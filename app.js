@@ -16,6 +16,7 @@ const state = {
   selectedPlacements: new Set(),
   topPlacementFilter: '(全部)',
   topSourceFilter: '(全部)',
+  topProjectsShowAll: false,
   boundDirHandle: null,
 };
 
@@ -1297,10 +1298,15 @@ function render() {
       });
 
       topics.sort((a, b) => (b[effMetric] - a[effMetric]));
-      const top10 = topics.slice(0, 10);
-      for (let i = 0; i < top10.length; i += 1) {
-        topRows.push({ rank: i + 1, ...top10[i] });
+      const displayTopics = state.topProjectsShowAll ? topics : topics.slice(0, 10);
+      for (let i = 0; i < displayTopics.length; i += 1) {
+        topRows.push({ rank: i + 1, ...displayTopics[i] });
       }
+    }
+
+    const topProjectsToggleBtn = $('topProjectsToggleBtn');
+    if (topProjectsToggleBtn) {
+      topProjectsToggleBtn.textContent = state.topProjectsShowAll ? '返回 Top 10' : '查看全部项目';
     }
 
     const cols = [
@@ -1537,6 +1543,11 @@ function setup() {
 
   updateFolderBtn?.addEventListener('click', async () => {
     await loadAllCsvFromBoundFolder();
+  });
+
+  $('topProjectsToggleBtn')?.addEventListener('click', () => {
+    state.topProjectsShowAll = !state.topProjectsShowAll;
+    render();
   });
 
   $('minImp').addEventListener('input', () => {
