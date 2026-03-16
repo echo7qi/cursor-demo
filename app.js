@@ -539,7 +539,7 @@ function render() {
       // 宣发来源周度明细表（多周 × 曝光量级pv / p-ctr / 每曝光收入 + 周环比）
       const swEl = $('sourceWeeklyTable');
       if (swEl && weekArr.length >= 1) {
-        const weeksToShow = weekArr.slice(-4);
+        const weeksToShow = weekArr.slice(-2);
         const weekLabel = (wk) => {
           const m = wk.slice(5, 7);
           const d = wk.slice(8, 10);
@@ -548,16 +548,17 @@ function render() {
         const byWeekBySrc = new Map();
         for (const w of weeksToShow) {
           const bySrc = groupBy(w.rows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
+          const totalImp = w.rows.reduce((s, r) => s + num(r[opsCols.imp]), 0);
           const srcMap = new Map();
           bySrc.forEach((rows, src) => {
             const a = computeFunnelAgg(rows, opsCols);
             const d = computeDerived(a);
-            srcMap.set(src, { imp: a.imp, ctr: d.ctr, rev_per_imp: d.rev_per_imp });
+            const shareOps = safeDiv(a.imp, totalImp);
+            srcMap.set(src, { imp: a.imp, ctr: d.ctr, rev_per_imp: d.rev_per_imp, shareOps });
           });
-          const totalImp = w.rows.reduce((s, r) => s + num(r[opsCols.imp]), 0);
           const totalA = computeFunnelAgg(w.rows, opsCols);
           const totalD = computeDerived(totalA);
-          srcMap.set('运营全局', { imp: totalImp, ctr: totalD.ctr, rev_per_imp: totalD.rev_per_imp });
+          srcMap.set('运营全局', { imp: totalImp, ctr: totalD.ctr, rev_per_imp: totalD.rev_per_imp, shareOps: 1 });
           byWeekBySrc.set(w.weekStart, srcMap);
         }
         const allSources = new Set();
@@ -571,22 +572,22 @@ function render() {
 
         let html = '<thead><tr><th rowspan="2">宣发来源</th>';
         weeksToShow.forEach((w) => {
-          html += `<th colspan="3">${weekLabel(w.weekStart)}</th>`;
+          html += `<th colspan="4">${weekLabel(w.weekStart)}</th>`;
         });
-        html += '<th colspan="4">周环比</th></tr><tr>';
+        html += '<th colspan="5">周环比</th></tr><tr>';
         weeksToShow.forEach(() => {
-          html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th>';
+          html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">运营宣推曝光占比</th>';
         });
-        html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">每曝光收入绝对值</th></tr></thead><tbody>';
+        html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">运营宣推曝光占比</th><th class="num">每曝光收入绝对值</th></tr></thead><tbody>';
 
         for (const src of sourceOrder) {
           html += `<tr><td><strong>${src}</strong></td>`;
           weeksToShow.forEach((w) => {
             const m = byWeekBySrc.get(w.weekStart)?.get(src);
             if (m) {
-              html += `<td class="num">${fmtInt(m.imp)}</td><td class="num">${fmtRate(m.ctr, 2)}</td><td class="num">${fmtMoney(m.rev_per_imp, 4)}</td>`;
+              html += `<td class="num">${fmtInt(m.imp)}</td><td class="num">${fmtRate(m.ctr, 2)}</td><td class="num">${fmtMoney(m.rev_per_imp, 4)}</td><td class="num">${fmtRate(m.shareOps, 2)}</td>`;
             } else {
-              html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td>';
+              html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
             }
           });
           if (prevWk) {
@@ -596,13 +597,14 @@ function render() {
               const impWow = wow(currM.imp, prevM.imp);
               const ctrWow = wow(currM.ctr, prevM.ctr);
               const revWow = wow(currM.rev_per_imp, prevM.rev_per_imp);
+              const shareWow = wow(currM.shareOps, prevM.shareOps);
               const revAbs = currM.rev_per_imp - prevM.rev_per_imp;
-              html += `<td class="num">${fmtWow(impWow)}</td><td class="num">${fmtWow(ctrWow)}</td><td class="num">${fmtWow(revWow)}</td><td class="num">${revAbs >= 0 ? '+' : ''}${fmtMoney(revAbs, 4)}</td>`;
+              html += `<td class="num">${fmtWow(impWow)}</td><td class="num">${fmtWow(ctrWow)}</td><td class="num">${fmtWow(revWow)}</td><td class="num">${fmtWow(shareWow)}</td><td class="num">${revAbs >= 0 ? '+' : ''}${fmtMoney(revAbs, 4)}</td>`;
             } else {
-              html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
+              html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
             }
           } else {
-            html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
+            html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
           }
           html += '</tr>';
         }
