@@ -9,7 +9,6 @@ const state = {
     opsTrend: null,
     sourceTrend: null,
     placementTrend: null,
-    latestSourceWow: null,
     latestPosQuadrant: null,
   },
   selectedSources: new Set(),
@@ -403,12 +402,8 @@ function render() {
       $('latestWeekTable').innerHTML = '';
       $('latestWeekSourceTable').innerHTML = '';
       $('latestWeekTopProjectsTable').innerHTML = '';
-      if ($('latestSourceWowFallback')) $('latestSourceWowFallback').innerHTML = '';
       if ($('latestPosQuadrantFallback')) $('latestPosQuadrantFallback').innerHTML = '';
-      if ($('latestSourceWowHint')) $('latestSourceWowHint').textContent = '';
       if ($('latestPosQuadrantHint')) $('latestPosQuadrantHint').textContent = '';
-      const c1 = state.charts.latestSourceWow;
-      if (c1) { c1.destroy(); state.charts.latestSourceWow = null; }
       const c2 = state.charts.latestPosQuadrant;
       if (c2) { c2.destroy(); state.charts.latestPosQuadrant = null; }
     } else {
@@ -538,115 +533,6 @@ function render() {
         { label: '每曝光收入环比', className: 'num', value: (r) => fmtWow(r.erpi_wow) },
       ];
       buildTable($('latestWeekSourceTable'), srcCols, srcAllWow);
-
-      // 来源趋势图：复合折线图，横轴=时间，纵轴=每曝光收入+p-CTR，图例=各宣发来源
-      const srcChartEl = $('latestSourceWowChart');
-      const srcHintEl = $('latestSourceWowHint');
-      const srcFallbackEl = $('latestSourceWowFallback');
-      const top5Src = srcAllWow.slice(0, 5).map((x) => x.src);
-      const palette = ['#4f7cff', '#40c79a', '#ff9f43', '#a855f7', '#ef4444'];
-
-      const srcByDate = groupBy(latestRows, (r) => String(r[COLS.date] ?? '').trim());
-      const srcDates = Array.from(srcByDate.keys()).filter(Boolean).sort();
-
-      if (srcFallbackEl) {
-        srcFallbackEl.innerHTML = `<div class="fallbackList">${
-          top5Src.map((s, i) => {
-            const m = srcCurrMap.get(s);
-            return m ? `<div class="fallbackItem"><span>${s}</span><span>每曝光收入 ${fmtMoney(m.rev_per_imp, 4)} ｜ p-CTR ${fmtRate(m.ctr, 2)}</span></div>` : '';
-          }).filter(Boolean).join('')
-        }</div>`;
-      }
-
-      if (typeof Chart !== 'undefined' && srcChartEl && srcDates.length) {
-        const ctx = srcChartEl.getContext('2d');
-        if (state.charts.latestSourceWow) state.charts.latestSourceWow.destroy();
-
-        const datasets = [];
-        top5Src.forEach((src, i) => {
-          const color = palette[i % palette.length];
-          const erpiVals = srcDates.map((d) => {
-            const rows = (srcByDate.get(d) || []).filter((r) => (String(r[COLS.source] ?? '').trim() || '(空)') === src);
-            const a = computeFunnelAgg(rows, opsCols);
-            const derv = computeDerived(a);
-            return derv.rev_per_imp ?? 0;
-          });
-          const ctrVals = srcDates.map((d) => {
-            const rows = (srcByDate.get(d) || []).filter((r) => (String(r[COLS.source] ?? '').trim() || '(空)') === src);
-            const a = computeFunnelAgg(rows, opsCols);
-            return safeDiv(a.clk, a.imp) ?? 0;
-          });
-          datasets.push({
-            label: `${src} · 每曝光收入`,
-            data: erpiVals,
-            borderColor: color,
-            backgroundColor: 'transparent',
-            tension: 0.25,
-            pointRadius: 0,
-            borderWidth: 2,
-            yAxisID: 'y',
-          });
-          datasets.push({
-            label: `${src} · p-CTR`,
-            data: ctrVals,
-            borderColor: color,
-            borderDash: [4, 4],
-            backgroundColor: 'transparent',
-            tension: 0.25,
-            pointRadius: 0,
-            borderWidth: 1.5,
-            yAxisID: 'y1',
-          });
-        });
-
-        state.charts.latestSourceWow = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: srcDates,
-            datasets,
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-              legend: { display: true, labels: { color: 'rgba(15,23,42,.72)' } },
-              tooltip: {
-                callbacks: {
-                  label: (ctx2) => {
-                    const v = ctx2.parsed.y;
-                    if (ctx2.dataset.yAxisID === 'y1') return `${ctx2.dataset.label}: ${(v * 100).toFixed(2)}%`;
-                    return `${ctx2.dataset.label}: ${Number(v).toFixed(4)}`;
-                  },
-                },
-              },
-            },
-            scales: {
-              x: {
-                ticks: { color: 'rgba(15,23,42,.55)', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 },
-                grid: { color: 'rgba(15,23,42,.06)' },
-              },
-              y: {
-                position: 'left',
-                title: { display: true, text: '每曝光收入' },
-                ticks: { color: 'rgba(15,23,42,.55)', callback: (v) => Number(v).toFixed(4) },
-                grid: { color: 'rgba(15,23,42,.06)' },
-              },
-              y1: {
-                position: 'right',
-                title: { display: true, text: 'p-CTR' },
-                ticks: { color: 'rgba(15,23,42,.45)', callback: (v) => `${Number(v * 100).toFixed(0)}%` },
-                grid: { drawOnChartArea: false },
-              },
-            },
-          },
-        });
-        if (srcHintEl) srcHintEl.textContent = '横轴=时间，左轴=每曝光收入，右轴=p-CTR；每来源两条线：实线=每曝光收入，虚线=p-CTR';
-        if (srcFallbackEl) srcFallbackEl.style.display = 'none';
-      } else {
-        if (srcHintEl) srcHintEl.textContent = '图表库未加载或日期范围内无数据，已显示列表版。';
-        if (srcFallbackEl) srcFallbackEl.style.display = '';
-      }
 
       // resource usage summary top5 by exposure
       const posUsageTop = [...posRows].sort((x, y) => y.imp - x.imp).slice(0, 5);
@@ -802,10 +688,7 @@ function render() {
     $('latestWeekTable').innerHTML = '';
     $('latestWeekSourceTable').innerHTML = '';
     $('latestWeekTopProjectsTable').innerHTML = '';
-    if ($('latestSourceWowHint')) $('latestSourceWowHint').textContent = '图表渲染异常。';
     if ($('latestPosQuadrantHint')) $('latestPosQuadrantHint').textContent = '图表渲染异常。';
-    const c1 = state.charts.latestSourceWow;
-    if (c1) { c1.destroy(); state.charts.latestSourceWow = null; }
     const c2 = state.charts.latestPosQuadrant;
     if (c2) { c2.destroy(); state.charts.latestPosQuadrant = null; }
   }
