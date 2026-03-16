@@ -1,0 +1,25 @@
+---
+description: 看板修改后自动部署到线上
+globs: 运营宣推数据看板/**/*
+alwaysApply: false
+---
+
+# 运营宣推数据看板 - 修改后部署
+
+修改 `运营宣推数据看板` 下的任何文件后，**必须**执行部署，使变更生效到线上：
+
+```bash
+cd 运营宣推数据看板 && ./deploy.sh "简要说明本次修改"
+```
+
+或手动：
+```bash
+cd 运营宣推数据看板
+git add -A
+git commit -m "修改说明"
+git push origin main
+```
+
+线上地址：https://echo7qi.github.io/cursor-demo/
+
+完成修改后，主动运行上述命令完成部署，并告知用户「已部署到线上」。
