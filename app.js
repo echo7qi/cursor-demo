@@ -15,6 +15,7 @@ const state = {
   selectedSources: new Set(),
   selectedPlacements: new Set(),
   topPlacementFilter: '(全部)',
+  topSourceFilter: '(全部)',
   boundDirHandle: null,
 };
 
@@ -315,12 +316,12 @@ function render() {
     if (!el.value) el.value = def;
   });
 
-  // Helpers
+  // Helpers：自然周 = 周一至周日 7 天为一周，周起始为周一
   const toWeekStartLocal = (dateStr) => {
     const d = new Date(`${dateStr}T00:00:00`);
     if (Number.isNaN(d.getTime())) return dateStr;
-    const day = d.getDay();
-    const deltaToMon = (day === 0 ? -6 : 1 - day);
+    const day = d.getDay(); // 0=周日,1=周一,...,6=周六
+    const deltaToMon = day === 0 ? -6 : 1 - day; // 归一到当周周一
     d.setDate(d.getDate() + deltaToMon);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -762,11 +763,39 @@ function render() {
     const totalDer = computeDerived(total);
     const totalShare = safeDiv(total.imp, total.gImp);
 
+    // 最新周环比：按自然周聚合，取最近两周
+    const byWeekOps = new Map();
+    for (const x of dailySeries) {
+      const wk = toWeekStartLocal(x.date);
+      if (!byWeekOps.has(wk)) byWeekOps.set(wk, { gImp: 0, imp: 0, clk: 0, read: 0, payu: 0, rev: 0 });
+      const b = byWeekOps.get(wk);
+      b.gImp += x.gImp;
+      b.imp += x.imp;
+      b.clk += x.clk;
+      b.read += x.read;
+      b.payu += x.payu;
+      b.rev += x.rev;
+    }
+    const weekStarts = Array.from(byWeekOps.keys()).sort();
+    const latestWeekAgg = weekStarts.length >= 1 ? byWeekOps.get(weekStarts[weekStarts.length - 1]) : null;
+    const prevWeekAgg = weekStarts.length >= 2 ? byWeekOps.get(weekStarts[weekStarts.length - 2]) : null;
+    const latestDer = latestWeekAgg ? computeDerived(latestWeekAgg) : null;
+    const prevDer = prevWeekAgg ? computeDerived(prevWeekAgg) : null;
+    const latestShare = latestWeekAgg ? safeDiv(latestWeekAgg.imp, latestWeekAgg.gImp) : null;
+    const prevShare = prevWeekAgg ? safeDiv(prevWeekAgg.imp, prevWeekAgg.gImp) : null;
+
+    const wowShare = latestShare != null && prevShare ? fmtWow(wow(latestShare, prevShare)) : null;
+    const wowRevPerImp = latestDer && prevDer ? fmtWow(wow(latestDer.rev_per_imp, prevDer.rev_per_imp)) : null;
+    const wowCtr = latestDer && prevDer ? fmtWow(wow(latestDer.ctr, prevDer.ctr)) : null;
+    const wowReadRate = latestDer && prevDer ? fmtWow(wow(latestDer.read_rate, prevDer.read_rate)) : null;
+
+    const wowSuffix = (v) => (v != null ? ` <span class="muted">（周环比${v}）</span>` : '');
+
     $('opsKpis').innerHTML = [
-      kpi('运营宣推曝光占比（全期）', fmtRate(totalShare, 2)),
-      kpi('运营宣推每曝光收入（全期）', `<span class="num">${fmtMoney(totalDer.rev_per_imp, 4)}</span>`),
-      kpi('运营宣推CTR（全期）', fmtRate(totalDer.ctr, 2)),
-      kpi('运营宣推阅读率（全期）', fmtRate(totalDer.read_rate, 2)),
+      kpi('运营宣推曝光占比（全期）', fmtRate(totalShare, 2) + wowSuffix(wowShare)),
+      kpi('运营宣推每曝光收入（全期）', `<span class="num">${fmtMoney(totalDer.rev_per_imp, 4)}</span>${wowSuffix(wowRevPerImp)}`),
+      kpi('运营宣推CTR（全期）', fmtRate(totalDer.ctr, 2) + wowSuffix(wowCtr)),
+      kpi('运营宣推阅读率（全期）', fmtRate(totalDer.read_rate, 2) + wowSuffix(wowReadRate)),
     ].join('');
 
     const series = aggregateSeries(dailySeries, timeGran);
@@ -857,7 +886,7 @@ function render() {
     }
 
     const cols = [
-      { label: timeGran === 'day' ? '日期' : '周起始(Mon)', value: (r) => `<span class="num">${r.date}</span>` },
+      { label: timeGran === 'day' ? '日期' : '周起始(周一)', value: (r) => `<span class="num">${r.date}</span>` },
       ...(timeGran === 'day' ? [] : [{ label: '覆盖天数', className: 'num', value: (r) => `<span class="num">${r.days ?? ''}</span>` }]),
       { label: '曝光占比', className: 'num', value: (r) => fmtRate(r.opsShare, 2) },
       { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
@@ -1208,22 +1237,45 @@ function render() {
     const allPlacements = Array.from(new Set(topRowsData.map((r) => String(r[COLS.placement] ?? '').trim() || '(空)'))).sort();
     if (pillsEl && pillsEl.childElementCount === 0) {
       state.topPlacementFilter = '(全部)';
-      const mkPill = (label) => {
+      const mkPill = (label, filterKey, pillsContainer) => {
         const el = document.createElement('label');
-        el.className = `pill ${state.topPlacementFilter === label ? 'pill--on' : ''}`;
+        el.className = `pill ${state[filterKey] === label ? 'pill--on' : ''}`;
         el.textContent = label;
         el.addEventListener('click', (e) => {
           e.preventDefault();
-          state.topPlacementFilter = label;
-          Array.from(pillsEl.children).forEach((c) => c.classList.remove('pill--on'));
+          state[filterKey] = label;
+          Array.from(pillsContainer.children).forEach((c) => c.classList.remove('pill--on'));
           el.classList.add('pill--on');
           render();
         });
         return el;
       };
       pillsEl.innerHTML = '';
-      pillsEl.appendChild(mkPill('(全部)'));
-      allPlacements.forEach((p) => pillsEl.appendChild(mkPill(p)));
+      pillsEl.appendChild(mkPill('(全部)', 'topPlacementFilter', pillsEl));
+      allPlacements.forEach((p) => pillsEl.appendChild(mkPill(p, 'topPlacementFilter', pillsEl)));
+    }
+
+    // 宣发来源筛选 pill
+    const srcPillsEl = $('topSourcePills');
+    const allSources = Array.from(new Set(topRowsData.map((r) => String(r[COLS.source] ?? '').trim() || '(空)'))).sort();
+    if (srcPillsEl && srcPillsEl.childElementCount === 0) {
+      state.topSourceFilter = '(全部)';
+      const mkPill = (label, filterKey, pillsContainer) => {
+        const el = document.createElement('label');
+        el.className = `pill ${state[filterKey] === label ? 'pill--on' : ''}`;
+        el.textContent = label;
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          state[filterKey] = label;
+          Array.from(pillsContainer.children).forEach((c) => c.classList.remove('pill--on'));
+          el.classList.add('pill--on');
+          render();
+        });
+        return el;
+      };
+      srcPillsEl.innerHTML = '';
+      srcPillsEl.appendChild(mkPill('(全部)', 'topSourceFilter', srcPillsEl));
+      allSources.forEach((s) => srcPillsEl.appendChild(mkPill(s, 'topSourceFilter', srcPillsEl)));
     }
 
     const topRows = [];
@@ -1240,6 +1292,7 @@ function render() {
       }).filter((t) => {
         if (t.imp < minImp) return false;
         if (state.topPlacementFilter && state.topPlacementFilter !== '(全部)' && t.pos !== state.topPlacementFilter) return false;
+        if (state.topSourceFilter && state.topSourceFilter !== '(全部)' && t.src !== state.topSourceFilter) return false;
         return true;
       });
 
@@ -1353,6 +1406,8 @@ async function loadRows(rows, fileNameLabel = null) {
   if (posPills) posPills.innerHTML = '';
   const topPosPills = $('topPlacementPills');
   if (topPosPills) topPosPills.innerHTML = '';
+  const topSrcPills = $('topSourcePills');
+  if (topSrcPills) topSrcPills.innerHTML = '';
   [
     'latestStartDate', 'latestEndDate',
     'opsStartDate', 'opsEndDate',
@@ -1423,8 +1478,11 @@ async function restoreBoundFolderHandle() {
     const perm = await savedHandle.queryPermission({ mode: 'read' });
     if (perm === 'granted') {
       state.boundDirHandle = savedHandle;
+      await loadAllCsvFromBoundFolder();
+    } else {
+      state.boundDirHandle = savedHandle;
       const hint = $('statusHint');
-      if (hint) hint.textContent = `已恢复绑定文件夹：${savedHandle.name}。可直接点“更新最新数据”。`;
+      if (hint) hint.textContent = `已恢复绑定文件夹：${savedHandle.name}。请点“更新最新数据”或重新授权。`;
     }
   } catch (err) {
     // Ignore restore failures; user can re-bind manually.
@@ -1470,7 +1528,7 @@ function setup() {
       } catch (_) {
         // Ignore persistence failure, manual bind still works.
       }
-      $('statusHint').textContent = `已绑定文件夹：${dir.name}。点击“更新最新数据”即可刷新。`;
+      await loadAllCsvFromBoundFolder();
     } catch (err) {
       if (err?.name === 'AbortError') return;
       $('statusHint').textContent = `绑定文件夹失败：${err?.message || err}`;
@@ -1480,7 +1538,6 @@ function setup() {
   updateFolderBtn?.addEventListener('click', async () => {
     await loadAllCsvFromBoundFolder();
   });
-
 
   $('minImp').addEventListener('input', () => {
     $('minImpLabel').textContent = String($('minImp').value);
