@@ -17,6 +17,8 @@ const state = {
   topPlacementFilter: '(全部)',
   topSourceFilter: '(全部)',
   topProjectsShowAll: false,
+  topProjectsByWeek: false,
+  latestWeekRange: null,
   boundDirHandle: null,
 };
 
@@ -394,6 +396,7 @@ function render() {
     else if (weekArr.length) latestWeek = weekArr[weekArr.length - 1];
 
     if (!latestWeek) {
+      state.latestWeekRange = null;
       $('latestWeekSummary').innerHTML = latestNoDataInRange ? '当前筛选日期范围内没有数据，请调整开始/结束日期。' : '未找到可计算的周数据。';
       $('latestWeekKpis').innerHTML = '';
       $('latestWeekWowTable').innerHTML = '';
@@ -424,6 +427,7 @@ function render() {
       const we = new Date(ws);
       we.setDate(ws.getDate() + 6);
       const weekEnd = `${we.getFullYear()}-${String(we.getMonth() + 1).padStart(2, '0')}-${String(we.getDate()).padStart(2, '0')}`;
+      state.latestWeekRange = { start: weekStart, end: weekEnd };
 
       const gImp = weekRows.reduce((s, r) => s + num(r[COLS.g_imp]), 0);
       const a = computeFunnelAgg(weekRows, opsCols);
@@ -711,17 +715,23 @@ function render() {
         topicTop.map((x) => `<li>${x.name}（${x.tid}）| ${x.src} / ${x.pos} | 每曝光收入 ${fmtMoney(x.rev_per_imp, 4)} | p-CTR ${fmtRate(x.ctr, 2)}</li>`).join('') +
         `</ul>`
       );
-      summaryLines.push(
-        `<strong>调配建议：</strong>` +
-        `${high.length ? `优先加量 ${high.map((x) => x.pos).join('、')}` : '优先维持高效资源位'}；` +
-        `${low.length ? `优先整改/挪量 ${low.map((x) => x.pos).join('、')}` : '低效大盘不明显'}。` +
-        `建议先做 5%~10% 小步调配，观察 2-3 天再放大。`
-      );
+      let adviceText = '';
+      if (high.length && low.length) {
+        adviceText = `优先加量 ${high.map((x) => x.pos).join('、')}；优先整改/挪量 ${low.map((x) => x.pos).join('、')}。`;
+      } else if (high.length) {
+        adviceText = `优先加量 ${high.map((x) => x.pos).join('、')}；暂无明显低效资源位。`;
+      } else if (low.length) {
+        adviceText = `暂无高效资源位，建议从曝光占比高的资源位中择优提升；优先整改/挪量 ${low.map((x) => x.pos).join('、')}。`;
+      } else {
+        adviceText = '资源位效率分布较均衡，建议维持当前配置。';
+      }
+      summaryLines.push(`<strong>调配建议：</strong>${adviceText} 建议先做 5%~10% 小步调配，观察 2-3 天再放大。`);
 
       $('latestWeekSummary').innerHTML = summaryLines.join('<br/>');
 
     }
   } catch (err) {
+    state.latestWeekRange = null;
     $('latestWeekSummary').innerHTML = `最新周模块渲染异常：${err?.message || err}`;
     $('latestWeekKpis').innerHTML = '';
     $('latestWeekWowTable').innerHTML = '';
@@ -789,14 +799,17 @@ function render() {
     const wowRevPerImp = latestDer && prevDer ? fmtWow(wow(latestDer.rev_per_imp, prevDer.rev_per_imp)) : null;
     const wowCtr = latestDer && prevDer ? fmtWow(wow(latestDer.ctr, prevDer.ctr)) : null;
     const wowReadRate = latestDer && prevDer ? fmtWow(wow(latestDer.read_rate, prevDer.read_rate)) : null;
+    const wowPayRate = latestDer && prevDer ? fmtWow(wow(latestDer.pay_rate, prevDer.pay_rate)) : null;
 
     const wowSuffix = (v) => (v != null ? ` <span class="muted">（周环比${v}）</span>` : '');
 
     $('opsKpis').innerHTML = [
       kpi('运营宣推曝光占比（全期）', fmtRate(totalShare, 2) + wowSuffix(wowShare)),
       kpi('运营宣推每曝光收入（全期）', `<span class="num">${fmtMoney(totalDer.rev_per_imp, 4)}</span>${wowSuffix(wowRevPerImp)}`),
+      kpi('运营宣推收入（全期）', `<span class="num">${fmtMoney(total.rev, 0)}</span>`),
       kpi('运营宣推CTR（全期）', fmtRate(totalDer.ctr, 2) + wowSuffix(wowCtr)),
       kpi('运营宣推阅读率（全期）', fmtRate(totalDer.read_rate, 2) + wowSuffix(wowReadRate)),
+      kpi('运营宣推付费率（全期）', fmtRate(totalDer.pay_rate, 2) + wowSuffix(wowPayRate)),
     ].join('');
 
     const series = aggregateSeries(dailySeries, timeGran);
@@ -985,15 +998,15 @@ function render() {
       selected.forEach((src, i) => {
         const color = palette[i % palette.length];
 
-        const erpiVals = buckets.map((b) => {
+        const effVals = buckets.map((b) => {
           const r = b.rows.filter((x) => (String(x[COLS.source] ?? '').trim() || '(空)') === src);
           const a = computeFunnelAgg(r, opsScopeCols);
           const d = computeDerived(a);
-          return d.rev_per_imp ?? 0;
+          return d[effMetric] ?? 0;
         });
         datasets.push({
-          label: `${src} · 每曝光收入`,
-          data: erpiVals,
+          label: `${src} · ${effLabel(effMetric)}`,
+          data: effVals,
           borderColor: color,
           backgroundColor: 'transparent',
           tension: 0.25,
@@ -1036,7 +1049,9 @@ function render() {
                   if (ctx2.dataset.yAxisID === 'y1') {
                     return `${ctx2.dataset.label}: ${(v * 100).toFixed(2)}%`;
                   }
-                  return `${ctx2.dataset.label}: ${Number(v).toFixed(4)}`;
+                  if (effMetric === 'rev_per_imp') return `${ctx2.dataset.label}: ${Number(v).toFixed(4)}`;
+                  if (effMetric === 'ctr' || effMetric === 'read_rate' || effMetric === 'pay_rate') return `${ctx2.dataset.label}: ${(v * 100).toFixed(2)}%`;
+                  return `${ctx2.dataset.label}: ${v}`;
                 },
               },
             },
@@ -1049,7 +1064,11 @@ function render() {
             y: {
               ticks: {
                 color: 'rgba(15,23,42,.55)',
-                callback: (v) => Number(v).toFixed(4),
+                callback: (v) => {
+                  if (effMetric === 'rev_per_imp') return Number(v).toFixed(4);
+                  if (effMetric === 'ctr' || effMetric === 'read_rate' || effMetric === 'pay_rate') return `${Number(v * 100).toFixed(0)}%`;
+                  return v;
+                },
               },
               grid: { color: 'rgba(15,23,42,.06)' },
             },
@@ -1066,7 +1085,7 @@ function render() {
       });
       if (hintEl) {
         const granLabel = timeGran === 'day' ? '日' : (timeGran === 'week_avg' ? '周（日均）' : '周（汇总）');
-        hintEl.textContent = `趋势：${granLabel} · 口径=运营宣推 · 每来源两条线：实线=每曝光收入，虚线=p-CTR（运营宣推点击/运营宣推曝光） · 已选来源=${selected.length}`;
+        hintEl.textContent = `趋势：${granLabel} · 口径=运营宣推 · 每来源两条线：实线=${effLabel(effMetric)}，虚线=p-CTR · 已选来源=${selected.length}`;
       }
     } else if (hintEl) {
       hintEl.textContent = '图表库未加载（可能网络受限），仍可查看下方表格。';
@@ -1227,13 +1246,74 @@ function render() {
     buildTable($('byPlacementTable'), cols, data);
   }
 
-  // 4) 每天综合效率最高的项目明细（最近 7 天 Top 10）
+  // 4) 每天/每周综合效率最高的项目明细 Top 10
   {
+    const topTimeMode = $('topTimeMode')?.value || 'day';
+    state.topProjectsByWeek = topTimeMode === 'week';
     const topRowsData = filterRowsByDate(dailyRows, $('topStartDate')?.value, $('topEndDate')?.value);
-    const byDate = groupBy(topRowsData, (r) => String(r[COLS.date] ?? '').trim());
-    const dates = Array.from(byDate.keys()).filter(Boolean).sort();
 
-    // 资源位筛选 pill
+    const topRows = [];
+    const dateColLabel = state.topProjectsByWeek ? '周起始' : '日期';
+
+    if (state.topProjectsByWeek) {
+      const byWeek = new Map();
+      for (const r of topRowsData) {
+        const d = String(r[COLS.date] ?? '').trim();
+        if (!d) continue;
+        const wk = toWeekStartLocal(d);
+        if (!byWeek.has(wk)) byWeek.set(wk, []);
+        byWeek.get(wk).push(r);
+      }
+      const weeks = Array.from(byWeek.keys()).sort();
+      for (const weekStart of weeks) {
+        const weekRows = byWeek.get(weekStart);
+        const byTopic = groupBy(weekRows, (r) => String(r[COLS.topicId] ?? '').trim() || String(r[COLS.topicName] ?? '').trim() || '(未知)');
+        const topics = Array.from(byTopic.entries()).map(([tid, rows]) => {
+          const a = computeFunnelAgg(rows, scopeCols);
+          const d = computeDerived(a);
+          const name = String(rows[0]?.[COLS.topicName] ?? '').trim();
+          const src = String(rows[0]?.[COLS.source] ?? '').trim();
+          const pos = String(rows[0]?.[COLS.placement] ?? '').trim() || '(空)';
+          return { date: weekStart, tid, name, src, pos, ...a, ...d };
+        }).filter((t) => {
+          if (t.imp < minImp) return false;
+          if (state.topPlacementFilter && state.topPlacementFilter !== '(全部)' && t.pos !== state.topPlacementFilter) return false;
+          if (state.topSourceFilter && state.topSourceFilter !== '(全部)' && t.src !== state.topSourceFilter) return false;
+          return true;
+        });
+        topics.sort((a, b) => (b[effMetric] - a[effMetric]));
+        const displayTopics = state.topProjectsShowAll ? topics : topics.slice(0, 10);
+        for (let i = 0; i < displayTopics.length; i += 1) {
+          topRows.push({ rank: i + 1, ...displayTopics[i] });
+        }
+      }
+    } else {
+      const byDate = groupBy(topRowsData, (r) => String(r[COLS.date] ?? '').trim());
+      const dates = Array.from(byDate.keys()).filter(Boolean).sort();
+      for (const date of dates) {
+        const day = byDate.get(date);
+        const byTopic = groupBy(day, (r) => String(r[COLS.topicId] ?? '').trim() || String(r[COLS.topicName] ?? '').trim() || '(未知)');
+        const topics = Array.from(byTopic.entries()).map(([tid, rows]) => {
+          const a = computeFunnelAgg(rows, scopeCols);
+          const d = computeDerived(a);
+          const name = String(rows[0]?.[COLS.topicName] ?? '').trim();
+          const src = String(rows[0]?.[COLS.source] ?? '').trim();
+          const pos = String(rows[0]?.[COLS.placement] ?? '').trim() || '(空)';
+          return { date, tid, name, src, pos, ...a, ...d };
+        }).filter((t) => {
+          if (t.imp < minImp) return false;
+          if (state.topPlacementFilter && state.topPlacementFilter !== '(全部)' && t.pos !== state.topPlacementFilter) return false;
+          if (state.topSourceFilter && state.topSourceFilter !== '(全部)' && t.src !== state.topSourceFilter) return false;
+          return true;
+        });
+        topics.sort((a, b) => (b[effMetric] - a[effMetric]));
+        const displayTopics = state.topProjectsShowAll ? topics : topics.slice(0, 10);
+        for (let i = 0; i < displayTopics.length; i += 1) {
+          topRows.push({ rank: i + 1, ...displayTopics[i] });
+        }
+      }
+    }
+
     const pillsEl = $('topPlacementPills');
     const allPlacements = Array.from(new Set(topRowsData.map((r) => String(r[COLS.placement] ?? '').trim() || '(空)'))).sort();
     if (pillsEl && pillsEl.childElementCount === 0) {
@@ -1279,38 +1359,13 @@ function render() {
       allSources.forEach((s) => srcPillsEl.appendChild(mkPill(s, 'topSourceFilter', srcPillsEl)));
     }
 
-    const topRows = [];
-    for (const date of dates) {
-      const day = byDate.get(date);
-      const byTopic = groupBy(day, (r) => String(r[COLS.topicId] ?? '').trim() || String(r[COLS.topicName] ?? '').trim() || '(未知)');
-      const topics = Array.from(byTopic.entries()).map(([tid, rows]) => {
-        const a = computeFunnelAgg(rows, scopeCols);
-        const d = computeDerived(a);
-        const name = String(rows[0]?.[COLS.topicName] ?? '').trim();
-        const src = String(rows[0]?.[COLS.source] ?? '').trim();
-        const pos = String(rows[0]?.[COLS.placement] ?? '').trim() || '(空)';
-        return { date, tid, name, src, pos, ...a, ...d };
-      }).filter((t) => {
-        if (t.imp < minImp) return false;
-        if (state.topPlacementFilter && state.topPlacementFilter !== '(全部)' && t.pos !== state.topPlacementFilter) return false;
-        if (state.topSourceFilter && state.topSourceFilter !== '(全部)' && t.src !== state.topSourceFilter) return false;
-        return true;
-      });
-
-      topics.sort((a, b) => (b[effMetric] - a[effMetric]));
-      const displayTopics = state.topProjectsShowAll ? topics : topics.slice(0, 10);
-      for (let i = 0; i < displayTopics.length; i += 1) {
-        topRows.push({ rank: i + 1, ...displayTopics[i] });
-      }
-    }
-
     const topProjectsToggleBtn = $('topProjectsToggleBtn');
     if (topProjectsToggleBtn) {
       topProjectsToggleBtn.textContent = state.topProjectsShowAll ? '返回 Top 10' : '查看全部项目';
     }
 
     const cols = [
-      { label: '日期', value: (r) => `<span class="num">${r.date}</span>` },
+      { label: dateColLabel, value: (r) => `<span class="num">${r.date}</span>` },
       { label: 'Top', className: 'num', value: (r) => `<span class="num">#${r.rank}</span>` },
       { label: '专题ID', className: 'num', value: (r) => `<span class="num">${r.tid}</span>` },
       { label: '专题名称', value: (r) => r.name || '<span class="muted">（空）</span>' },
@@ -1548,6 +1603,18 @@ function setup() {
   $('topProjectsToggleBtn')?.addEventListener('click', () => {
     state.topProjectsShowAll = !state.topProjectsShowAll;
     render();
+  });
+
+  $('topTimeMode')?.addEventListener('change', () => render());
+
+  $('syncMatrixToLatestWeek')?.addEventListener('click', () => {
+    if (state.latestWeekRange) {
+      const s = $('matrixStartDate');
+      const e = $('matrixEndDate');
+      if (s) s.value = state.latestWeekRange.start;
+      if (e) e.value = state.latestWeekRange.end;
+      render();
+    }
   });
 
   $('minImp').addEventListener('input', () => {

@@ -72,6 +72,7 @@
             <div class="adviceBox" id="latestWeekSummary"></div>
             <div class="subSectionTitle">资源位 × 宣发来源效率矩阵（热力）</div>
             <div class="cardControls">
+              <button id="syncMatrixToLatestWeek" class="btn btn--ghost" type="button">同步最新周日期</button>
               <div class="control">
                 <div class="control__label">开始日期</div>
                 <input id="matrixStartDate" type="date" />
@@ -262,10 +263,17 @@
         <div id="module4" class="card card--full">
           <div class="card__title">
             <div class="card__titleMain"><span class="titleBadge">5</span>项目效率明细（Top 10）</div>
-            <div class="card__titleSub">按天查看高效项目，支持按资源位、宣发来源筛选</div>
+            <div class="card__titleSub">按天/按周查看高效项目，支持按资源位、宣发来源筛选</div>
           </div>
           <div class="card__body">
             <div class="cardControls">
+              <div class="control">
+                <div class="control__label">时间维度</div>
+                <select id="topTimeMode">
+                  <option value="day">按天 Top 10</option>
+                  <option value="week">按周 Top 10</option>
+                </select>
+              </div>
               <div class="control">
                 <div class="control__label">开始日期</div>
                 <input id="topStartDate" type="date" />
@@ -295,7 +303,7 @@
 
     <footer class="footer">
       <div class="footer__text">
-        使用说明：把 `作品明细表 2026-03-12 15_12_08.csv` 拖入页面或点击“选择 CSV 文件”。如遇 0 值异常，优先检查埋点/归因口径。
+        使用说明：拖入 CSV 或点击「选择 CSV 文件」/「绑定数据文件夹」。指标口径：运营宣推曝光 = 全局曝光中归因到运营宣推的部分；p-CTR = 运营宣推点击/运营宣推曝光；每曝光收入 = 收入/曝光；阅读率 = 实际阅读/点击；付费率 = 付费用户/实际阅读。周环比 = 本周 vs 上周。
       </div>
     </footer>
 
