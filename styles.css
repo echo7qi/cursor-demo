@@ -92,6 +92,12 @@ input[type="range"]{width:100%}
   grid-template-columns: 1fr 1fr;
   gap:12px;
 }
+/* Display order: 1 -> 0 -> 2 -> 3 -> 4 */
+#module1{order:1}
+#module0{order:2}
+#module2{order:3}
+#module3{order:4}
+#module4{order:5}
 .card{
   border:1px solid var(--border);
   background: rgba(255,255,255,.92);
@@ -103,8 +109,35 @@ input[type="range"]{width:100%}
 .card__title{
   padding:12px 14px;
   border-bottom:1px solid var(--border);
-  font-size:13px;
   color:rgba(15, 23, 42, .86);
+  background: linear-gradient(180deg, rgba(79,124,255,.06), rgba(79,124,255,0));
+}
+.card__titleMain{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:600;
+  color:rgba(15, 23, 42, .90);
+  letter-spacing:.1px;
+}
+.card__titleSub{
+  margin-top:5px;
+  font-size:12px;
+  color:var(--muted);
+}
+.titleBadge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  background: rgba(79,124,255,.18);
+  color:#315fe6;
+  font-size:12px;
+  font-weight:700;
+  font-family:var(--mono);
 }
 .card__body{padding:12px 14px}
 

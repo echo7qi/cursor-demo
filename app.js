@@ -441,7 +441,7 @@ function render() {
       $('latestWeekKpis').innerHTML = [
         kpi('周区间', `<span class="num">${weekStart} ~ ${weekEnd}</span>${days < 7 ? '<span class="muted">（非完整周）</span>' : ''}`),
         kpi('运营宣推曝光占比（周）', fmtRate(opsShareGlobal, 2)),
-        kpi('运营宣推每曝光收入（周）', `<span class="num">${fmtMoney(d.rev_per_imp, 6)}</span>`),
+        kpi('运营宣推每曝光收入（周）', `<span class="num">${fmtMoney(d.rev_per_imp, 4)}</span>`),
         kpi('运营宣推p-CTR（周）', fmtRate(d.ctr, 2)),
       ].join('');
 
@@ -454,10 +454,10 @@ function render() {
       ];
       const wowCols = [
         { label: '指标', value: (r) => r.metric },
-        { label: '当前周', className: 'num', value: (r) => (r.metric === '每曝光收入' ? fmtMoney(r.curr, 6) : fmtRate(r.curr, 2)) },
+        { label: '当前周', className: 'num', value: (r) => (r.metric === '每曝光收入' ? fmtMoney(r.curr, 4) : fmtRate(r.curr, 2)) },
         { label: '上周', className: 'num', value: (r) => {
           if (r.prev == null) return 'N/A';
-          return r.metric === '每曝光收入' ? fmtMoney(r.prev, 6) : fmtRate(r.prev, 2);
+          return r.metric === '每曝光收入' ? fmtMoney(r.prev, 4) : fmtRate(r.prev, 2);
         } },
         { label: '环比', className: 'num', value: (r) => fmtWow(r.wow) },
       ];
@@ -481,7 +481,7 @@ function render() {
         { label: '运营宣推曝光占比', className: 'num', value: (r) => fmtRate(r.shareOps, 2) },
         { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
         { label: '运营宣推收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
-        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 6) },
+        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
         { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
         { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
         { label: '付费率', className: 'num', value: (r) => fmtRate(r.pay_rate, 2) },
@@ -528,7 +528,7 @@ function render() {
         { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
         { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.pctr, 2) },
         { label: 'p-CTR环比', className: 'num', value: (r) => fmtWow(r.pctr_wow) },
-        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.erpi, 6) },
+        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.erpi, 4) },
         { label: '每曝光收入环比', className: 'num', value: (r) => fmtWow(r.erpi_wow) },
       ];
       buildTable($('latestWeekSourceTable'), srcCols, srcAllWow);
@@ -623,7 +623,7 @@ function render() {
         { label: '资源位', value: (r) => r.pos },
         { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
         { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
-        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 6) },
+        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
       ];
       buildTable($('latestWeekTopProjectsTable'), topicCols, topicTop);
 
@@ -634,7 +634,7 @@ function render() {
       if (quadFallbackEl) {
         quadFallbackEl.innerHTML = `<div class="fallbackList">${
           posRows.slice(0, 10).map((x) =>
-            `<div class="fallbackItem"><span>${x.pos}</span><span>曝光占比 ${fmtRate(x.shareOps,2)} ｜ 每曝光收入 ${fmtMoney(x.rev_per_imp,6)}</span></div>`
+            `<div class="fallbackItem"><span>${x.pos}</span><span>曝光占比 ${fmtRate(x.shareOps,2)} ｜ 每曝光收入 ${fmtMoney(x.rev_per_imp,4)}</span></div>`
           ).join('')
         }</div>`;
       }
@@ -664,7 +664,7 @@ function render() {
                 callbacks: {
                   label: (ctx2) => {
                     const p = ctx2.raw || {};
-                    return `${p.pos || ''} | 占比${fmtRate(p.x || 0, 2)} | 每曝光收入${fmtMoney(p.y || 0, 6)} | 曝光${fmtInt(p.imp || 0)}`;
+                    return `${p.pos || ''} | 占比${fmtRate(p.x || 0, 2)} | 每曝光收入${fmtMoney(p.y || 0, 4)} | 曝光${fmtInt(p.imp || 0)}`;
                   },
                 },
               },
@@ -695,18 +695,18 @@ function render() {
         `<strong>2. 各宣发来源（Top5曝光）p-CTR与每曝光收入环比：</strong><ul>` +
         srcTop.map((x) => {
           const p = srcPrevMap.get(x.src);
-          return `<li>${x.src}：p-CTR ${fmtRate(x.ctr, 2)}（环比 ${fmtWow(wow(x.ctr, p?.ctr))}）；每曝光收入 ${fmtMoney(x.rev_per_imp, 6)}（环比 ${fmtWow(wow(x.rev_per_imp, p?.rev_per_imp))}）</li>`;
+          return `<li>${x.src}：p-CTR ${fmtRate(x.ctr, 2)}（环比 ${fmtWow(wow(x.ctr, p?.ctr))}）；每曝光收入 ${fmtMoney(x.rev_per_imp, 4)}（环比 ${fmtWow(wow(x.rev_per_imp, p?.rev_per_imp))}）</li>`;
         }).join('') +
         `</ul>`
       );
       summaryLines.push(
         `<strong>3. 各资源使用情况（按曝光占比Top5）：</strong><ul>` +
-        posUsageTop.map((x) => `<li>${x.pos}：占比 ${fmtRate(x.shareOps, 2)}，每曝光收入 ${fmtMoney(x.rev_per_imp, 6)}，标签：${x.tag}</li>`).join('') +
+        posUsageTop.map((x) => `<li>${x.pos}：占比 ${fmtRate(x.shareOps, 2)}，每曝光收入 ${fmtMoney(x.rev_per_imp, 4)}，标签：${x.tag}</li>`).join('') +
         `</ul>`
       );
       summaryLines.push(
         `<strong>4. 综合效率最高投放项目 Top5（当周）：</strong><ul>` +
-        topicTop.map((x) => `<li>${x.name}（${x.tid}）| ${x.src} / ${x.pos} | 每曝光收入 ${fmtMoney(x.rev_per_imp, 6)} | p-CTR ${fmtRate(x.ctr, 2)}</li>`).join('') +
+        topicTop.map((x) => `<li>${x.name}（${x.tid}）| ${x.src} / ${x.pos} | 每曝光收入 ${fmtMoney(x.rev_per_imp, 4)} | p-CTR ${fmtRate(x.ctr, 2)}</li>`).join('') +
         `</ul>`
       );
       summaryLines.push(
@@ -764,7 +764,7 @@ function render() {
 
     $('opsKpis').innerHTML = [
       kpi('运营宣推曝光占比（全期）', fmtRate(totalShare, 2)),
-      kpi('运营宣推每曝光收入（全期）', `<span class="num">${fmtMoney(totalDer.rev_per_imp, 6)}</span>`),
+      kpi('运营宣推每曝光收入（全期）', `<span class="num">${fmtMoney(totalDer.rev_per_imp, 4)}</span>`),
       kpi('运营宣推CTR（全期）', fmtRate(totalDer.ctr, 2)),
       kpi('运营宣推阅读率（全期）', fmtRate(totalDer.read_rate, 2)),
     ].join('');
@@ -820,7 +820,7 @@ function render() {
                   const isShare = ctx2.dataset.yAxisID === 'y1';
                   const isRate = metricKey === 'ctr' || metricKey === 'read_rate' || metricKey === 'pay_rate';
                   if (isShare) return `${ctx2.dataset.label}: ${(v * 100).toFixed(2)}%`;
-                  if (metricKey === 'rev_per_imp') return `${ctx2.dataset.label}: ${v.toFixed(6)}`;
+                  if (metricKey === 'rev_per_imp') return `${ctx2.dataset.label}: ${Number(v).toFixed(4)}`;
                   if (isRate) return `${ctx2.dataset.label}: ${(v * 100).toFixed(2)}%`;
                   return `${ctx2.dataset.label}: ${v}`;
                 },
@@ -865,7 +865,7 @@ function render() {
       { label: '运营宣推阅读', className: 'num', value: (r) => fmtInt(r.read) },
       { label: '运营宣推付费用户', className: 'num', value: (r) => fmtInt(r.payu) },
       { label: '运营宣推收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
-      { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 6) },
+      { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
       { label: 'CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
       { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
       { label: '付费率', className: 'num', value: (r) => fmtRate(r.pay_rate, 2) },
@@ -1006,7 +1006,7 @@ function render() {
                   if (ctx2.dataset.yAxisID === 'y1') {
                     return `${ctx2.dataset.label}: ${(v * 100).toFixed(2)}%`;
                   }
-                  return `${ctx2.dataset.label}: ${v.toFixed(6)}`;
+                  return `${ctx2.dataset.label}: ${Number(v).toFixed(4)}`;
                 },
               },
             },
@@ -1047,7 +1047,7 @@ function render() {
       { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
       { label: '运营宣推曝光占比', className: 'num', value: (r) => fmtRate(r.ops_share, 2) },
       { label: '运营宣推收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
-      { label: '每曝光收入(运营宣推)', className: 'num', value: (r) => fmtMoney(r.erpi_ops, 6) },
+      { label: '每曝光收入(运营宣推)', className: 'num', value: (r) => fmtMoney(r.erpi_ops, 4) },
       { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
       { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
       { label: '付费率', className: 'num', value: (r) => fmtRate(r.pay_rate, 2) },
@@ -1151,7 +1151,7 @@ function render() {
               callbacks: {
                 label: (ctx2) => {
                   const v = ctx2.parsed.y;
-                  if (effMetric === 'rev_per_imp') return `${ctx2.dataset.label}: ${v.toFixed(6)}`;
+                  if (effMetric === 'rev_per_imp') return `${ctx2.dataset.label}: ${Number(v).toFixed(4)}`;
                   if (effMetric === 'ctr' || effMetric === 'read_rate' || effMetric === 'pay_rate') return `${ctx2.dataset.label}: ${(v * 100).toFixed(2)}%`;
                   return `${ctx2.dataset.label}: ${v}`;
                 },
@@ -1189,7 +1189,7 @@ function render() {
       { label: '资源位', value: (r) => r.pos },
       { label: '曝光', className: 'num', value: (r) => fmtInt(r.imp) },
       { label: '收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
-      { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 6) },
+      { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
       { label: 'CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
       { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
       { label: '付费率', className: 'num', value: (r) => fmtRate(r.pay_rate, 2) },
@@ -1260,9 +1260,9 @@ function render() {
       { label: '曝光', className: 'num', value: (r) => fmtInt(r.imp) },
       { label: '收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
       { label: effLabel(effMetric), className: 'num', value: (r) => {
-        if (effMetric === 'rev_per_imp') return fmtMoney(r.rev_per_imp, 6);
+        if (effMetric === 'rev_per_imp') return fmtMoney(r.rev_per_imp, 4);
         if (effMetric === 'ctr' || effMetric === 'read_rate' || effMetric === 'pay_rate') return fmtRate(r[effMetric], 2);
-        return fmtMoney(r[effMetric], 6);
+        return fmtMoney(r[effMetric], 4);
       } },
       { label: 'CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
       { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
@@ -1313,7 +1313,7 @@ function render() {
     };
 
     const metricFormatter = (v) => {
-      if (effMetric === 'rev_per_imp') return fmtMoney(v, 6);
+      if (effMetric === 'rev_per_imp') return fmtMoney(v, 4);
       if (effMetric === 'ctr' || effMetric === 'read_rate' || effMetric === 'pay_rate') return fmtRate(v, 2);
       return String(v);
     };
