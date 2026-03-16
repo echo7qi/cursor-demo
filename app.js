@@ -627,7 +627,10 @@ function render() {
             },
           },
         });
-        if (quadHintEl) quadHintEl.textContent = '横轴=资源位运营宣推曝光占比，纵轴=每曝光收入，气泡大小≈曝光量';
+        if (quadHintEl) {
+          quadHintEl.innerHTML = '横轴=曝光占比，纵轴=每曝光收入，气泡大小≈曝光量。<br/>' +
+            '<span class="muted">四象限建议：右上(高占比+高效率)=维持/加量；左上(低占比+高效率)=可加量；右下(高占比+低效率)=优先挪量；左下(低占比+低效率)=观察或收缩。</span>';
+        }
         if (quadFallbackEl) quadFallbackEl.style.display = 'none';
       } else {
         if (quadHintEl) quadHintEl.textContent = '图表库未加载，已显示列表版资源位效率。';
@@ -675,7 +678,9 @@ function render() {
       } else {
         adviceText = '资源位效率分布较均衡，建议维持当前配置。';
       }
-      summaryLines.push(`<strong>调配建议：</strong>${adviceText} 建议先做 5%~10% 小步调配，观察 2-3 天再放大。`);
+      summaryLines.push(`<strong>调配建议：</strong>${adviceText}`);
+      summaryLines.push(`<strong>结构性挪量：</strong>将曝光从低效资源位向高效资源位转移，在不增加总曝光下提升每曝光收入。`);
+      summaryLines.push(`<strong>效率底线：</strong>加量时每曝光收入下降不超过 5%~10%，超限则回撤或重新调配。建议先做 5%~10% 小步调配，观察 2-3 天再放大。`);
 
       $('latestWeekSummary').innerHTML = summaryLines.join('<br/>');
 
@@ -844,6 +849,37 @@ function render() {
       if (hintEl) hintEl.textContent = '图表：蓝线=效率指标，灰线=运营宣推曝光占比';
     } else if (hintEl) {
       hintEl.textContent = '图表库未加载（可能网络受限），仍可查看下方表格。';
+    }
+
+    // 效率-规模平衡提示
+    const balanceHintEl = $('opsBalanceHint');
+    if (balanceHintEl && series.length >= 4) {
+      const mid = Math.floor(series.length / 2);
+      const firstHalf = series.slice(0, mid);
+      const secondHalf = series.slice(mid);
+      const avgEffFirst = firstHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / firstHalf.length;
+      const avgEffSecond = secondHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / secondHalf.length;
+      const avgShareFirst = firstHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / firstHalf.length;
+      const avgShareSecond = secondHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / secondHalf.length;
+      const effUp = avgEffSecond > avgEffFirst * 1.02;
+      const effDown = avgEffSecond < avgEffFirst * 0.98;
+      const shareUp = avgShareSecond > avgShareFirst * 1.02;
+      const shareDown = avgShareSecond < avgShareFirst * 0.98;
+      let balanceText = '';
+      if (effUp && shareDown) {
+        balanceText = '<strong>效率-规模平衡提示：</strong>效率提升但曝光占比下降，两条曲线在拉大。建议在高效资源位/来源适度加量，避免为冲规模牺牲效率。';
+      } else if (effDown && shareUp) {
+        balanceText = '<strong>效率-规模平衡提示：</strong>曝光占比上升但效率下降，两条曲线在拉大。建议结构性挪量：从低效资源位向高效资源位调配，加量时设效率底线（如每曝光收入下降不超过5%）。';
+      } else if (effUp && shareUp) {
+        balanceText = '<strong>效率-规模平衡提示：</strong>效率与规模均向好，保持当前策略。加量时优先高效资源位，维持效率底线。';
+      } else if (effDown && shareDown) {
+        balanceText = '<strong>效率-规模平衡提示：</strong>效率与曝光占比均下降，需关注。建议先做结构性调配，从低效挪向高效，再考虑加量。';
+      } else {
+        balanceText = '<strong>效率-规模平衡提示：</strong>效率与规模变化较平稳。加量时优先高效资源位，建议设效率底线（每曝光收入下降不超过5%~10%）。';
+      }
+      balanceHintEl.innerHTML = balanceText;
+    } else if (balanceHintEl) {
+      balanceHintEl.innerHTML = '';
     }
 
     const cols = [

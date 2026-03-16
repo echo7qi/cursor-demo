@@ -228,6 +228,11 @@ input[type="range"]{width:100%}
   margin:6px 0 0 16px;
   padding:0;
 }
+.adviceBox--compact{
+  margin-top:8px;
+  padding:8px 10px;
+  font-size:11px;
+}
 
 .subSectionTitle{
   margin:10px 0 8px;
