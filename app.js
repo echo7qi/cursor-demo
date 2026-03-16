@@ -566,9 +566,16 @@ function render() {
           const bySrc = groupBy(w.rows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
           bySrc.forEach((_, src) => allSources.add(src));
         });
-        const sourceOrder = ['运营全局', ...Array.from(allSources).filter((s) => s !== '运营全局').sort()];
         const latestWk = weeksToShow[weeksToShow.length - 1];
         const prevWk = weeksToShow.length >= 2 ? weeksToShow[weeksToShow.length - 2] : null;
+        const otherSources = Array.from(allSources).filter((s) => s !== '运营全局');
+        const latestSrcMap = byWeekBySrc.get(latestWk.weekStart);
+        otherSources.sort((a, b) => {
+          const impA = latestSrcMap?.get(a)?.imp ?? 0;
+          const impB = latestSrcMap?.get(b)?.imp ?? 0;
+          return impB - impA;
+        });
+        const sourceOrder = ['运营全局', ...otherSources];
 
         let html = '<thead><tr><th rowspan="2">宣发来源</th>';
         weeksToShow.forEach((w) => {
@@ -576,16 +583,16 @@ function render() {
         });
         html += '<th colspan="5">周环比</th></tr><tr>';
         weeksToShow.forEach(() => {
-          html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">运营宣推曝光占比</th>';
+          html += '<th class="num">曝光量级pv</th><th class="num">宣推占比</th><th class="num">p-ctr</th><th class="num">每曝光收入</th>';
         });
-        html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">运营宣推曝光占比</th><th class="num">每曝光收入绝对值</th></tr></thead><tbody>';
+        html += '<th class="num">曝光量级pv</th><th class="num">宣推占比</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">每曝光收入绝对值</th></tr></thead><tbody>';
 
         for (const src of sourceOrder) {
           html += `<tr><td><strong>${src}</strong></td>`;
           weeksToShow.forEach((w) => {
             const m = byWeekBySrc.get(w.weekStart)?.get(src);
             if (m) {
-              html += `<td class="num">${fmtInt(m.imp)}</td><td class="num">${fmtRate(m.ctr, 2)}</td><td class="num">${fmtMoney(m.rev_per_imp, 4)}</td><td class="num">${fmtRate(m.shareOps, 2)}</td>`;
+              html += `<td class="num">${fmtInt(m.imp)}</td><td class="num">${fmtRate(m.shareOps, 2)}</td><td class="num">${fmtRate(m.ctr, 2)}</td><td class="num">${fmtMoney(m.rev_per_imp, 4)}</td>`;
             } else {
               html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
             }
@@ -599,7 +606,7 @@ function render() {
               const revWow = wow(currM.rev_per_imp, prevM.rev_per_imp);
               const shareWow = wow(currM.shareOps, prevM.shareOps);
               const revAbs = currM.rev_per_imp - prevM.rev_per_imp;
-              html += `<td class="num">${fmtWow(impWow)}</td><td class="num">${fmtWow(ctrWow)}</td><td class="num">${fmtWow(revWow)}</td><td class="num">${fmtWow(shareWow)}</td><td class="num">${revAbs >= 0 ? '+' : ''}${fmtMoney(revAbs, 4)}</td>`;
+              html += `<td class="num">${fmtWow(impWow)}</td><td class="num">${fmtWow(shareWow)}</td><td class="num">${fmtWow(ctrWow)}</td><td class="num">${fmtWow(revWow)}</td><td class="num">${revAbs >= 0 ? '+' : ''}${fmtMoney(revAbs, 4)}</td>`;
             } else {
               html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
             }
@@ -958,6 +965,73 @@ function render() {
       balanceHintEl.innerHTML = balanceText;
     } else if (balanceHintEl) {
       balanceHintEl.innerHTML = '';
+    }
+
+    // 运营周报一句话汇总
+    const summaryEl = $('opsWeeklySummary');
+    if (summaryEl && series.length >= 2 && opsRows.length > 0) {
+      const mid = Math.floor(series.length / 2);
+      const firstHalf = series.slice(0, mid);
+      const secondHalf = series.slice(mid);
+      const avgEffFirst = firstHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / firstHalf.length;
+      const avgEffSecond = secondHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / secondHalf.length;
+      const avgShareFirst = firstHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / firstHalf.length;
+      const avgShareSecond = secondHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / secondHalf.length;
+      const effUp = avgEffSecond > avgEffFirst * 1.05;
+      const effDown = avgEffSecond < avgEffFirst * 0.95;
+      const shareUp = avgShareSecond > avgShareFirst * 1.05;
+      const shareDown = avgShareSecond < avgShareFirst * 0.95;
+
+      const getBucketKey = (d) => (timeGran === 'day' ? d : toWeekStartLocal(d));
+      const firstKeys = new Set(firstHalf.map((x) => x.date));
+      const secondKeys = new Set(secondHalf.map((x) => x.date));
+      const allFirstRows = opsRows.filter((r) => firstKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
+      const allSecondRows = opsRows.filter((r) => secondKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
+      const totalFirstImp = allFirstRows.reduce((s, r) => s + num(r[COLS.ops_imp]), 0);
+      const totalSecondImp = allSecondRows.reduce((s, r) => s + num(r[COLS.ops_imp]), 0);
+      const opsCols = pickScopeCols('ops');
+      const bySource = groupBy(opsRows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
+      const sourceChanges = [];
+      for (const [src, rows] of bySource) {
+        const firstRows = rows.filter((r) => firstKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
+        const secondRows = rows.filter((r) => secondKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
+        if (firstRows.length < 2 || secondRows.length < 2) continue;
+        const a1 = computeFunnelAgg(firstRows, opsCols);
+        const a2 = computeFunnelAgg(secondRows, opsCols);
+        const d1 = computeDerived(a1);
+        const d2 = computeDerived(a2);
+        const effChange = safeDiv(d2[effMetric] - d1[effMetric], d1[effMetric] || 1);
+        const share1 = safeDiv(a1.imp, totalFirstImp);
+        const share2 = safeDiv(a2.imp, totalSecondImp);
+        const shareChange = share1 > 0 ? safeDiv(share2 - share1, share1) : 0;
+        const totalImp = a1.imp + a2.imp;
+        sourceChanges.push({ src, effChange, shareChange, eff1: d1[effMetric], eff2: d2[effMetric], totalImp });
+      }
+      sourceChanges.sort((a, b) => b.totalImp - a.totalImp);
+
+      const parts = [];
+      let bigTrend = '';
+      if (effUp && shareUp) bigTrend = '大盘效率与曝光占比均向好';
+      else if (effUp && shareDown) bigTrend = '大盘效率提升但曝光占比下降';
+      else if (effDown && shareUp) bigTrend = '大盘曝光占比上升但效率下降';
+      else if (effDown && shareDown) bigTrend = '大盘效率与曝光占比均下降';
+      else bigTrend = '大盘效率与曝光占比变化较平稳';
+      parts.push(bigTrend);
+
+      const highlights = [];
+      const anomalies = [];
+      for (const x of sourceChanges) {
+        if (x.effChange >= 0.08 && x.totalImp > 50000) highlights.push(`${x.src}效率提升明显`);
+        else if (x.effChange <= -0.08 && x.totalImp > 50000) anomalies.push(`${x.src}效率下降明显`);
+        else if (x.shareChange >= 0.15 && x.totalImp > 50000) highlights.push(`${x.src}曝光占比提升`);
+        else if (x.shareChange <= -0.15 && x.totalImp > 50000) anomalies.push(`${x.src}曝光占比下降需关注`);
+      }
+      if (highlights.length) parts.push(`其中${highlights.slice(0, 2).join('、')}`);
+      if (anomalies.length) parts.push(`${anomalies.slice(0, 2).join('、')}`);
+
+      summaryEl.innerHTML = `<strong>【结论】</strong>${parts.join('；')}。`;
+    } else if (summaryEl) {
+      summaryEl.innerHTML = '';
     }
 
     const cols = [
@@ -1611,10 +1685,82 @@ async function restoreBoundFolderHandle() {
   }
 }
 
+async function copyTableAsImage(btn) {
+  const wrap = btn?.closest('.tableWrap');
+  const table = wrap?.querySelector('table');
+  if (!table || typeof html2canvas !== 'function') return;
+  try {
+    const canvas = await html2canvas(table, {
+      useCORS: true,
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false,
+    });
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (blob && navigator.clipboard?.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      const orig = btn.textContent;
+      btn.textContent = '已复制';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    } else {
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'table.png';
+      a.click();
+      btn.textContent = '已下载';
+      setTimeout(() => { btn.textContent = '复制为图片'; }, 1500);
+    }
+  } catch (err) {
+    btn.textContent = '复制失败';
+    setTimeout(() => { btn.textContent = '复制为图片'; }, 1500);
+  }
+}
+
+async function copyChartAsImage(btn) {
+  const wrap = btn?.closest('.chartWrap');
+  const canvas = wrap?.querySelector('canvas');
+  if (!canvas) return;
+  try {
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (blob && navigator.clipboard?.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      const orig = btn.textContent;
+      btn.textContent = '已复制';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    } else {
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chart.png';
+      a.click();
+      btn.textContent = '已下载';
+      setTimeout(() => { btn.textContent = '复制为图片'; }, 1500);
+    }
+  } catch (err) {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'chart.png';
+    a.click();
+    btn.textContent = '已下载';
+    setTimeout(() => { btn.textContent = '复制为图片'; }, 1500);
+  }
+}
+
 function setup() {
   window.addEventListener('error', (e) => {
     const hint = $('statusHint');
     if (hint) hint.textContent = `页面脚本异常：${e.message || 'unknown error'}`;
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target?.classList?.contains('copyChartBtn')) {
+      copyChartAsImage(e.target);
+    }
+    if (e.target?.classList?.contains('copyTableBtn')) {
+      copyTableAsImage(e.target);
+    }
   });
 
   const fileInput = $('fileInput');
@@ -1702,6 +1848,166 @@ function setup() {
 
   $('minImpLabel').textContent = String($('minImp').value);
   restoreBoundFolderHandle();
+
+  $('exportReportBtn')?.addEventListener('click', async () => {
+    if (!state.rows.length) {
+      const h = $('statusHint');
+      if (h) h.textContent = '请先加载 CSV 数据后再导出报告。';
+      return;
+    }
+    const btn = $('exportReportBtn');
+    const orig = btn?.textContent;
+    if (btn) btn.textContent = '生成中…';
+    try {
+      const { html, dataUrl } = await generateReportHtml();
+      const name = `运营宣推报告_${new Date().toISOString().slice(0, 10)}.html`;
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+
+      const download = () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      };
+
+      download();
+      if (dataUrl && dataUrl.length < 1800000) {
+        try {
+          await navigator.clipboard.writeText(dataUrl);
+          if (btn) btn.textContent = '已复制分享链接，粘贴到浏览器即可查看';
+        } catch {
+          if (btn) btn.textContent = '已下载，复制失败请手动分享文件';
+        }
+      } else {
+        if (btn) btn.textContent = '已下载，可将文件上传至网盘生成分享链接';
+      }
+      setTimeout(() => { if (btn) btn.textContent = orig; }, 3000);
+    } catch (err) {
+      if (btn) btn.textContent = '导出失败';
+      setTimeout(() => { if (btn) btn.textContent = orig; }, 2000);
+    }
+  });
+}
+
+async function generateReportHtml() {
+  const reportCss = `
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;color:rgba(15,23,42,.92);background:#f6f8ff;padding:16px}
+.report{max-width:1000px;margin:0 auto}
+.report h1{font-size:18px;margin:0 0 4px}
+.report .meta{font-size:12px;color:rgba(15,23,42,.6);margin-bottom:20px}
+.report section{margin-bottom:24px;border:1px solid rgba(15,23,42,.1);border-radius:12px;background:#fff;padding:14px}
+.report .sectionTitle{font-size:14px;font-weight:600;margin-bottom:10px;color:rgba(15,23,42,.9)}
+.report .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.report .kpi{border:1px solid rgba(15,23,42,.1);border-radius:10px;padding:10px;background:rgba(246,248,255,.8)}
+.report .kpi__label{font-size:11px;color:rgba(15,23,42,.6)}
+.report .kpi__value{margin-top:6px;font-family:ui-monospace,monospace;font-size:14px}
+.report .adviceBox{border:1px solid rgba(15,23,42,.1);background:rgba(246,248,255,.8);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.7;margin:10px 0}
+.report table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
+.report th,.report td{padding:8px 10px;border:1px solid rgba(15,23,42,.1);text-align:left}
+.report th{background:rgba(246,248,255,.95)}
+.report .chartImg{max-width:100%;height:auto;border-radius:10px;border:1px solid rgba(15,23,42,.1);margin:10px 0}
+.report .subTitle{font-size:12px;color:rgba(15,23,42,.6);margin:12px 0 6px}
+`;
+
+  const getHtml = (id) => { const el = document.getElementById(id); return el ? el.innerHTML : ''; };
+  const getTableHtml = (id) => {
+    const t = document.querySelector(`#${id}`);
+    if (!t || !t.tagName || t.tagName.toLowerCase() !== 'table') return '';
+    const clone = t.cloneNode(true);
+    clone.querySelectorAll('.copyTableBtn').forEach((b) => b.remove());
+    return clone.outerHTML;
+  };
+  const getMatrixHtml = () => {
+    const wrap = document.getElementById('matrixTable');
+    if (!wrap) return '';
+    const table = wrap.querySelector('table');
+    return table ? table.outerHTML : wrap.innerHTML;
+  };
+
+  const chartIds = ['opsTrendChart', 'sourceTrendChart', 'placementTrendChart', 'latestPosQuadrantChart'];
+  const chartDataUrls = {};
+  for (const id of chartIds) {
+    const c = document.getElementById(id);
+    if (c && c.tagName && c.tagName.toLowerCase() === 'canvas') {
+      try {
+        chartDataUrls[id] = c.toDataURL('image/png');
+      } catch (_) {}
+    }
+  }
+
+  let matrixImg = '';
+  const matrixEl = document.getElementById('matrixTable');
+  if (matrixEl && typeof html2canvas === 'function') {
+    try {
+      const table = matrixEl.querySelector('table');
+      if (table) {
+        const canvas = await html2canvas(table, { useCORS: true, scale: 2, backgroundColor: '#fff', logging: false });
+        matrixImg = canvas.toDataURL('image/png');
+      }
+    } catch (_) {}
+  }
+  if (!matrixImg && matrixEl) matrixImg = ''; else if (!matrixImg) matrixImg = '';
+
+  const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>运营宣推数据报告</title>
+  <style>${reportCss}</style>
+</head>
+<body>
+  <div class="report">
+    <h1>运营宣推数据报告</h1>
+    <div class="meta">导出时间：${new Date().toLocaleString('zh-CN')} · 本地解析，未上传原始数据。分享方式：将报告链接粘贴到浏览器地址栏即可查看。</div>
+
+    <section>
+      <div class="sectionTitle">最新周总览与调配建议</div>
+      <div class="adviceBox">${getHtml('latestWeekSummary') || '（无数据）'}</div>
+      <div class="subTitle">当周 KPI</div>
+      <div class="kpis">${getHtml('latestWeekKpis') || '<div class="kpi"><div class="kpi__label">—</div><div class="kpi__value">—</div></div>'}</div>
+      <div class="subTitle">资源位 × 宣发来源效率矩阵</div>
+      ${matrixImg ? `<img src="${matrixImg}" alt="热力图" class="chartImg"/>` : (getMatrixHtml() ? getMatrixHtml() : '')}
+      <div class="subTitle">当周运营宣推周环比总览</div>
+      ${getTableHtml('latestWeekWowTable') || '—'}
+      <div class="subTitle">宣发来源周度明细</div>
+      ${getTableHtml('sourceWeeklyTable') || '—'}
+    </section>
+
+    <section>
+      <div class="sectionTitle">运营宣推大盘趋势</div>
+      <div class="kpis">${getHtml('opsKpis') || '—'}</div>
+      <div class="adviceBox">${getHtml('opsWeeklySummary') || ''}</div>
+      <div class="adviceBox">${getHtml('opsBalanceHint') || ''}</div>
+      ${chartDataUrls.opsTrendChart ? `<img src="${chartDataUrls.opsTrendChart}" alt="大盘趋势" class="chartImg"/>` : ''}
+    </section>
+
+    <section>
+      <div class="sectionTitle">各业务线宣发效率趋势</div>
+      ${chartDataUrls.sourceTrendChart ? `<img src="${chartDataUrls.sourceTrendChart}" alt="来源趋势" class="chartImg"/>` : ''}
+    </section>
+
+    <section>
+      <div class="sectionTitle">各资源位效率趋势</div>
+      ${chartDataUrls.placementTrendChart ? `<img src="${chartDataUrls.placementTrendChart}" alt="资源位趋势" class="chartImg"/>` : ''}
+    </section>
+
+    <section>
+      <div class="sectionTitle">资源位效率-规模象限</div>
+      ${chartDataUrls.latestPosQuadrantChart ? `<img src="${chartDataUrls.latestPosQuadrantChart}" alt="象限图" class="chartImg"/>` : ''}
+    </section>
+
+    <section>
+      <div class="sectionTitle">项目效率明细</div>
+      ${getTableHtml('dailyTopProjectsTable') || '—'}
+    </section>
+  </div>
+</body>
+</html>`;
+
+  const dataUrl = `data:text/html;charset=utf-8;base64,${btoa(unescape(encodeURIComponent(html)))}`;
+  return { html, dataUrl };
 }
 
 setup();

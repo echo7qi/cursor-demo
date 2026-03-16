@@ -19,6 +19,7 @@
         </label>
         <button id="bindFolderBtn" class="btn btn--ghost" type="button">绑定数据文件夹</button>
         <button id="updateFolderBtn" class="btn" type="button">更新最新数据</button>
+        <button id="exportReportBtn" class="btn btn--ghost" type="button" title="导出结论报告，供他人查看（无需上传数据）">导出报告</button>
       </div>
     </header>
 
@@ -101,35 +102,44 @@
               </div>
             </div>
             <div class="chartHint muted" id="matrixHint">口径跟随顶部“指标口径”和“效率指标”。色块越深，效率越高。</div>
-            <div id="matrixTable" class="matrixWrap"></div>
+            <div class="tableWrap tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+              <div id="matrixTable" class="matrixWrap"></div>
+            </div>
             <div class="kpis" id="latestWeekKpis"></div>
             <div class="subSectionTitle">当周运营宣推周环比总览（最新周 vs 上周）</div>
-            <div class="tableWrap">
+            <div class="tableWrap tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
               <table class="table" id="latestWeekWowTable"></table>
             </div>
-            <div class="subSectionTitle">宣发来源周度明细（曝光量级pv / p-ctr / 每曝光收入 / 运营宣推曝光占比）</div>
-            <div class="tableWrap tableWrap--wide">
+            <div class="subSectionTitle">宣发来源周度明细（曝光量级 / 宣推占比 / p-ctr / 每曝光收入）</div>
+            <div class="tableWrap tableWrap--wide tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
               <table class="table table--sourceWeekly" id="sourceWeeklyTable"></table>
             </div>
             <details class="details">
               <summary>展开查看明细表（资源位/来源/Top项目）</summary>
               <div class="details__body">
                 <div class="subSectionTitle">各资源位使用情况（最新周）</div>
-                <div class="tableWrap">
+                <div class="tableWrap tableWrap--copyable">
+                  <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
                   <table class="table" id="latestWeekTable"></table>
                 </div>
                 <div class="subSectionTitle">各宣发来源环比（最新周 vs 上周）</div>
-                <div class="tableWrap">
+                <div class="tableWrap tableWrap--copyable">
+                  <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
                   <table class="table" id="latestWeekSourceTable"></table>
                 </div>
                 <div class="subSectionTitle">当周综合效率最高投放项目 Top5</div>
-                <div class="tableWrap">
+                <div class="tableWrap tableWrap--copyable">
+                  <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
                   <table class="table" id="latestWeekTopProjectsTable"></table>
                 </div>
               </div>
             </details>
             <div class="subSectionTitle">资源位效率-规模象限（最新周）</div>
             <div class="chartWrap">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
               <canvas id="latestPosQuadrantChart"></canvas>
               <div class="chartHint muted" id="latestPosQuadrantHint">横轴=资源位运营宣推曝光占比，纵轴=每曝光收入，气泡大小≈曝光量</div>
               <div id="latestPosQuadrantFallback"></div>
@@ -162,7 +172,9 @@
               </div>
             </div>
             <div class="kpis" id="opsKpis"></div>
+            <div class="adviceBox adviceBox--compact adviceBox--summary" id="opsWeeklySummary"></div>
             <div class="chartWrap chartWrap--hero">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
               <canvas id="opsTrendChart"></canvas>
               <div class="chartHint muted" id="chartHint">图表：蓝线=效率指标，灰线=运营宣推曝光占比</div>
             </div>
@@ -170,7 +182,8 @@
 
             <details class="details">
               <summary>展开查看明细表（与上方趋势同粒度）</summary>
-              <div class="tableWrap details__body">
+              <div class="tableWrap details__body tableWrap--copyable">
+                <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
                 <table class="table" id="opsDailyTable"></table>
               </div>
             </details>
@@ -206,12 +219,14 @@
               <div class="pillRow__pills" id="sourcePills"></div>
             </div>
             <div class="chartWrap">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
               <canvas id="sourceTrendChart"></canvas>
               <div class="chartHint muted" id="sourceChartHint">图表：按业务线拆分，展示每曝光收入 + p-CTR 趋势（运营宣推口径）</div>
             </div>
             <details class="details">
               <summary>展开查看来源效率表</summary>
-              <div class="tableWrap details__body">
+              <div class="tableWrap details__body tableWrap--copyable">
+                <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
                 <table class="table" id="bySourceTable"></table>
               </div>
             </details>
@@ -247,12 +262,14 @@
               <div class="pillRow__pills" id="placementPills"></div>
             </div>
             <div class="chartWrap">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
               <canvas id="placementTrendChart"></canvas>
               <div class="chartHint muted" id="placementChartHint">图表：按资源位拆分，展示效率趋势</div>
             </div>
             <details class="details">
               <summary>展开查看资源位效率表</summary>
-              <div class="tableWrap details__body">
+              <div class="tableWrap details__body tableWrap--copyable">
+                <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
                 <table class="table" id="byPlacementTable"></table>
               </div>
             </details>
@@ -291,7 +308,8 @@
               <div class="pillRow__pills" id="topSourcePills"></div>
             </div>
             <button id="topProjectsToggleBtn" class="btn btn--ghost" type="button">查看全部项目</button>
-            <div class="tableWrap">
+            <div class="tableWrap tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
               <table class="table" id="dailyTopProjectsTable"></table>
             </div>
           </div>
@@ -308,6 +326,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
