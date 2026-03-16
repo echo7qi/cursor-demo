@@ -401,6 +401,8 @@ function render() {
       $('latestWeekWowTable').innerHTML = '';
       $('latestWeekTable').innerHTML = '';
       $('latestWeekSourceTable').innerHTML = '';
+      const swEl = $('sourceWeeklyTable');
+      if (swEl) swEl.innerHTML = '';
       $('latestWeekTopProjectsTable').innerHTML = '';
       if ($('latestPosQuadrantFallback')) $('latestPosQuadrantFallback').innerHTML = '';
       if ($('latestPosQuadrantHint')) $('latestPosQuadrantHint').textContent = '';
@@ -533,6 +535,80 @@ function render() {
         { label: '每曝光收入环比', className: 'num', value: (r) => fmtWow(r.erpi_wow) },
       ];
       buildTable($('latestWeekSourceTable'), srcCols, srcAllWow);
+
+      // 宣发来源周度明细表（多周 × 曝光量级pv / p-ctr / 每曝光收入 + 周环比）
+      const swEl = $('sourceWeeklyTable');
+      if (swEl && weekArr.length >= 1) {
+        const weeksToShow = weekArr.slice(-4);
+        const weekLabel = (wk) => {
+          const m = wk.slice(5, 7);
+          const d = wk.slice(8, 10);
+          return `${m}${d}周`;
+        };
+        const byWeekBySrc = new Map();
+        for (const w of weeksToShow) {
+          const bySrc = groupBy(w.rows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
+          const srcMap = new Map();
+          bySrc.forEach((rows, src) => {
+            const a = computeFunnelAgg(rows, opsCols);
+            const d = computeDerived(a);
+            srcMap.set(src, { imp: a.imp, ctr: d.ctr, rev_per_imp: d.rev_per_imp });
+          });
+          const totalImp = w.rows.reduce((s, r) => s + num(r[opsCols.imp]), 0);
+          const totalA = computeFunnelAgg(w.rows, opsCols);
+          const totalD = computeDerived(totalA);
+          srcMap.set('运营全局', { imp: totalImp, ctr: totalD.ctr, rev_per_imp: totalD.rev_per_imp });
+          byWeekBySrc.set(w.weekStart, srcMap);
+        }
+        const allSources = new Set();
+        weeksToShow.forEach((w) => {
+          const bySrc = groupBy(w.rows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
+          bySrc.forEach((_, src) => allSources.add(src));
+        });
+        const sourceOrder = ['运营全局', ...Array.from(allSources).filter((s) => s !== '运营全局').sort()];
+        const latestWk = weeksToShow[weeksToShow.length - 1];
+        const prevWk = weeksToShow.length >= 2 ? weeksToShow[weeksToShow.length - 2] : null;
+
+        let html = '<thead><tr><th rowspan="2">宣发来源</th>';
+        weeksToShow.forEach((w) => {
+          html += `<th colspan="3">${weekLabel(w.weekStart)}</th>`;
+        });
+        html += '<th colspan="4">周环比</th></tr><tr>';
+        weeksToShow.forEach(() => {
+          html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th>';
+        });
+        html += '<th class="num">曝光量级pv</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">每曝光收入绝对值</th></tr></thead><tbody>';
+
+        for (const src of sourceOrder) {
+          html += `<tr><td><strong>${src}</strong></td>`;
+          weeksToShow.forEach((w) => {
+            const m = byWeekBySrc.get(w.weekStart)?.get(src);
+            if (m) {
+              html += `<td class="num">${fmtInt(m.imp)}</td><td class="num">${fmtRate(m.ctr, 2)}</td><td class="num">${fmtMoney(m.rev_per_imp, 4)}</td>`;
+            } else {
+              html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td>';
+            }
+          });
+          if (prevWk) {
+            const currM = byWeekBySrc.get(latestWk.weekStart)?.get(src);
+            const prevM = byWeekBySrc.get(prevWk.weekStart)?.get(src);
+            if (currM && prevM) {
+              const impWow = wow(currM.imp, prevM.imp);
+              const ctrWow = wow(currM.ctr, prevM.ctr);
+              const revWow = wow(currM.rev_per_imp, prevM.rev_per_imp);
+              const revAbs = currM.rev_per_imp - prevM.rev_per_imp;
+              html += `<td class="num">${fmtWow(impWow)}</td><td class="num">${fmtWow(ctrWow)}</td><td class="num">${fmtWow(revWow)}</td><td class="num">${revAbs >= 0 ? '+' : ''}${fmtMoney(revAbs, 4)}</td>`;
+            } else {
+              html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
+            }
+          } else {
+            html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
+          }
+          html += '</tr>';
+        }
+        html += '</tbody>';
+        swEl.innerHTML = html;
+      }
 
       // resource usage summary top5 by exposure
       const posUsageTop = [...posRows].sort((x, y) => y.imp - x.imp).slice(0, 5);
