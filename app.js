@@ -1,4 +1,22 @@
-/* global Papa, Chart */
+/* global Papa, Chart, pako */
+
+// 分享链接：若 URL 含 #r=xxx，则解码并展示报告（与本地结论一致）
+(function checkReportHash() {
+  const hash = location.hash;
+  const m = hash && hash.startsWith('#r=') ? hash.slice(3) : null;
+  if (!m || typeof pako === 'undefined') return;
+  try {
+    const binary = atob(m.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const decompressed = pako.ungzip(bytes);
+    const html = new TextDecoder().decode(decompressed);
+    document.open();
+    document.write(html);
+    document.close();
+    window.__reportView = true;
+  } catch (_) {}
+})();
 
 const $ = (id) => document.getElementById(id);
 
@@ -1859,7 +1877,7 @@ function setup() {
     const orig = btn?.textContent;
     if (btn) btn.textContent = '生成中…';
     try {
-      const { html, dataUrl } = await generateReportHtml();
+      const { html, dataUrl, shareUrl } = await generateReportHtml();
       const name = `运营宣推报告_${new Date().toISOString().slice(0, 10)}.html`;
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
 
@@ -1872,10 +1890,29 @@ function setup() {
       };
 
       download();
-      if (dataUrl && dataUrl.length < 1800000) {
+
+      let urlToCopy = shareUrl;
+      // 0x0.st 为第三方托管，会将报告上传至外部服务器。若需短链接，可取消下方注释并知悉数据会离开本地。
+      // if (shareUrl && shareUrl.length < 60000) {
+      //   try {
+      //     const formData = new FormData();
+      //     formData.append('file', blob, name);
+      //     const res = await fetch('https://0x0.st', {
+      //       method: 'POST',
+      //       body: formData,
+      //       headers: { 'User-Agent': 'OpsDashboard/1.0' },
+      //     });
+      //     if (res.ok) {
+      //       const shortUrl = (await res.text()).trim();
+      //       if (shortUrl && shortUrl.startsWith('http')) urlToCopy = shortUrl;
+      //     }
+      //   } catch (_) {}
+      // }
+
+      if (urlToCopy) {
         try {
-          await navigator.clipboard.writeText(dataUrl);
-          if (btn) btn.textContent = '已复制分享链接，粘贴到浏览器即可查看';
+          await navigator.clipboard.writeText(urlToCopy);
+          if (btn) btn.textContent = urlToCopy.length < 100 ? '已复制短链接' : '已复制分享链接，粘贴到浏览器即可查看';
         } catch {
           if (btn) btn.textContent = '已下载，复制失败请手动分享文件';
         }
@@ -2007,8 +2044,22 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Pi
 </html>`;
 
   const dataUrl = `data:text/html;charset=utf-8;base64,${btoa(unescape(encodeURIComponent(html)))}`;
-  return { html, dataUrl };
+
+  // 精简版（无图表图片）用于 hash URL，保证链接可分享
+  const liteHtml = html.replace(/<img[^>]+src="data:image[^"]*"[^>]*\/?>/gi, '<p class="subTitle">[图表见完整报告]</p>');
+  let shareUrl = null;
+  if (typeof pako !== 'undefined') {
+    const bytes = pako.gzip(liteHtml, { level: 9 });
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+    }
+    const b64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_');
+    const base = (location.origin + location.pathname).replace(/(index\.html)?\/?$/, '/').split('?')[0];
+    shareUrl = base + '#r=' + b64;
+  }
+  return { html, dataUrl, shareUrl };
 }
 
-setup();
+if (!window.__reportView) setup();
 
