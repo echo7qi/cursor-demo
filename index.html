@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>运营宣推数据看板</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="appShell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">数据看板</div>
+        <nav class="sidebar__nav">
+          <a class="sidebar__link is-active" href="./index.html" aria-current="page">运营宣推</a>
+          <a class="sidebar__link" href="./wishbar.html">祈愿宣发</a>
+          <a class="sidebar__link" href="./reach.html">目标用户触达</a>
+        </nav>
+        <div class="sidebar__hint muted">本地解析 CSV，不上传数据</div>
+      </aside>
+
+      <div class="appShell__content">
+        <header class="header">
+          <div class="header__title">
+            <h1>运营宣推数据看板</h1>
+            <div class="header__subtitle">本地解析 CSV，不上传数据</div>
+          </div>
+          <div class="header__actions">
+            <label class="file">
+              <input id="fileInput" type="file" accept=".csv,text/csv" />
+              <span>选择 CSV 文件</span>
+            </label>
+            <button id="bindFolderBtn" class="btn btn--ghost" type="button">绑定数据文件夹</button>
+            <button id="updateFolderBtn" class="btn" type="button">更新最新数据</button>
+            <button id="exportReportBtn" class="btn btn--ghost" type="button" title="导出结论报告。分享链接含报告数据，仅发送给可信任对象。">导出报告</button>
+          </div>
+        </header>
+
+        <main class="container">
+      <section class="panel">
+        <div class="panel__row">
+          <div class="control">
+            <div class="control__label">指标口径</div>
+            <select id="metricScope">
+              <option value="global">全局（曝光/点击/实际阅读/付费/收入）</option>
+              <option value="ops" selected>运营宣推（运营宣推曝光/点击/贡献阅读/贡献付费/贡献收入）</option>
+            </select>
+          </div>
+          <div class="control">
+            <div class="control__label">效率指标（用于排序/Top）</div>
+            <select id="effMetric">
+              <option value="rev_per_imp" selected>每曝光收入（收入/曝光）</option>
+              <option value="ctr">CTR（点击/曝光）</option>
+              <option value="read_rate">阅读率（实际阅读/点击）</option>
+              <option value="pay_rate">付费率（付费/实际阅读）</option>
+            </select>
+          </div>
+          <div class="control control--wide">
+            <div class="control__label">过滤：最小曝光（用于 Top 列表，避免小样本）</div>
+            <div class="range">
+              <input id="minImp" type="range" min="0" max="2000000" step="10000" value="100000" />
+              <div class="range__value"><span id="minImpLabel">100000</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel__hint" id="statusHint">请选择/拖入 CSV 文件开始分析。</div>
+      </section>
+
+      <section class="grid">
+        <div id="module0" class="card card--full">
+          <div class="card__title">
+            <div class="card__titleMain"><span class="titleBadge">2</span>最新周总览与调配建议</div>
+            <div class="card__titleSub">运营宣推口径，先看结论与周环比，再看热力与结构明细</div>
+          </div>
+          <div class="card__body">
+            <div class="cardControls">
+              <div class="control">
+                <div class="control__label">开始日期</div>
+                <input id="latestStartDate" type="date" />
+              </div>
+              <div class="control">
+                <div class="control__label">结束日期</div>
+                <input id="latestEndDate" type="date" />
+              </div>
+            </div>
+            <div class="adviceBox" id="latestWeekSummary"></div>
+            <div class="subSectionTitle">资源位 × 宣发来源效率矩阵（热力）</div>
+            <div class="cardControls">
+              <button id="syncMatrixToLatestWeek" class="btn btn--ghost" type="button">同步最新周日期</button>
+              <div class="control">
+                <div class="control__label">开始日期</div>
+                <input id="matrixStartDate" type="date" />
+              </div>
+              <div class="control">
+                <div class="control__label">结束日期</div>
+                <input id="matrixEndDate" type="date" />
+              </div>
+              <div class="control">
+                <div class="control__label">展示资源位数量（按曝光）</div>
+                <select id="matrixTopPos">
+                  <option value="6">Top 6</option>
+                  <option value="8" selected>Top 8</option>
+                  <option value="10">Top 10</option>
+                  <option value="12">Top 12</option>
+                </select>
+              </div>
+              <div class="control">
+                <div class="control__label">展示来源数量（按曝光）</div>
+                <select id="matrixTopSrc">
+                  <option value="6">Top 6</option>
+                  <option value="8" selected>Top 8</option>
+                  <option value="10">Top 10</option>
+                  <option value="12">Top 12</option>
+                </select>
+              </div>
+            </div>
+            <div class="chartHint muted" id="matrixHint">口径跟随顶部“指标口径”和“效率指标”。色块越深，效率越高。</div>
+            <div class="tableWrap tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+              <div id="matrixTable" class="matrixWrap"></div>
+            </div>
+            <div class="kpis" id="latestWeekKpis"></div>
+            <div class="subSectionTitle">当周运营宣推周环比总览（最新周 vs 上周）</div>
+            <div class="tableWrap tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+              <table class="table" id="latestWeekWowTable"></table>
+            </div>
+            <div class="subSectionTitle">宣发来源周度明细（曝光量级 / 宣推占比 / p-ctr / 每曝光收入）</div>
+            <div class="tableWrap tableWrap--wide tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+              <table class="table table--sourceWeekly" id="sourceWeeklyTable"></table>
+            </div>
+            <details class="details">
+              <summary>展开查看明细表（资源位/来源/Top项目）</summary>
+              <div class="details__body">
+                <div class="subSectionTitle">各资源位使用情况（最新周）</div>
+                <div class="tableWrap tableWrap--copyable">
+                  <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+                  <table class="table" id="latestWeekTable"></table>
+                </div>
+                <div class="subSectionTitle">各宣发来源环比（最新周 vs 上周）</div>
+                <div class="tableWrap tableWrap--copyable">
+                  <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+                  <table class="table" id="latestWeekSourceTable"></table>
+                </div>
+                <div class="subSectionTitle">当周综合效率最高投放项目 Top5</div>
+                <div class="tableWrap tableWrap--copyable">
+                  <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+                  <table class="table" id="latestWeekTopProjectsTable"></table>
+                </div>
+              </div>
+            </details>
+            <div class="subSectionTitle">资源位效率-规模象限（最新周）</div>
+            <div class="chartWrap">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
+              <canvas id="latestPosQuadrantChart"></canvas>
+              <div class="chartHint muted" id="latestPosQuadrantHint">横轴=资源位运营宣推曝光占比，纵轴=每曝光收入，气泡大小≈曝光量</div>
+              <div id="latestPosQuadrantFallback"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="module1" class="card card--full card--hero">
+          <div class="card__title">
+            <div class="card__titleMain"><span class="titleBadge">1</span>运营宣推大盘趋势</div>
+            <div class="card__titleSub">查看整体曝光占比、效率指标与时间走势</div>
+          </div>
+          <div class="card__body">
+            <div class="cardControls">
+              <div class="control">
+                <div class="control__label">时间粒度</div>
+                <select id="opsTimeGran">
+                  <option value="day" selected>日</option>
+                  <option value="week_avg">周（日均）</option>
+                  <option value="week_sum">周（汇总）</option>
+                </select>
+              </div>
+              <div class="control">
+                <div class="control__label">开始日期</div>
+                <input id="opsStartDate" type="date" />
+              </div>
+              <div class="control">
+                <div class="control__label">结束日期</div>
+                <input id="opsEndDate" type="date" />
+              </div>
+            </div>
+            <div class="kpis" id="opsKpis"></div>
+            <div class="adviceBox adviceBox--compact adviceBox--summary" id="opsWeeklySummary"></div>
+            <div class="chartWrap chartWrap--hero">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
+              <canvas id="opsTrendChart"></canvas>
+              <div class="chartHint muted" id="chartHint">图表：蓝线=效率指标，灰线=运营宣推曝光占比</div>
+            </div>
+            <div class="adviceBox adviceBox--compact" id="opsBalanceHint"></div>
+
+            <details class="details">
+              <summary>展开查看明细表（与上方趋势同粒度）</summary>
+              <div class="tableWrap details__body tableWrap--copyable">
+                <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+                <table class="table" id="opsDailyTable"></table>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div id="module2" class="card card--full">
+          <div class="card__title">
+            <div class="card__titleMain"><span class="titleBadge">3</span>各业务线宣发效率趋势</div>
+            <div class="card__titleSub">按宣发来源拆分，关注每曝光收入与 p-CTR 变化</div>
+          </div>
+          <div class="card__body">
+            <div class="cardControls">
+              <div class="control">
+                <div class="control__label">时间粒度</div>
+                <select id="srcTimeGran">
+                  <option value="day" selected>日</option>
+                  <option value="week_avg">周（日均）</option>
+                  <option value="week_sum">周（汇总）</option>
+                </select>
+              </div>
+              <div class="control">
+                <div class="control__label">开始日期</div>
+                <input id="srcStartDate" type="date" />
+              </div>
+              <div class="control">
+                <div class="control__label">结束日期</div>
+                <input id="srcEndDate" type="date" />
+              </div>
+            </div>
+            <div class="pillRow">
+              <div class="pillRow__label muted">选择业务线/宣发来源（用于趋势图）</div>
+              <div class="pillRow__pills" id="sourcePills"></div>
+            </div>
+            <div class="chartWrap">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
+              <canvas id="sourceTrendChart"></canvas>
+              <div class="chartHint muted" id="sourceChartHint">图表：按业务线拆分，展示每曝光收入 + p-CTR 趋势（运营宣推口径）</div>
+            </div>
+            <details class="details">
+              <summary>展开查看来源效率表</summary>
+              <div class="tableWrap details__body tableWrap--copyable">
+                <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+                <table class="table" id="bySourceTable"></table>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div id="module3" class="card card--full">
+          <div class="card__title">
+            <div class="card__titleMain"><span class="titleBadge">4</span>各资源位效率趋势</div>
+            <div class="card__titleSub">按资源位对比效率波动，定位可加量与需整改位置</div>
+          </div>
+          <div class="card__body">
+            <div class="cardControls">
+              <div class="control">
+                <div class="control__label">时间粒度</div>
+                <select id="posTimeGran">
+                  <option value="day" selected>日</option>
+                  <option value="week_avg">周（日均）</option>
+                  <option value="week_sum">周（汇总）</option>
+                </select>
+              </div>
+              <div class="control">
+                <div class="control__label">开始日期</div>
+                <input id="posStartDate" type="date" />
+              </div>
+              <div class="control">
+                <div class="control__label">结束日期</div>
+                <input id="posEndDate" type="date" />
+              </div>
+            </div>
+            <div class="pillRow">
+              <div class="pillRow__label muted">选择资源位（用于趋势图）</div>
+              <div class="pillRow__pills" id="placementPills"></div>
+            </div>
+            <div class="chartWrap">
+              <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
+              <canvas id="placementTrendChart"></canvas>
+              <div class="chartHint muted" id="placementChartHint">图表：按资源位拆分，展示效率趋势</div>
+            </div>
+            <details class="details">
+              <summary>展开查看资源位效率表</summary>
+              <div class="tableWrap details__body tableWrap--copyable">
+                <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+                <table class="table" id="byPlacementTable"></table>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div id="module4" class="card card--full">
+          <div class="card__title">
+            <div class="card__titleMain"><span class="titleBadge">5</span>项目效率明细（Top 10）</div>
+            <div class="card__titleSub">按天/按周查看高效项目，支持按资源位、宣发来源筛选</div>
+          </div>
+          <div class="card__body">
+            <div class="cardControls">
+              <div class="control">
+                <div class="control__label">时间维度</div>
+                <select id="topTimeMode">
+                  <option value="day">按天 Top 10</option>
+                  <option value="week">按周 Top 10</option>
+                </select>
+              </div>
+              <div class="control">
+                <div class="control__label">开始日期</div>
+                <input id="topStartDate" type="date" />
+              </div>
+              <div class="control">
+                <div class="control__label">结束日期</div>
+                <input id="topEndDate" type="date" />
+              </div>
+            </div>
+            <div class="pillRow">
+              <div class="pillRow__label muted">按资源位过滤</div>
+              <div class="pillRow__pills" id="topPlacementPills"></div>
+            </div>
+            <div class="pillRow">
+              <div class="pillRow__label muted">按宣发来源过滤</div>
+              <div class="pillRow__pills" id="topSourcePills"></div>
+            </div>
+            <button id="topProjectsToggleBtn" class="btn btn--ghost" type="button">查看全部项目</button>
+            <div class="tableWrap tableWrap--copyable">
+              <button class="btn btn--ghost btn--sm copyTableBtn" type="button">复制为图片</button>
+              <table class="table" id="dailyTopProjectsTable"></table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+        </main>
+
+        <footer class="footer">
+          <div class="footer__text">
+            使用说明：拖入 CSV 或点击「选择 CSV 文件」/「绑定数据文件夹」。指标口径：运营宣推曝光 = 全局曝光中归因到运营宣推的部分；p-CTR = 运营宣推点击/运营宣推曝光；每曝光收入 = 收入/曝光；阅读率 = 实际阅读/点击；付费率 = 付费用户/实际阅读。周环比 = 本周 vs 上周。
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="./app.js?v=20260318_1"></script>
+  </body>
+</html>
+

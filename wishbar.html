@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>祈愿bar来源占比（按周）</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="appShell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">数据看板</div>
+        <nav class="sidebar__nav">
+          <a class="sidebar__link" href="./index.html">运营宣推</a>
+          <a class="sidebar__link is-active" href="./wishbar.html" aria-current="page">祈愿宣发</a>
+          <a class="sidebar__link" href="./reach.html">目标用户触达</a>
+        </nav>
+        <div class="sidebar__hint muted">
+          支持拖入/选择 CSV，本地解析不上传。<br />
+          口径：一级来源中「广告资源投放 / v2资源投放」合并为「运营资源投放」。
+        </div>
+      </aside>
+
+      <div class="appShell__content">
+        <header class="header">
+          <div class="header__title">
+            <h1>祈愿宣发</h1>
+            <div class="header__subtitle">本地解析 CSV，不上传数据</div>
+          </div>
+          <div class="header__actions">
+            <label class="file">
+              <input id="wishbarFileInput" type="file" accept=".csv,text/csv" />
+              <span>选择 CSV 文件</span>
+            </label>
+            <button id="wishbarBindFolderBtn" class="btn btn--ghost" type="button">绑定数据文件夹</button>
+            <button id="wishbarUpdateBtn" class="btn" type="button">读取祈愿文件夹全部CSV并更新</button>
+            <button id="wishbarClearBtn" class="btn btn--ghost" type="button">清空</button>
+          </div>
+        </header>
+
+        <main class="container">
+          <section class="panel">
+            <div class="panel__row">
+              <div class="control">
+                <div class="control__label">日期（周）</div>
+                <input id="wishbarWeekPick" type="date" />
+              </div>
+              <div class="control control--wide">
+                <div class="control__label">一级来源筛选（多选，仅模块1）</div>
+                <button id="wishbarBarL1Btn" class="selectBtn" type="button">
+                  <span class="selectBtn__label" id="wishbarBarL1Summary">请选择</span>
+                  <span class="selectBtn__chev">▾</span>
+                </button>
+              </div>
+              <div class="control control--wide">
+                <div class="control__label">二级来源筛选（多选，仅模块1）</div>
+                <button id="wishbarBarL2Btn" class="selectBtn" type="button">
+                  <span class="selectBtn__label" id="wishbarBarL2Summary">请选择</span>
+                  <span class="selectBtn__chev">▾</span>
+                </button>
+              </div>
+            </div>
+            <div class="panel__hint" id="wishbarStatusHint">请选择/拖入 CSV 文件开始分析。</div>
+          </section>
+
+          <section class="grid">
+            <div class="card card--full">
+              <div class="card__title">
+                <div class="card__titleMain">祈愿bar访问来源</div>
+                <div class="card__titleSub">展示最新一周各一级来源占比（横向柱状，按占比倒序）</div>
+              </div>
+              <div class="card__body">
+              <div class="chartHint muted" id="wishbarChartHint" style="margin-bottom:6px"></div>
+              <div class="chartWrap chartWrap--hero">
+                <canvas id="wishbarShareChart"></canvas>
+              </div>
+              </div>
+            </div>
+
+            <div class="card card--full">
+              <div class="card__title">
+                <div class="card__titleMain">各访问来源占比波动趋势图（周）</div>
+                <div class="card__titleSub">支持一级来源与二级来源并集筛选；Y轴=占比%</div>
+              </div>
+              <div class="card__body">
+                <div class="cardControls" style="margin-bottom:8px">
+                  <div class="control">
+                    <div class="control__label">截止日期（模块2）</div>
+                    <input id="wishbarTrendEndOnly" type="date" />
+                  </div>
+                  <div class="control control--wide">
+                    <div class="control__label">一级来源筛选（多选，模块2）</div>
+                    <button id="wishbarTrendL1Btn" class="selectBtn" type="button">
+                      <span class="selectBtn__label" id="wishbarTrendL1Summary">请选择</span>
+                      <span class="selectBtn__chev">▾</span>
+                    </button>
+                  </div>
+                  <div class="control control--wide">
+                    <div class="control__label">二级来源筛选（多选，模块2）</div>
+                    <button id="wishbarTrendL2Btn" class="selectBtn" type="button">
+                      <span class="selectBtn__label" id="wishbarTrendL2Summary">请选择</span>
+                      <span class="selectBtn__chev">▾</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="chartHint muted" id="wishbarVolumeHint" style="margin-bottom:6px"></div>
+                <div class="chartWrap chartWrap--hero">
+                  <canvas id="wishbarVolumeChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card--full">
+              <div class="card__title">
+                <div class="card__titleMain">周度占比明细表（%）</div>
+                <div class="card__titleSub">按周 × 一级来源展示（与图表一致的 TopK + 其他口径）</div>
+              </div>
+              <div class="card__body">
+                <div class="tableWrap tableWrap--wide">
+                  <table class="table" id="wishbarShareTable"></table>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer class="footer">
+          <div class="footer__text">
+            CSV 需要包含字段：日期、统计周期、一级来源、祈愿bar访问uv。仅使用统计周期=周的数据。
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="./wishbar.js?v=20260318_2"></script>
+  </body>
+</html>
+

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>数据看板（汇总）</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="appShell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">数据看板</div>
+        <nav class="sidebar__nav">
+          <button id="navOps" class="sidebar__link is-active" type="button">运营宣推</button>
+          <button id="navWishbar" class="sidebar__link" type="button">祈愿宣发</button>
+          <button id="navReach" class="sidebar__link" type="button">目标用户触达</button>
+          <a class="sidebar__link" href="./all.html" aria-current="page">汇总页</a>
+        </nav>
+        <div class="sidebar__hint muted">同一页面汇总查看（Tab 切换）。</div>
+      </aside>
+
+      <div class="appShell__content">
+        <header class="header">
+          <div class="header__title">
+            <h1>数据看板（汇总）</h1>
+            <div class="header__subtitle">同一地址查看多个模块（本地解析 CSV，不上传数据）</div>
+          </div>
+          <div class="header__actions">
+            <button id="tabOps" class="btn" type="button">运营宣推</button>
+            <button id="tabWishbar" class="btn btn--ghost" type="button">祈愿宣发</button>
+            <button id="tabReach" class="btn btn--ghost" type="button">目标用户触达</button>
+          </div>
+        </header>
+
+        <main class="container">
+          <section class="panel">
+            <div class="panel__hint">
+              提示：汇总页用 iframe 展示两个模块。若你发现“绑定数据文件夹”无反应，请直接打开对应页面进行绑定（同源安全限制下，部分浏览器不允许在 iframe 内弹出目录选择器）。
+              <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap">
+                <a class="btn btn--ghost btn--sm" href="./index.html" target="_blank" rel="noreferrer">打开运营宣推（新窗口）</a>
+                <a class="btn btn--ghost btn--sm" href="./wishbar.html" target="_blank" rel="noreferrer">打开祈愿宣发（新窗口）</a>
+                <a class="btn btn--ghost btn--sm" href="./reach.html" target="_blank" rel="noreferrer">打开目标用户触达（新窗口）</a>
+              </div>
+            </div>
+          </section>
+
+          <section class="card card--full">
+            <div class="card__body" style="padding:0">
+              <div class="embedTabs">
+                <iframe id="frameOps" class="embedFrame" title="运营宣推" src="./index.html" allow="file-system-access; clipboard-read; clipboard-write"></iframe>
+                <iframe id="frameWishbar" class="embedFrame" title="祈愿宣发" src="./wishbar.html" style="display:none" allow="file-system-access; clipboard-read; clipboard-write"></iframe>
+                <iframe id="frameReach" class="embedFrame" title="目标用户触达" src="./reach.html" style="display:none" allow="file-system-access; clipboard-read; clipboard-write"></iframe>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer class="footer">
+          <div class="footer__text">如果你后续希望“同一个 CSV 只选一次就两边联动”，我也可以继续把两个模块做成真正的单页集成版。</div>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const tabOps = document.getElementById('tabOps');
+        const tabWishbar = document.getElementById('tabWishbar');
+        const tabReach = document.getElementById('tabReach');
+        const frameOps = document.getElementById('frameOps');
+        const frameWishbar = document.getElementById('frameWishbar');
+        const frameReach = document.getElementById('frameReach');
+        const navOps = document.getElementById('navOps');
+        const navWishbar = document.getElementById('navWishbar');
+        const navReach = document.getElementById('navReach');
+        const ts = Date.now();
+        // 避免 iframe 缓存旧脚本/旧页面
+        frameOps.src = `./index.html?_ts=${ts}`;
+        frameWishbar.src = `./wishbar.html?_ts=${ts}`;
+        frameReach.src = `./reach.html?_ts=${ts}`;
+
+        function setTab(which) {
+          const isOps = which === 'ops';
+          const isWishbar = which === 'wishbar';
+          const isReach = which === 'reach';
+          frameOps.style.display = isOps ? 'block' : 'none';
+          frameWishbar.style.display = isWishbar ? 'block' : 'none';
+          frameReach.style.display = isReach ? 'block' : 'none';
+          tabOps.className = isOps ? 'btn' : 'btn btn--ghost';
+          tabWishbar.className = isWishbar ? 'btn' : 'btn btn--ghost';
+          tabReach.className = isReach ? 'btn' : 'btn btn--ghost';
+          if (navOps) navOps.className = isOps ? 'sidebar__link is-active' : 'sidebar__link';
+          if (navWishbar) navWishbar.className = isWishbar ? 'sidebar__link is-active' : 'sidebar__link';
+          if (navReach) navReach.className = isReach ? 'sidebar__link is-active' : 'sidebar__link';
+        }
+
+        tabOps.addEventListener('click', () => setTab('ops'));
+        tabWishbar.addEventListener('click', () => setTab('wishbar'));
+        tabReach.addEventListener('click', () => setTab('reach'));
+        navOps?.addEventListener('click', () => setTab('ops'));
+        navWishbar?.addEventListener('click', () => setTab('wishbar'));
+        navReach?.addEventListener('click', () => setTab('reach'));
+        setTab('ops');
+      })();
+    </script>
+  </body>
+</html>
+
