@@ -1612,98 +1612,59 @@ function init() {
     });
   });
 
-  loadOpsDataSilently().then(() => { if (rows.length) renderLatestWeekTable(); });
+  if (window.__SNAPSHOT_DATA) {
+    rows = window.__SNAPSHOT_DATA.rows || [];
+    opsRows = window.__SNAPSHOT_DATA.opsRows || [];
+    const hideIds = ['reachFileInput', 'reachBindFolderBtn', 'reachUpdateBtn', 'reachClearBtn', 'reachExportBtn'];
+    hideIds.forEach((id) => { const el = $(id); if (el) { const p = el.closest('label') || el; p.style.display = 'none'; } });
+    hydrateColumns();
+    render();
+    setStatus(`快照模式：已加载 ${rows.length} 行触达数据 + ${opsRows.length} 行运营宣推数据。`);
+  } else {
+    loadOpsDataSilently().then(() => { if (rows.length) renderLatestWeekTable(); });
+  }
 
   $('reachExportBtn')?.addEventListener('click', exportSnapshot);
 }
 
-function exportSnapshot() {
+async function exportSnapshot() {
   if (!rows.length) { alert('请先加载数据再导出快照。'); return; }
 
-  const chartImg = chart ? chart.toBase64Image() : '';
-  const summaryHtml = $('reachLatestWeekTable')?.innerHTML || '';
-  const summaryHint = $('latestWeekHint')?.textContent || '';
-  const chartHint = $('reachChartHint')?.textContent || '';
-  const detailsHtml = $('reachDetails')?.innerHTML || '';
-  const statusText = $('reachStatus')?.textContent || '';
+  setStatus('正在生成可交互快照…');
+
+  const cssText = await fetch('./styles.css').then((r) => r.text()).catch(() => '');
+  const jsText = await fetch('./reach.js?' + Date.now()).then((r) => r.text()).catch(() => '');
+
+  const dataPayload = JSON.stringify({ rows, opsRows });
   const now = new Date();
   const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const pageHtml = document.querySelector('.appShell__content main')?.innerHTML || '';
+  const headerHtml = document.querySelector('.appShell__content header')?.innerHTML || '';
 
   const html = `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>祈愿触达快照 ${ts}</title>
-<style>
-:root{--bg:#f6f8ff;--panel:#fff;--card:#fff;--border:rgba(15,23,42,.10);--text:rgba(15,23,42,.92);--muted:rgba(15,23,42,.62);--accent:#4f7cff;--heading:rgba(15,23,42,.90);--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif}
-*{box-sizing:border-box}body{margin:0;font-family:var(--sans);color:var(--text);background:var(--bg);padding:20px}
-.snap-header{max-width:1200px;margin:0 auto 18px;padding:16px 20px;background:#fff;border-radius:14px;border:1px solid var(--border)}
-.snap-header h1{margin:0 0 6px;font-size:17px}
-.snap-header .meta{font-size:12px;color:var(--muted);line-height:1.6}
-.snap-section{max-width:1200px;margin:0 auto 16px}
-.snap-section__title{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--heading)}
-.tableWrap{overflow:auto;border-radius:12px;border:1px solid var(--border)}
-.tableWrap--wide{overflow-x:auto}
-.table{width:100%;border-collapse:collapse;font-size:12px}
-.table thead th{position:sticky;top:0;background:rgba(246,248,255,.95);text-align:left;padding:10px;border-bottom:1px solid var(--border);color:rgba(15,23,42,.78);white-space:nowrap}
-.table tbody td{padding:9px 10px;border-bottom:1px solid rgba(15,23,42,.06);color:rgba(15,23,42,.86);white-space:nowrap}
-.table tbody tr:hover{background:rgba(79,124,255,.06)}
-.table--compact{font-size:12px}.table--compact th,.table--compact td{padding:5px 8px}
-.mono{font-family:var(--mono)}.muted{color:var(--muted)}
-.lwt-table{border-collapse:collapse}
-.lwt-row{cursor:pointer;transition:background .15s}.lwt-row:hover{background:rgba(79,124,255,.04)}.lwt-row.is-open{background:rgba(79,124,255,.07)}
-.lwt-row .lwt-expand{display:inline-block;width:14px;font-size:11px;color:var(--muted);transition:transform .2s}
-.lwt-row.is-open .lwt-expand{transform:rotate(90deg)}
-.lwt-tag{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600;color:#fff;white-space:nowrap;vertical-align:middle}
-.lwt-detail-row{display:none}.lwt-detail-row.is-open{display:table-row}
-.lwt-detail-row td{padding:0!important;border-top:none!important}
-.lwt-detail{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 20px 20px;background:#f8fafc;border-bottom:2px solid var(--border)}
-.lwt-section{background:#fff;border-radius:8px;padding:12px 14px;border:1px solid var(--border)}
-.lwt-section__title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--heading)}
-.lwt-tips{margin:0;padding-left:0;list-style:none;font-size:12px;line-height:1.7}
-.lwt-tips li{padding:4px 0;border-bottom:1px solid rgba(15,23,42,.05)}.lwt-tips li:last-child{border-bottom:none}
-.lwt-insights{margin-top:16px;padding:16px 20px;background:linear-gradient(135deg,#f0f4ff 0%,#fdf4ff 100%);border-radius:10px;border:1px solid rgba(79,124,255,.15)}
-.lwt-insights__title{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--heading)}
-.lwt-insight-group{margin-bottom:12px}.lwt-insight-group:last-child{margin-bottom:0}
-.lwt-insight-group__title{font-size:13px;font-weight:600;margin-bottom:6px;color:var(--heading)}
-.details{border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.8);padding:10px 12px}
-.details summary{cursor:pointer;font-size:12px;color:var(--muted);user-select:none}
-.details__body{margin-top:10px}
-.chartImg{max-width:100%;border-radius:10px;border:1px solid var(--border)}
-.snap-footer{max-width:1200px;margin:24px auto 0;text-align:center;font-size:11px;color:var(--muted)}
-@media(max-width:920px){.lwt-detail{grid-template-columns:1fr}}
-</style>
+<title>\u7948\u613f\u89e6\u8fbe\u770b\u677f\u5feb\u7167 ${ts}</title>
+<style>${cssText}</style>
+<style>.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}
+.snap-banner{background:linear-gradient(135deg,#f0f4ff,#fdf4ff);border-bottom:1px solid rgba(79,124,255,.15);padding:10px 18px;font-size:12px;color:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:space-between}
+.snap-banner strong{color:rgba(15,23,42,.9)}</style>
 </head>
 <body>
-<div class="snap-header">
-  <h1>祈愿目标用户触达看板 · 快照</h1>
-  <div class="meta">
-    生成时间：${ts}<br>
-    ${statusText ? '数据状态：' + statusText.replace(/</g,'&lt;') + '<br>' : ''}
-    ${summaryHint ? summaryHint.replace(/</g,'&lt;') : ''}
-  </div>
+<div class="appShell">
+<div class="appShell__content">
+<div class="snap-banner"><span>\u{1f4cb} <strong>\u53ef\u4ea4\u4e92\u5feb\u7167</strong>\u3000\u751f\u6210\u65f6\u95f4\uff1a${ts}\u3000\u00b7\u3000\u7b5b\u9009/\u56fe\u8868/\u5c55\u5f00\u5747\u53ef\u6b63\u5e38\u4f7f\u7528</span></div>
+<header class="header">${headerHtml}</header>
+<main class="container">${pageHtml}</main>
 </div>
-
-<div class="snap-section">
-  <div class="snap-section__title">最新周新上线祈愿项目明细</div>
-  ${summaryHtml}
 </div>
-
-${chartImg ? '<div class="snap-section"><div class="snap-section__title">各项目目标用户触达率曲线</div>' + (chartHint ? '<div class="muted" style="font-size:12px;margin-bottom:8px">' + chartHint.replace(/</g,'&lt;') + '</div>' : '') + '<img class="chartImg" src="' + chartImg + '" alt="触达率曲线"/></div>' : ''}
-
-${detailsHtml ? '<div class="snap-section"><div class="snap-section__title">明细列表</div>' + detailsHtml + '</div>' : ''}
-
-<div class="snap-footer">此文件为静态快照，数据截止上述时间。如需交互筛选请访问看板原页面。</div>
-
-<script>
-document.querySelectorAll('.lwt-row').forEach(function(row){
-  row.addEventListener('click',function(){
-    this.classList.toggle('is-open');
-    if(this.nextElementSibling) this.nextElementSibling.classList.toggle('is-open');
-  });
-});
-</script>
+<script>window.__SNAPSHOT_DATA=${dataPayload};<\/script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>
+<script>${jsText}<\/script>
 </body>
 </html>`;
 
@@ -1712,10 +1673,11 @@ document.querySelectorAll('.lwt-row').forEach(function(row){
   const a = document.createElement('a');
   a.href = url;
   const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-  a.download = `祈愿触达快照_${dateStr}.html`;
+  a.download = `\u7948\u613f\u89e6\u8fbe\u5feb\u7167_${dateStr}.html`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  setStatus('快照已下载！同事打开即可交互筛选。');
 }
 
 init();
