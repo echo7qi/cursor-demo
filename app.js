@@ -2075,5 +2075,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Pi
   return { html, dataUrl, shareUrl };
 }
 
-if (!window.__reportView) setup();
+if (!window.__reportView) {
+  setup();
+  if (window.__SNAPSHOT_DATA && window.__SNAPSHOT_DATA.opsAppRows) {
+    state.rows = mergeRowsDedup(window.__SNAPSHOT_DATA.opsAppRows);
+    state.lastFileName = '快照数据';
+    render();
+    const h = $('statusHint');
+    if (h) h.textContent = `快照模式：已加载 ${state.rows.length} 行运营宣推数据。`;
+  }
+}
 

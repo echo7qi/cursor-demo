@@ -29,6 +29,7 @@
             <button id="tabOps" class="btn" type="button">运营宣推</button>
             <button id="tabWishbar" class="btn btn--ghost" type="button">祈愿宣发</button>
             <button id="tabReach" class="btn btn--ghost" type="button">目标用户触达</button>
+            <button id="exportAllBtn" class="btn" type="button">导出整站快照</button>
           </div>
         </header>
 
@@ -61,6 +62,120 @@
       </div>
     </div>
 
+    <script>
+      async function exportAllSnapshot() {
+        var btn = document.getElementById('exportAllBtn');
+        btn.textContent = '正在生成…';
+        btn.disabled = true;
+        try {
+          var fOps = document.getElementById('frameOps');
+          var fWish = document.getElementById('frameWishbar');
+          var fReach = document.getElementById('frameReach');
+
+          var opsAppRows = [], wishbarRows = [], reachRows = [], reachOpsRows = [];
+          try { opsAppRows = fOps.contentWindow.state.rows || []; } catch(_){}
+          try { wishbarRows = fWish.contentWindow.rawRows || []; } catch(_){}
+          try { reachRows = fReach.contentWindow.rows || []; } catch(_){}
+          try { reachOpsRows = fReach.contentWindow.opsRows || []; } catch(_){}
+
+          if (!opsAppRows.length && !wishbarRows.length && !reachRows.length) {
+            alert('请先在各模块加载数据，再导出快照。');
+            return;
+          }
+
+          var dataObj = { opsAppRows: opsAppRows, wishbarRows: wishbarRows, rows: reachRows, opsRows: reachOpsRows };
+          var dataPayload = JSON.stringify(dataObj);
+
+          var results = await Promise.all([
+            fetch('./styles.css').then(function(r){return r.text()}),
+            fetch('./app.js?' + Date.now()).then(function(r){return r.text()}),
+            fetch('./wishbar.js?' + Date.now()).then(function(r){return r.text()}),
+            fetch('./reach.js?' + Date.now()).then(function(r){return r.text()}),
+          ]);
+          var cssText = results[0], appJs = results[1], wishbarJs = results[2], reachJs = results[3];
+
+          function buildModulePage(title, innerHtml, jsCode, dataKey) {
+            var hide = '.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}'
+              + '.header__actions .file,.header__actions [id*=Bind],.header__actions [id*=Update],.header__actions [id*=Clear],.header__actions [id*=Export],.header__actions [id*=export]{display:none!important}';
+            return '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>'
+              + '<title>' + title + '</title>'
+              + '<style>' + cssText + '</style><style>' + hide + '</style></head><body>'
+              + innerHtml
+              + '<scr' + 'ipt>window.__SNAPSHOT_DATA=' + dataPayload + ';</scr' + 'ipt>'
+              + '<scr' + 'ipt src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></scr' + 'ipt>'
+              + '<scr' + 'ipt src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></scr' + 'ipt>'
+              + '<scr' + 'ipt>' + jsCode + '</scr' + 'ipt>'
+              + '</body></html>';
+          }
+
+          var opsPage = buildModulePage('运营宣推', fOps.contentDocument.querySelector('.appShell').innerHTML, appJs, 'opsAppRows');
+          var wishPage = buildModulePage('祈愿宣发', fWish.contentDocument.querySelector('.appShell').innerHTML, wishbarJs, 'wishbarRows');
+          var reachPage = buildModulePage('目标用户触达', fReach.contentDocument.querySelector('.appShell').innerHTML, reachJs, 'rows');
+
+          var now = new Date();
+          var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+          function toDataUri(html) {
+            return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+          }
+
+          var shellHtml = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>'
+            + '<title>\u6570\u636e\u770b\u677f\u5feb\u7167 ' + ts + '</title>'
+            + '<style>' + cssText + '</style>'
+            + '<style>.snap-banner{background:linear-gradient(135deg,#f0f4ff,#fdf4ff);border-bottom:1px solid rgba(79,124,255,.15);padding:10px 18px;font-size:12px;color:rgba(15,23,42,.7)}.snap-banner strong{color:rgba(15,23,42,.9)}</style>'
+            + '</head><body><div class="appShell"><aside class="sidebar"><div class="sidebar__brand">\u6570\u636e\u770b\u677f</div>'
+            + '<nav class="sidebar__nav"><button id="navOps" class="sidebar__link is-active" type="button">\u8fd0\u8425\u5ba3\u63a8</button>'
+            + '<button id="navWishbar" class="sidebar__link" type="button">\u7948\u613f\u5ba3\u53d1</button>'
+            + '<button id="navReach" class="sidebar__link" type="button">\u76ee\u6807\u7528\u6237\u89e6\u8fbe</button></nav>'
+            + '<div class="sidebar__hint muted">\u53ef\u4ea4\u4e92\u5feb\u7167 \u00b7 ' + ts + '</div></aside>'
+            + '<div class="appShell__content">'
+            + '<div class="snap-banner">\ud83d\udccb <strong>\u53ef\u4ea4\u4e92\u5feb\u7167</strong>\u3000\u6240\u6709\u7b5b\u9009/\u56fe\u8868/\u5c55\u5f00\u5747\u53ef\u6b63\u5e38\u4f7f\u7528\u3000\u00b7\u3000' + ts + '</div>'
+            + '<header class="header"><div class="header__title"><h1>\u6570\u636e\u770b\u677f\uff08\u5feb\u7167\uff09</h1></div>'
+            + '<div class="header__actions">'
+            + '<button id="tabOps" class="btn" type="button">\u8fd0\u8425\u5ba3\u63a8</button>'
+            + '<button id="tabWishbar" class="btn btn--ghost" type="button">\u7948\u613f\u5ba3\u53d1</button>'
+            + '<button id="tabReach" class="btn btn--ghost" type="button">\u76ee\u6807\u7528\u6237\u89e6\u8fbe</button>'
+            + '</div></header>'
+            + '<main class="container"><section class="card card--full"><div class="card__body" style="padding:0"><div class="embedTabs">'
+            + '<iframe id="frameOps" class="embedFrame" title="\u8fd0\u8425\u5ba3\u63a8"></iframe>'
+            + '<iframe id="frameWishbar" class="embedFrame" title="\u7948\u613f\u5ba3\u53d1" style="display:none"></iframe>'
+            + '<iframe id="frameReach" class="embedFrame" title="\u76ee\u6807\u7528\u6237\u89e6\u8fbe" style="display:none"></iframe>'
+            + '</div></div></section></main>'
+            + '</div></div>'
+            + '<scr' + 'ipt>'
+            + 'var opsUri=' + JSON.stringify(toDataUri(opsPage)) + ';'
+            + 'var wishUri=' + JSON.stringify(toDataUri(wishPage)) + ';'
+            + 'var reachUri=' + JSON.stringify(toDataUri(reachPage)) + ';'
+            + 'document.getElementById("frameOps").src=opsUri;'
+            + 'document.getElementById("frameWishbar").src=wishUri;'
+            + 'document.getElementById("frameReach").src=reachUri;'
+            + 'function setTab(w){'
+            + 'var fs=["frameOps","frameWishbar","frameReach"];var ns=["Ops","Wishbar","Reach"];var ks=["ops","wishbar","reach"];'
+            + 'fs.forEach(function(f,i){document.getElementById(f).style.display=ks[i]===w?"block":"none"});'
+            + 'ns.forEach(function(n,i){var b=document.getElementById("tab"+n);if(b)b.className=ks[i]===w?"btn":"btn btn--ghost";'
+            + 'var nb=document.getElementById("nav"+n);if(nb)nb.className=ks[i]===w?"sidebar__link is-active":"sidebar__link"});}'
+            + '["tabOps","tabWishbar","tabReach","navOps","navWishbar","navReach"].forEach(function(id){'
+            + 'var el=document.getElementById(id);if(el)el.addEventListener("click",function(){setTab(id.replace("tab","").replace("nav","").toLowerCase())})});'
+            + '</scr' + 'ipt></body></html>';
+
+          var blob = new Blob([shellHtml], { type: 'text/html;charset=utf-8' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          var d = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+          a.download = '\u6570\u636e\u770b\u677f\u5feb\u7167_' + d + '.html';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 1000);
+        } catch(e) {
+          alert('导出失败：' + (e.message || e));
+        } finally {
+          btn.textContent = '\u5bfc\u51fa\u6574\u7ad9\u5feb\u7167';
+          btn.disabled = false;
+        }
+      }
+      document.getElementById('exportAllBtn').addEventListener('click', exportAllSnapshot);
+    </script>
     <script>
       (function () {
         const tabOps = document.getElementById('tabOps');

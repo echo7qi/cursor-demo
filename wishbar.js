@@ -363,6 +363,7 @@ function makeChartConfig(type, data) {
 let chart = null;
 let volumeChart = null;
 let parsed = null;
+let rawRows = [];
 let trendSelectedL1 = new Set();
 let trendSelectedL2 = new Set();
 let trendInitialized = false;
@@ -852,6 +853,7 @@ async function onFile(file) {
   setStatus('解析中…');
   try {
     const rows = await parseCsvFile(file);
+    rawRows = rows;
     parsed = buildWeeklyShares(rows);
     const w = $('wishbarWeekPick');
     if (w) w.value = parsed.weeks[parsed.weeks.length - 1] || '';
@@ -891,6 +893,7 @@ async function loadLatestFromBoundFolder() {
       fileCount += 1;
     }
     if (!fileCount) throw new Error('祈愿子文件夹下未找到任何 CSV 文件。');
+    rawRows = allRows;
     parsed = buildWeeklyShares(allRows);
     const w = $('wishbarWeekPick');
     if (w) w.value = parsed.weeks[parsed.weeks.length - 1] || '';
@@ -1016,10 +1019,20 @@ function init() {
     setStatus('已清空。请选择/拖入 CSV 文件开始分析。');
   });
 
-  // 如果已经绑定过文件夹，给一个提示
-  getBoundDirHandle().then((h) => {
-    if (h) setStatus('检测到已绑定数据文件夹：可点击「读取祈愿文件夹全部CSV并更新」。');
-  });
+  if (window.__SNAPSHOT_DATA && window.__SNAPSHOT_DATA.wishbarRows) {
+    rawRows = window.__SNAPSHOT_DATA.wishbarRows;
+    parsed = buildWeeklyShares(rawRows);
+    const w = $('wishbarWeekPick');
+    if (w) w.value = parsed.weeks[parsed.weeks.length - 1] || '';
+    const te = $('wishbarTrendEndOnly');
+    if (te) te.value = parsed.weeks[parsed.weeks.length - 1] || '';
+    render();
+    setStatus(`快照模式：已加载 ${rawRows.length} 行祈愿宣发数据。`);
+  } else {
+    getBoundDirHandle().then((h) => {
+      if (h) setStatus('检测到已绑定数据文件夹：可点击「读取祈愿文件夹全部CSV并更新」。');
+    });
+  }
 }
 
 init();
