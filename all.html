@@ -94,9 +94,10 @@
           ]);
           var cssText = results[0], appJs = results[1], wishbarJs = results[2], reachJs = results[3];
 
-          function buildModulePage(title, innerHtml, jsCode, dataKey) {
+          function buildModulePage(title, innerHtml, jsCode) {
             var hide = '.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}'
-              + '.header__actions .file,.header__actions [id*=Bind],.header__actions [id*=Update],.header__actions [id*=Clear],.header__actions [id*=Export],.header__actions [id*=export]{display:none!important}';
+              + '.header__actions .file,.header__actions [id*=Bind],.header__actions [id*=Update],.header__actions [id*=Clear],.header__actions [id*=Export],.header__actions [id*=export]{display:none!important}'
+              + '.header{position:static!important;top:auto!important}';
             return '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>'
               + '<title>' + title + '</title>'
               + '<style>' + cssText + '</style><style>' + hide + '</style></head><body>'
@@ -108,9 +109,19 @@
               + '</body></html>';
           }
 
-          var opsPage = buildModulePage('运营宣推', fOps.contentDocument.querySelector('.appShell').innerHTML, appJs, 'opsAppRows');
-          var wishPage = buildModulePage('祈愿宣发', fWish.contentDocument.querySelector('.appShell').innerHTML, wishbarJs, 'wishbarRows');
-          var reachPage = buildModulePage('目标用户触达', fReach.contentDocument.querySelector('.appShell').innerHTML, reachJs, 'rows');
+          function extractModuleContent(doc, title) {
+            var main = doc.querySelector('main.container');
+            var mainHtml = main ? main.innerHTML : '';
+            return '<div class="appShell"><div class="appShell__content">'
+              + '<header class="header"><div class="header__title"><h1>' + title + '</h1>'
+              + '<div class="header__subtitle">快照模块（可交互）</div></div><div class="header__actions"></div></header>'
+              + '<main class="container">' + mainHtml + '</main>'
+              + '</div></div>';
+          }
+
+          var opsPage = buildModulePage('运营宣推', extractModuleContent(fOps.contentDocument, '运营宣推数据看板'), appJs);
+          var wishPage = buildModulePage('祈愿宣发', extractModuleContent(fWish.contentDocument, '祈愿宣发看板'), wishbarJs);
+          var reachPage = buildModulePage('目标用户触达', extractModuleContent(fReach.contentDocument, '祈愿目标用户触达看板'), reachJs);
 
           var now = new Date();
           var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
