@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <script>
+      if (new URLSearchParams(location.search).get('embed') === '1') {
+        document.body.classList.add('is-embed');
+      }
+    </script>
     <div class="appShell">
       <aside class="sidebar">
         <div class="sidebar__brand">数据看板</div>
@@ -134,7 +139,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="./wishbar.js?v=20260318_2"></script>
+    <script src="./wishbar.js?v=20260318_3"></script>
   </body>
 </html>
 

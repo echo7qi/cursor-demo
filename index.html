@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <script>
+      if (new URLSearchParams(location.search).get('embed') === '1') {
+        document.body.classList.add('is-embed');
+      }
+    </script>
     <div class="appShell">
       <aside class="sidebar">
         <div class="sidebar__brand">数据看板</div>

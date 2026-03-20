@@ -34,6 +34,63 @@ body{
   min-width:0;
 }
 
+body.is-embed .appShell{
+  grid-template-columns: 1fr;
+}
+body.is-embed .sidebar{
+  display:none;
+}
+body.is-embed .header{
+  position: static;
+  top: auto;
+  padding: 12px 14px;
+}
+body.is-embed .header__actions{
+  display: none;
+}
+body.is-embed .footer{
+  display: none;
+}
+body.is-embed .container{
+  max-width: none;
+  margin: 8px 0;
+  padding: 0 10px;
+}
+body.is-embed .panel{
+  border-radius: 10px;
+  padding: 10px;
+}
+body.is-embed .card{
+  border-radius: 10px;
+}
+body.is-embed .grid{
+  margin-top: 10px;
+  gap: 10px;
+}
+
+/* 汇总页：更紧凑、减少左侧到内容区视觉割裂 */
+body[data-page="all"] .container{
+  max-width: none;
+  margin: 12px 0;
+  padding: 0 10px;
+}
+body[data-page="all"] .panel{
+  background: rgba(255,255,255,.86);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+body[data-page="all"] .card{
+  border-radius: 12px;
+}
+body[data-page="all"] .appShell__content{
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body[data-page="all"] .container{
+  flex: 1;
+}
+
 .sidebar{
   position:sticky;
   top:0;
@@ -85,6 +142,19 @@ body{
   color: rgba(15, 23, 42, .92);
   font-weight:600;
 }
+.sidebar__actions{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid rgba(15, 23, 42, .08);
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.sidebar__actions .sidebar__link{
+  font-size:12px;
+  padding:8px 10px;
+}
+
 .sidebar__hint{
   margin-top:12px;
   padding:10px 10px;
@@ -97,12 +167,13 @@ body{
 
 .embedTabs{
   width:100%;
-  height: calc(100vh - 210px);
-  min-height: 720px;
+  height: auto;
+  min-height: 0;
 }
 .embedFrame{
   width:100%;
-  height:100%;
+  height:auto;
+  min-height: 320px;
   border:0;
   background: transparent;
 }

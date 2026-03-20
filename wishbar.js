@@ -1029,8 +1029,18 @@ function init() {
     render();
     setStatus(`快照模式：已加载 ${rawRows.length} 行祈愿宣发数据。`);
   } else {
-    getBoundDirHandle().then((h) => {
-      if (h) setStatus('检测到已绑定数据文件夹：可点击「读取祈愿文件夹全部CSV并更新」。');
+    getBoundDirHandle().then(async (h) => {
+      if (!h) return;
+      try {
+        const perm = await h.queryPermission?.({ mode: 'read' });
+        if (perm === 'granted') {
+          await loadLatestFromBoundFolder();
+        } else {
+          setStatus('检测到已绑定数据文件夹，请点击「读取祈愿文件夹全部CSV并更新」授权读取。');
+        }
+      } catch (_) {
+        setStatus('检测到已绑定数据文件夹，请点击「读取祈愿文件夹全部CSV并更新」。');
+      }
     });
   }
 }

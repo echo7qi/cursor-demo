@@ -1621,7 +1621,20 @@ function init() {
     render();
     setStatus(`快照模式：已加载 ${rows.length} 行触达数据 + ${opsRows.length} 行运营宣推数据。`);
   } else {
-    loadOpsDataSilently().then(() => { if (rows.length) renderLatestWeekTable(); });
+    getBoundDirHandle().then(async (h) => {
+      if (!h) { loadOpsDataSilently().then(() => { if (rows.length) renderLatestWeekTable(); }); return; }
+      try {
+        const perm = await h.queryPermission?.({ mode: 'read' });
+        if (perm === 'granted') {
+          await loadAllFromBoundFolder();
+        } else {
+          loadOpsDataSilently().then(() => { if (rows.length) renderLatestWeekTable(); });
+          setStatus('检测到已绑定数据文件夹，请点击「读取触达文件夹全部CSV并更新」授权读取。');
+        }
+      } catch (_) {
+        loadOpsDataSilently().then(() => { if (rows.length) renderLatestWeekTable(); });
+      }
+    });
   }
 
   $('reachExportBtn')?.addEventListener('click', exportSnapshot);
