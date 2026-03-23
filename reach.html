@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>祈愿宣发触达</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <script>
+      if (new URLSearchParams(location.search).get('embed') === '1') {
+        document.body.classList.add('is-embed');
+      }
+    </script>
+    <div class="appShell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">数据看板</div>
+        <nav class="sidebar__nav">
+          <a class="sidebar__link" href="./index.html">运营宣推</a>
+          <a class="sidebar__link" href="./wishbar.html">祈愿bar访问贡献</a>
+          <a class="sidebar__link is-active" href="./reach.html" aria-current="page">祈愿宣发触达</a>
+        </nav>
+        <div class="sidebar__hint muted">本地解析 CSV，不上传数据</div>
+      </aside>
+
+      <div class="appShell__content">
+        <header class="header">
+          <div class="header__title">
+            <h1>祈愿宣发触达看板</h1>
+            <div class="header__subtitle">看不同品类在上线30日内触达率（目标用户=整体）</div>
+          </div>
+          <div class="header__actions">
+            <label class="file">
+              <input id="reachFileInput" type="file" accept=".csv,text/csv" />
+              <span>选择 CSV 文件</span>
+            </label>
+            <button id="reachBindFolderBtn" class="btn btn--ghost" type="button">绑定数据文件夹</button>
+            <button id="reachUpdateBtn" class="btn" type="button">读取触达文件夹全部CSV并更新</button>
+            <button id="reachClearBtn" class="btn btn--ghost" type="button">清空</button>
+            <button id="reachExportBtn" class="btn" type="button">导出快照</button>
+          </div>
+        </header>
+
+        <main class="container">
+          <section class="grid" style="margin-bottom:0">
+            <div class="card card--full">
+              <div class="card__title">
+                <div class="card__titleMain">最新周新上线祈愿项目明细</div>
+                <div class="card__titleSub">点击行展开：查看各目标用户类型触达、资源位效率对比、运营建议；底部查看跨项目资源位调换与饱和预警</div>
+              </div>
+              <div class="card__body">
+                <div class="muted" id="latestWeekHint" style="margin-bottom:8px;font-size:12px"></div>
+                <div class="cardControls" style="margin-bottom:10px">
+                  <div class="control">
+                    <div class="control__label">按宣发来源筛选结论</div>
+                    <select id="reachSourceFilter">
+                      <option value="">全部</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="reachLatestWeekTable"><div class="muted">暂无数据，请先加载 CSV。</div></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel__row">
+              <div class="control control--wide">
+                <div class="control__label">品类（二级品类）</div>
+                <button id="reachCatBtn" class="selectBtn" type="button">
+                  <span class="selectBtn__label" id="reachCatSummary">全部</span>
+                  <span class="selectBtn__chev">▾</span>
+                </button>
+              </div>
+              <div class="control control--wide">
+                <div class="control__label">项目名（模糊搜索）</div>
+                <input id="reachProjectQ" type="text" placeholder="输入关键字，如：祈愿特典 / H5活动 / 2.0角色…" />
+              </div>
+              <div class="control">
+                <div class="control__label">上线日期范围</div>
+                <button id="reachLaunchRangeBtn" class="selectBtn" type="button">
+                  <span class="selectBtn__label" id="reachLaunchRangeSummary">全部</span>
+                  <span class="selectBtn__chev">▾</span>
+                </button>
+                <input id="reachLaunchStart" type="date" style="display:none" />
+                <input id="reachLaunchEnd" type="date" style="display:none" />
+              </div>
+              <div class="control">
+                <div class="control__label">上线天数（统计口径）</div>
+                <select id="reachEvalDay"></select>
+              </div>
+              <div class="control">
+                <div class="control__label">目标用户类型</div>
+                <select id="reachTargetType"></select>
+              </div>
+              <div class="control">
+                <div class="control__label">目标用户规模分档</div>
+                <select id="reachBucketPreset"></select>
+              </div>
+              <div class="control">
+                <div class="control__label">展示项目数</div>
+                <select id="reachTopN">
+                  <option value="6">Top 6</option>
+                  <option value="10">Top 10</option>
+                  <option value="12" selected>Top 12</option>
+                  <option value="20">Top 20</option>
+                  <option value="999">全部</option>
+                </select>
+              </div>
+            </div>
+            <div class="panel__hint" id="reachStatus">请选择/拖入 CSV 文件开始分析。</div>
+          </section>
+
+          <section class="grid">
+            <div class="card card--full">
+              <div class="card__title">
+                <div class="card__titleMain">各项目祈愿宣发触达率曲线（上线天数）</div>
+                <div class="card__titleSub">横轴=上线天数；纵轴=祈愿宣发触达率；每条折线=一个项目（按筛选结果展示TopN）</div>
+              </div>
+              <div class="card__body">
+                <div class="chartHint muted" id="reachChartHint" style="margin-bottom:6px"></div>
+                <div class="chartWrap chartWrap--hero">
+                  <canvas id="reachChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card--full">
+              <div class="card__title">
+                <div class="card__titleMain">明细列表（可展开）</div>
+                <div class="card__titleSub">按品类展开，查看项目规模、D{天数}触达率与上线日期</div>
+              </div>
+              <div class="card__body">
+                <div id="reachDetails"></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="./reach.js?v=20260318_18"></script>
+  </body>
+</html>
+

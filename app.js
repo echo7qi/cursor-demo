@@ -43,6 +43,8 @@ const DB_NAME = 'ops-dashboard-local-db';
 const DB_STORE = 'kv';
 const DB_KEY_DIR_HANDLE = 'boundDirHandle';
 
+const OPS_SUBDIR_CANDIDATES = ['运营宣推', '运营宣推大盘', '运营宣推上'];
+
 const COLS = {
   gran: '时间维度',
   date: '日期',
@@ -152,17 +154,17 @@ function buildTable(el, columns, data) {
   thead.appendChild(trh);
 
   const tbody = document.createElement('tbody');
-  for (const row of data) {
+  data.forEach((row, i) => {
     const tr = document.createElement('tr');
     for (const c of columns) {
       const td = document.createElement('td');
-      const v = typeof c.value === 'function' ? c.value(row) : row[c.value];
-      td.innerHTML = v;
+      const v = typeof c.value === 'function' ? c.value(row, i, data) : row[c.value];
+      td.innerHTML = typeof v === 'string' ? v : (v ?? '');
       if (c.className) td.className = c.className;
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
-  }
+  });
 
   el.innerHTML = '';
   el.appendChild(thead);
@@ -389,9 +391,11 @@ function render() {
     });
   };
 
-  // 0) 最新周资源效率 + 调配建议（固定运营宣推口径）
+  // 0) 最新周资源效率 + 调配建议（固定运营宣推口径）；结论在 module1 顶部，优先用 ops 日期与图表保持一致
   try {
-    const latestRows = filterRowsByDate(dailyRows, $('latestStartDate')?.value, $('latestEndDate')?.value);
+    const opsStart = $('opsStartDate')?.value || $('latestStartDate')?.value;
+    const opsEnd = $('opsEndDate')?.value || $('latestEndDate')?.value;
+    const latestRows = filterRowsByDate(dailyRows, opsStart, opsEnd);
     const latestNoDataInRange = !latestRows.length;
     const opsCols = pickScopeCols('ops');
     const byDate = groupBy(latestRows, (r) => String(r[COLS.date] ?? '').trim());
@@ -415,10 +419,16 @@ function render() {
     if (!latestWeek) {
       state.latestWeekRange = null;
       $('latestWeekSummary').innerHTML = latestNoDataInRange ? '当前筛选日期范围内没有数据，请调整开始/结束日期。' : '未找到可计算的周数据。';
-      $('latestWeekKpis').innerHTML = '';
+      const kwEl = $('latestWeekKpis'); if (kwEl) kwEl.innerHTML = '';
+      const w1 = $('conclusionSection1Wrap');
+      const w2 = $('conclusionSection2Wrap');
+      if (w1) w1.style.display = 'none';
+      if (w2) w2.style.display = 'none';
       $('latestWeekWowTable').innerHTML = '';
       $('latestWeekTable').innerHTML = '';
       $('latestWeekSourceTable').innerHTML = '';
+      const tall = $('latestWeekSourceTableAll');
+      if (tall) tall.innerHTML = '';
       const swEl = $('sourceWeeklyTable');
       if (swEl) swEl.innerHTML = '';
       $('latestWeekTopProjectsTable').innerHTML = '';
@@ -459,7 +469,8 @@ function render() {
         prevOpsShareGlobal = safeDiv(prevA.imp, pgImp);
       }
 
-      $('latestWeekKpis').innerHTML = [
+      const kwEl = $('latestWeekKpis');
+      if (kwEl) kwEl.innerHTML = [
         kpi('周区间', `<span class="num">${weekStart} ~ ${weekEnd}</span>${days < 7 ? '<span class="muted">（非完整周）</span>' : ''}`),
         kpi('运营宣推曝光占比（周）', fmtRate(opsShareGlobal, 2)),
         kpi('运营宣推每曝光收入（周）', `<span class="num">${fmtMoney(d.rev_per_imp, 4)}</span>`),
@@ -484,8 +495,12 @@ function render() {
       ];
       buildTable($('latestWeekWowTable'), wowCols, wowRows);
 
+      // 资源位为「其它」等的不在数据结论范围内
+      const excludePlacement = new Set(['其它', '其他', '(空)']);
+      const weekRowsForPos = weekRows.filter((r) => !excludePlacement.has(String(r[COLS.placement] ?? '').trim() || '(空)'));
+
       // by placement
-      const byPos = groupBy(weekRows, (r) => String(r[COLS.placement] ?? '').trim() || '(空)');
+      const byPos = groupBy(weekRowsForPos, (r) => String(r[COLS.placement] ?? '').trim() || '(空)');
       const posRows = Array.from(byPos.entries()).map(([pos, rows]) => {
         const pa = computeFunnelAgg(rows, opsCols);
         const pd = computeDerived(pa);
@@ -496,19 +511,6 @@ function render() {
         else if (pd.rev_per_imp >= d.rev_per_imp * 1.2) tag = '高效小盘（可试探加量）';
         return { pos, ...pa, ...pd, shareOps, tag };
       }).sort((x, y) => y.rev_per_imp - x.rev_per_imp);
-
-      const weekCols = [
-        { label: '资源位', value: (r) => r.pos },
-        { label: '运营宣推曝光占比', className: 'num', value: (r) => fmtRate(r.shareOps, 2) },
-        { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
-        { label: '运营宣推收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
-        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
-        { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
-        { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
-        { label: '付费率', className: 'num', value: (r) => fmtRate(r.pay_rate, 2) },
-        { label: '建议标签', value: (r) => r.tag },
-      ];
-      buildTable($('latestWeekTable'), weekCols, posRows.slice(0, 20));
 
       // source wow
       const srcCurrMap = new Map();
@@ -552,19 +554,18 @@ function render() {
         { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.erpi, 4) },
         { label: '每曝光收入环比', className: 'num', value: (r) => fmtWow(r.erpi_wow) },
       ];
-      buildTable($('latestWeekSourceTable'), srcCols, srcAllWow);
 
       // 宣发来源周度明细表（多周 × 曝光量级pv / p-ctr / 每曝光收入 + 周环比）
       const swEl = $('sourceWeeklyTable');
       if (swEl && weekArr.length >= 1) {
-        const weeksToShow = weekArr.slice(-2);
+        const weeksToShow = weekArr.slice(-2).reverse();
         const weekLabel = (wk) => {
           const m = wk.slice(5, 7);
           const d = wk.slice(8, 10);
           return `${m}${d}周`;
         };
         const byWeekBySrc = new Map();
-        for (const w of weeksToShow) {
+        for (const w of weekArr.slice(-2)) {
           const bySrc = groupBy(w.rows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
           const totalImp = w.rows.reduce((s, r) => s + num(r[opsCols.imp]), 0);
           const srcMap = new Map();
@@ -579,21 +580,52 @@ function render() {
           srcMap.set('运营全局', { imp: totalImp, ctr: totalD.ctr, rev_per_imp: totalD.rev_per_imp, shareOps: 1 });
           byWeekBySrc.set(w.weekStart, srcMap);
         }
+        const latestWk = weeksToShow[0];
+        const prevWk = weeksToShow.length >= 2 ? weeksToShow[1] : null;
         const allSources = new Set();
-        weeksToShow.forEach((w) => {
+        weekArr.slice(-2).forEach((w) => {
           const bySrc = groupBy(w.rows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
           bySrc.forEach((_, src) => allSources.add(src));
         });
-        const latestWk = weeksToShow[weeksToShow.length - 1];
-        const prevWk = weeksToShow.length >= 2 ? weeksToShow[weeksToShow.length - 2] : null;
         const otherSources = Array.from(allSources).filter((s) => s !== '运营全局');
         const latestSrcMap = byWeekBySrc.get(latestWk.weekStart);
+        const prevSrcMap = prevWk ? byWeekBySrc.get(prevWk.weekStart) : null;
         otherSources.sort((a, b) => {
           const impA = latestSrcMap?.get(a)?.imp ?? 0;
           const impB = latestSrcMap?.get(b)?.imp ?? 0;
           return impB - impA;
         });
         const sourceOrder = ['运营全局', ...otherSources];
+
+        let maxAbsChangeSrc = null;
+        let maxAbsChangeVal = -1;
+        if (prevWk && prevSrcMap) {
+          for (const src of otherSources) {
+            const currM = latestSrcMap?.get(src);
+            const prevM = prevSrcMap?.get(src);
+            if (currM && prevM) {
+              const impWow = wow(currM.imp, prevM.imp);
+              const ctrWow = wow(currM.ctr, prevM.ctr);
+              const revWow = wow(currM.rev_per_imp, prevM.rev_per_imp);
+              const shareWow = wow(currM.shareOps, prevM.shareOps);
+              const absMax = Math.max(
+                impWow != null ? Math.abs(impWow) : 0,
+                shareWow != null ? Math.abs(shareWow) : 0,
+                ctrWow != null ? Math.abs(ctrWow) : 0,
+                revWow != null ? Math.abs(revWow) : 0,
+              );
+              if (absMax > maxAbsChangeVal) {
+                maxAbsChangeVal = absMax;
+                maxAbsChangeSrc = src;
+              }
+            }
+          }
+        }
+
+        const cellCls = (curr, prev) => {
+          if (prev == null) return '';
+          return curr > prev ? 'bad' : curr < prev ? 'good' : '';
+        };
 
         let html = '<thead><tr><th rowspan="2">宣发来源</th>';
         weeksToShow.forEach((w) => {
@@ -606,18 +638,35 @@ function render() {
         html += '<th class="num">曝光量级pv</th><th class="num">宣推占比</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">每曝光收入绝对值</th></tr></thead><tbody>';
 
         for (const src of sourceOrder) {
-          html += `<tr><td><strong>${src}</strong></td>`;
-          weeksToShow.forEach((w) => {
+          const rowHighlight = src === maxAbsChangeSrc ? 'rowHighlightMax' : '';
+          html += `<tr${rowHighlight ? ` class="${rowHighlight}"` : ''}><td><strong>${src}</strong></td>`;
+          weeksToShow.forEach((w, wi) => {
             const m = byWeekBySrc.get(w.weekStart)?.get(src);
             if (m) {
-              html += `<td class="num">${fmtInt(m.imp)}</td><td class="num">${fmtRate(m.shareOps, 2)}</td><td class="num">${fmtRate(m.ctr, 2)}</td><td class="num">${fmtMoney(m.rev_per_imp, 4)}</td>`;
+              const isLatest = wi === 0 && prevWk;
+              const prevM = prevWk && wi === 0 ? prevSrcMap?.get(src) : null;
+              let impSp = fmtInt(m.imp);
+              let shareSp = fmtRate(m.shareOps, 2);
+              let ctrSp = fmtRate(m.ctr, 2);
+              let revSp = fmtMoney(m.rev_per_imp, 4);
+              if (isLatest && prevM) {
+                const impCls = cellCls(m.imp, prevM.imp);
+                const shareCls = cellCls(m.shareOps, prevM.shareOps);
+                const ctrCls = cellCls(m.ctr, prevM.ctr);
+                const revCls = cellCls(m.rev_per_imp, prevM.rev_per_imp);
+                if (impCls) impSp = `<span class="${impCls}">${impSp}</span>`;
+                if (shareCls) shareSp = `<span class="${shareCls}">${shareSp}</span>`;
+                if (ctrCls) ctrSp = `<span class="${ctrCls}">${ctrSp}</span>`;
+                if (revCls) revSp = `<span class="${revCls}">${revSp}</span>`;
+              }
+              html += `<td class="num">${impSp}</td><td class="num">${shareSp}</td><td class="num">${ctrSp}</td><td class="num">${revSp}</td>`;
             } else {
               html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
             }
           });
           if (prevWk) {
-            const currM = byWeekBySrc.get(latestWk.weekStart)?.get(src);
-            const prevM = byWeekBySrc.get(prevWk.weekStart)?.get(src);
+            const currM = latestSrcMap?.get(src);
+            const prevM = prevSrcMap?.get(src);
             if (currM && prevM) {
               const impWow = wow(currM.imp, prevM.imp);
               const ctrWow = wow(currM.ctr, prevM.ctr);
@@ -641,7 +690,8 @@ function render() {
       const posUsageTop = [...posRows].sort((x, y) => y.imp - x.imp).slice(0, 5);
       const prevPosMap = new Map();
       if (prevWeek) {
-        const byPosPrev = groupBy(prevWeek.rows, (r) => String(r[COLS.placement] ?? '').trim() || '(空)');
+        const prevWeekRowsForPos = prevWeek.rows.filter((r) => !excludePlacement.has(String(r[COLS.placement] ?? '').trim() || '(空)'));
+        const byPosPrev = groupBy(prevWeekRowsForPos, (r) => String(r[COLS.placement] ?? '').trim() || '(空)');
         byPosPrev.forEach((rows, pos) => {
           const pa = computeFunnelAgg(rows, opsCols);
           const pd = computeDerived(pa);
@@ -662,29 +712,90 @@ function render() {
         };
       }).sort((a, b) => b.imp - a.imp);
 
-      // top5 projects in current week (ops scope)
-      const byTopic = groupBy(weekRows, (r) => String(r[COLS.topicId] ?? '').trim() || String(r[COLS.topicName] ?? '').trim() || '(未知)');
-      const topicTop = Array.from(byTopic.entries()).map(([tid, rows]) => {
+      // 资源位表格：资源位、曝光量级、曝光占比、pctr、每曝光收入、周环比、本周建议（曝光占比=各资源位运营宣推/运营宣推总曝光）
+      const weekCols = [
+        { label: '资源位', value: (r) => r.pos },
+        { label: '曝光量级', className: 'num', value: (r) => fmtInt(r.imp) },
+        { label: '曝光占比', className: 'num', value: (r) => fmtRate(r.shareOps ?? 0, 2) },
+        { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.pctr ?? r.ctr, 2) },
+        { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.erpi ?? r.rev_per_imp, 4) },
+        { label: '周环比', className: 'num', value: (r) => (r.erpi_wow != null ? fmtWow(r.erpi_wow) : '-') },
+        { label: '本周建议', value: (r) => r.tag ?? '' },
+      ];
+      buildTable($('latestWeekTable'), weekCols, posAllWow);
+
+      // top5 projects: 按(项目,宣发来源,资源位)粒度，含效率表现（自身历史+同来源同资源位对比，曝光量级归一）
+      const excludeSrc = new Set(['其它', '其他', '(空)']);
+      const weekRowsForTop5 = weekRows.filter(
+        (r) => !excludePlacement.has(String(r[COLS.placement] ?? '').trim() || '(空)')
+      );
+      const byTopicSrcPos = groupBy(weekRowsForTop5, (r) => {
+        const tid = String(r[COLS.topicId] ?? '').trim() || String(r[COLS.topicName] ?? '').trim();
+        const name = String(r[COLS.topicName] ?? '').trim() || '(空)';
+        const src = String(r[COLS.source] ?? '').trim() || '(空)';
+        const pos = String(r[COLS.placement] ?? '').trim() || '(空)';
+        return `${tid}||${name}||${src}||${pos}`;
+      });
+      let topicTopRaw = Array.from(byTopicSrcPos.entries()).map(([key, rows]) => {
         const ta = computeFunnelAgg(rows, opsCols);
         const td = computeDerived(ta);
-        const name = String(rows[0]?.[COLS.topicName] ?? '').trim() || '(空)';
-        const src = String(rows[0]?.[COLS.source] ?? '').trim() || '(空)';
-        const pos = String(rows[0]?.[COLS.placement] ?? '').trim() || '(空)';
+        const [, name, src, pos] = key.split('||');
+        const tid = key.split('||')[0];
         return { tid, name, src, pos, ...ta, ...td };
       }).filter((x) => x.imp >= Math.max(10000, Math.floor(minImp / 2)))
-        .sort((x, y) => y.rev_per_imp - x.rev_per_imp)
-        .slice(0, 5);
+        .filter((x) => !excludeSrc.has(x.src))
+        .sort((x, y) => y.rev_per_imp - x.rev_per_imp);
 
+      // 效率表现：自身历史均值 + 同来源同资源位同曝光档位对比
+      const getEfficiencyLabel = (item) => {
+        const impLo = item.imp * 0.5;
+        const impHi = item.imp * 2;
+        const histErpis = [];
+        let peerErpis = [];
+        for (const w of weekArr) {
+          if (w.weekStart === weekStart) continue;
+          const matches = w.rows.filter((r) => {
+            if (excludePlacement.has(String(r[COLS.placement] ?? '').trim() || '(空)')) return false;
+            const n = String(r[COLS.topicName] ?? '').trim();
+            const p = String(r[COLS.placement] ?? '').trim() || '(空)';
+            return (n === item.name || String(r[COLS.topicId] ?? '').trim() === item.tid) && p === item.pos;
+          });
+          if (matches.length) {
+            const agg = computeFunnelAgg(matches, opsCols);
+            const der = computeDerived(agg);
+            if (agg.imp > 0) histErpis.push(der.rev_per_imp);
+          }
+        }
+        const histAvg = histErpis.length ? histErpis.reduce((s, v) => s + v, 0) / histErpis.length : null;
+        const byPeer = groupBy(
+          weekRowsForTop5.filter((r) => String(r[COLS.source] ?? '').trim() === item.src && (String(r[COLS.placement] ?? '').trim() || '(空)') === item.pos),
+          (r) => String(r[COLS.topicName] ?? '').trim()
+        );
+        byPeer.forEach((rows, name) => {
+          if (name === item.name) return;
+          const agg = computeFunnelAgg(rows, opsCols);
+          if (agg.imp >= impLo && agg.imp <= impHi && agg.imp > 0) peerErpis.push(agg.rev / agg.imp);
+        });
+        const cur = item.rev_per_imp;
+        const hist = histAvg != null && histAvg > 0 ? (cur >= histAvg * 1.05 ? '高于自身历史' : cur <= histAvg * 0.95 ? '低于自身历史' : '持平自身历史') : null;
+        const peerP50 = peerErpis.length ? peerErpis.sort((a, b) => a - b)[Math.floor(peerErpis.length / 2)] : null;
+        const peer = peerP50 != null && peerP50 > 0 ? (cur >= peerP50 * 1.05 ? '高于同档位P50' : cur <= peerP50 * 0.95 ? '低于同档位P50' : '持平同档位P50') : null;
+        const parts = [hist, peer].filter(Boolean);
+        return parts.length ? parts.join('；') : '-';
+      };
+
+      const topicTop = topicTopRaw.slice(0, 5).map((x) => ({ ...x, effLabel: getEfficiencyLabel(x) }));
       const topicCols = [
-        { label: '专题ID', className: 'num', value: (r) => r.tid },
-        { label: '专题名称', value: (r) => r.name },
+        { label: '项目名', value: (r) => r.name },
         { label: '宣发来源', value: (r) => r.src },
-        { label: '资源位', value: (r) => r.pos },
-        { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
-        { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
+        { label: '资源场景', value: (r) => r.pos },
         { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
+        { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
+        { label: '效率表现', value: (r) => r.effLabel || '-' },
       ];
       buildTable($('latestWeekTopProjectsTable'), topicCols, topicTop);
+
+      buildTable($('latestWeekSourceTableAll'), srcCols, srcAllWow);
 
       // 资源位效率-规模象限图（最新周）
       const quadEl = $('latestPosQuadrantChart');
@@ -743,34 +854,54 @@ function render() {
       const high = posRows.filter((r) => r.tag.includes('高效')).slice(0, 3);
       const low = posRows.filter((r) => r.tag.includes('低效')).slice(0, 3);
 
+      // 波动阈值：1和2无明显波动则不展示
+      const wowRev = wow(d.rev_per_imp, prevD?.rev_per_imp);
+      const wowCtr = wow(d.ctr, prevD?.ctr);
+      const wowShare = wow(opsShareGlobal, prevOpsShareGlobal);
+      const hasSignificantWow = prevD && [wowRev, wowCtr, wowShare].some((v) => v != null && Math.abs(v) >= 0.05);
+      const srcTopWithWow = srcTop.map((x) => {
+        const p = srcPrevMap.get(x.src);
+        return { ...x, pctr_wow: wow(x.ctr, p?.ctr), erpi_wow: wow(x.rev_per_imp, p?.rev_per_imp) };
+      });
+      const hasSignificantSrc = srcTopWithWow.some((x) =>
+        (x.pctr_wow != null && Math.abs(x.pctr_wow) >= 0.08) || (x.erpi_wow != null && Math.abs(x.erpi_wow) >= 0.08)
+      );
+
+      const wrap1 = $('conclusionSection1Wrap');
+      const wrap2 = $('conclusionSection2Wrap');
+      if (wrap1) wrap1.style.display = hasSignificantWow ? '' : 'none';
+      if (wrap2) wrap2.style.display = hasSignificantSrc ? '' : 'none';
+      if (hasSignificantWow) buildTable($('latestWeekWowTable'), wowCols, wowRows);
+      if (hasSignificantSrc) {
+        const srcColsTop5 = [
+          { label: '宣发来源', value: (r) => r.src },
+          { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
+          { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
+          { label: 'p-CTR环比', className: 'num', value: (r) => fmtWow(r.pctr_wow) },
+          { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
+          { label: '每曝光收入环比', className: 'num', value: (r) => fmtWow(r.erpi_wow) },
+        ];
+        buildTable($('latestWeekSourceTable'), srcColsTop5, srcTopWithWow);
+      }
+
       const summaryLines = [];
+      summaryLines.push(`<strong>【口径】</strong>以下结论仅针对运营宣推曝光及效率进行分析。`);
       summaryLines.push(`<strong>当前周：</strong>${weekStart} ~ ${weekEnd}${days < 7 ? '（非完整周）' : ''}`);
-      summaryLines.push(
-        `<strong>1. 当周运营宣推资源效率环比上周：</strong>` +
-        `每曝光收入 ${fmtWow(wow(d.rev_per_imp, prevD?.rev_per_imp))}，` +
-        `p-CTR ${fmtWow(wow(d.ctr, prevD?.ctr))}，` +
-        `阅读率 ${fmtWow(wow(d.read_rate, prevD?.read_rate))}，` +
-        `付费率 ${fmtWow(wow(d.pay_rate, prevD?.pay_rate))}，` +
-        `运营宣推曝光占比 ${fmtWow(wow(opsShareGlobal, prevOpsShareGlobal))}`
-      );
-      summaryLines.push(
-        `<strong>2. 各宣发来源（Top5曝光）p-CTR与每曝光收入环比：</strong><ul>` +
-        srcTop.map((x) => {
-          const p = srcPrevMap.get(x.src);
-          return `<li>${x.src}：p-CTR ${fmtRate(x.ctr, 2)}（环比 ${fmtWow(wow(x.ctr, p?.ctr))}）；每曝光收入 ${fmtMoney(x.rev_per_imp, 4)}（环比 ${fmtWow(wow(x.rev_per_imp, p?.rev_per_imp))}）</li>`;
-        }).join('') +
-        `</ul>`
-      );
-      summaryLines.push(
-        `<strong>3. 各资源使用情况（按曝光占比Top5）：</strong><ul>` +
-        posUsageTop.map((x) => `<li>${x.pos}：占比 ${fmtRate(x.shareOps, 2)}，每曝光收入 ${fmtMoney(x.rev_per_imp, 4)}，标签：${x.tag}</li>`).join('') +
-        `</ul>`
-      );
-      summaryLines.push(
-        `<strong>4. 综合效率最高投放项目 Top5（当周）：</strong><ul>` +
-        topicTop.map((x) => `<li>${x.name}（${x.tid}）| ${x.src} / ${x.pos} | 每曝光收入 ${fmtMoney(x.rev_per_imp, 4)} | p-CTR ${fmtRate(x.ctr, 2)}</li>`).join('') +
-        `</ul>`
-      );
+      if (prevD) {
+        const effUp = d.rev_per_imp > prevD.rev_per_imp * 1.02;
+        const effDown = d.rev_per_imp < prevD.rev_per_imp * 0.98;
+        const shareUp = opsShareGlobal > prevOpsShareGlobal * 1.02;
+        const shareDown = opsShareGlobal < prevOpsShareGlobal * 0.98;
+        let oneLiner = '最新周大盘';
+        if (effUp && shareUp) oneLiner += '效率与曝光占比均向好';
+        else if (effUp && shareDown) oneLiner += '效率提升但曝光占比下降';
+        else if (effDown && shareUp) oneLiner += '曝光占比上升但效率下降';
+        else if (effDown && shareDown) oneLiner += '效率与曝光占比均下降';
+        else oneLiner += '效率与曝光占比变化较平稳';
+        summaryLines.push(`<strong>【结论】</strong>${oneLiner}。`);
+      } else {
+        summaryLines.push(`<strong>【结论】</strong>最新周数据已展示（当前仅一周，暂无环比）。`);
+      }
       let adviceText = '';
       if (high.length && low.length) {
         adviceText = `优先加量 ${high.map((x) => x.pos).join('、')}；优先整改/挪量 ${low.map((x) => x.pos).join('、')}。`;
@@ -781,17 +912,17 @@ function render() {
       } else {
         adviceText = '资源位效率分布较均衡，建议维持当前配置。';
       }
-      summaryLines.push(`<strong>调配建议：</strong>${adviceText}`);
-      summaryLines.push(`<strong>结构性挪量：</strong>将曝光从低效资源位向高效资源位转移，在不增加总曝光下提升每曝光收入。`);
-      summaryLines.push(`<strong>效率底线：</strong>加量时每曝光收入下降不超过 5%~10%，超限则回撤或重新调配。建议先做 5%~10% 小步调配，观察 2-3 天再放大。`);
+      summaryLines.push(`<strong>调配建议：</strong>${adviceText} · 结构性挪量：低效→高效转移；效率底线：加量时每曝光收入降幅≤5%~10%。`);
 
+      const wrap = $('conclusionBlock');
+      if (wrap) wrap.style.display = '';
       $('latestWeekSummary').innerHTML = summaryLines.join('<br/>');
 
     }
   } catch (err) {
     state.latestWeekRange = null;
     $('latestWeekSummary').innerHTML = `最新周模块渲染异常：${err?.message || err}`;
-    $('latestWeekKpis').innerHTML = '';
+    const kwEl = $('latestWeekKpis'); if (kwEl) kwEl.innerHTML = '';
     $('latestWeekWowTable').innerHTML = '';
     $('latestWeekTable').innerHTML = '';
     $('latestWeekSourceTable').innerHTML = '';
@@ -954,16 +1085,13 @@ function render() {
       hintEl.textContent = '图表库未加载（可能网络受限），仍可查看下方表格。';
     }
 
-    // 效率-规模平衡提示
+    // 效率-规模平衡提示：仅针对最新周（最新周 vs 上周）
     const balanceHintEl = $('opsBalanceHint');
-    if (balanceHintEl && series.length >= 4) {
-      const mid = Math.floor(series.length / 2);
-      const firstHalf = series.slice(0, mid);
-      const secondHalf = series.slice(mid);
-      const avgEffFirst = firstHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / firstHalf.length;
-      const avgEffSecond = secondHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / secondHalf.length;
-      const avgShareFirst = firstHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / firstHalf.length;
-      const avgShareSecond = secondHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / secondHalf.length;
+    if (balanceHintEl && weekStarts.length >= 2 && latestDer && prevDer) {
+      const avgEffFirst = prevDer[effMetric] ?? 0;
+      const avgEffSecond = latestDer[effMetric] ?? 0;
+      const avgShareFirst = prevShare ?? 0;
+      const avgShareSecond = latestShare ?? 0;
       const effUp = avgEffSecond > avgEffFirst * 1.02;
       const effDown = avgEffSecond < avgEffFirst * 0.98;
       const shareUp = avgShareSecond > avgShareFirst * 1.02;
@@ -985,35 +1113,38 @@ function render() {
       balanceHintEl.innerHTML = '';
     }
 
-    // 运营周报一句话汇总
+    // 运营周报一句话汇总：仅针对最新周输出（最新周 vs 上周）
     const summaryEl = $('opsWeeklySummary');
-    if (summaryEl && series.length >= 2 && opsRows.length > 0) {
-      const mid = Math.floor(series.length / 2);
-      const firstHalf = series.slice(0, mid);
-      const secondHalf = series.slice(mid);
-      const avgEffFirst = firstHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / firstHalf.length;
-      const avgEffSecond = secondHalf.reduce((s, x) => s + (x[effMetric] ?? 0), 0) / secondHalf.length;
-      const avgShareFirst = firstHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / firstHalf.length;
-      const avgShareSecond = secondHalf.reduce((s, x) => s + (x.opsShare ?? 0), 0) / secondHalf.length;
+    if (summaryEl && weekStarts.length >= 1 && opsRows.length > 0) {
+      const excludePlacement = new Set(['其它', '其他', '(空)']);
+      const opsRowsForSummary = opsRows.filter((r) => !excludePlacement.has(String(r[COLS.placement] ?? '').trim() || '(空)'));
+
+      const prevWeekStart = weekStarts.length >= 2 ? weekStarts[weekStarts.length - 2] : null;
+      const latestWeekStart = weekStarts.length >= 1 ? weekStarts[weekStarts.length - 1] : null;
+      const firstKeys = prevWeekStart ? new Set([prevWeekStart]) : new Set();
+      const secondKeys = latestWeekStart ? new Set([latestWeekStart]) : new Set();
+
+      const avgEffFirst = prevDer ? prevDer[effMetric] ?? 0 : 0;
+      const avgEffSecond = latestDer ? latestDer[effMetric] ?? 0 : 0;
+      const avgShareFirst = prevShare ?? 0;
+      const avgShareSecond = latestShare ?? 0;
       const effUp = avgEffSecond > avgEffFirst * 1.05;
       const effDown = avgEffSecond < avgEffFirst * 0.95;
       const shareUp = avgShareSecond > avgShareFirst * 1.05;
       const shareDown = avgShareSecond < avgShareFirst * 0.95;
 
-      const getBucketKey = (d) => (timeGran === 'day' ? d : toWeekStartLocal(d));
-      const firstKeys = new Set(firstHalf.map((x) => x.date));
-      const secondKeys = new Set(secondHalf.map((x) => x.date));
-      const allFirstRows = opsRows.filter((r) => firstKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
-      const allSecondRows = opsRows.filter((r) => secondKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
+      const getBucketKey = (d) => toWeekStartLocal(d);
+      const allFirstRows = opsRowsForSummary.filter((r) => firstKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
+      const allSecondRows = opsRowsForSummary.filter((r) => secondKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
       const totalFirstImp = allFirstRows.reduce((s, r) => s + num(r[COLS.ops_imp]), 0);
       const totalSecondImp = allSecondRows.reduce((s, r) => s + num(r[COLS.ops_imp]), 0);
       const opsCols = pickScopeCols('ops');
-      const bySource = groupBy(opsRows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
+      const bySource = groupBy(opsRowsForSummary, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
       const sourceChanges = [];
       for (const [src, rows] of bySource) {
         const firstRows = rows.filter((r) => firstKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
         const secondRows = rows.filter((r) => secondKeys.has(getBucketKey(String(r[COLS.date] ?? '').trim())));
-        if (firstRows.length < 2 || secondRows.length < 2) continue;
+        if (!prevWeekStart || firstRows.length < 1 || secondRows.length < 1) continue;
         const a1 = computeFunnelAgg(firstRows, opsCols);
         const a2 = computeFunnelAgg(secondRows, opsCols);
         const d1 = computeDerived(a1);
@@ -1029,11 +1160,15 @@ function render() {
 
       const parts = [];
       let bigTrend = '';
-      if (effUp && shareUp) bigTrend = '大盘效率与曝光占比均向好';
-      else if (effUp && shareDown) bigTrend = '大盘效率提升但曝光占比下降';
-      else if (effDown && shareUp) bigTrend = '大盘曝光占比上升但效率下降';
-      else if (effDown && shareDown) bigTrend = '大盘效率与曝光占比均下降';
-      else bigTrend = '大盘效率与曝光占比变化较平稳';
+      if (prevWeekStart && latestWeekStart) {
+        if (effUp && shareUp) bigTrend = '最新周大盘效率与曝光占比均向好';
+        else if (effUp && shareDown) bigTrend = '最新周大盘效率提升但曝光占比下降';
+        else if (effDown && shareUp) bigTrend = '最新周大盘曝光占比上升但效率下降';
+        else if (effDown && shareDown) bigTrend = '最新周大盘效率与曝光占比均下降';
+        else bigTrend = '最新周大盘效率与曝光占比变化较平稳';
+      } else {
+        bigTrend = '最新周大盘数据已展示（当前仅一周，暂无环比）';
+      }
       parts.push(bigTrend);
 
       const highlights = [];
@@ -1047,26 +1182,37 @@ function render() {
       if (highlights.length) parts.push(`其中${highlights.slice(0, 2).join('、')}`);
       if (anomalies.length) parts.push(`${anomalies.slice(0, 2).join('、')}`);
 
-      summaryEl.innerHTML = `<strong>【结论】</strong>${parts.join('；')}。`;
+      summaryEl.innerHTML = `<strong>【结论】</strong>${parts.join('；')}。（仅针对最新周）`;
     } else if (summaryEl) {
       summaryEl.innerHTML = '';
     }
 
+    const dataRows = series.slice(-60).reverse();
+    const wowWrap = (r, i, data, getRaw, format) => {
+      const raw = format(getRaw(r));
+      if (i !== 0 || !data?.[1]) return raw;
+      const cv = getRaw(r);
+      const pv = getRaw(data[1]);
+      if (pv == null || (typeof pv === 'number' && !Number.isFinite(pv))) return raw;
+      if (cv > pv) return `<span class="bad">${raw}</span>`;
+      if (cv < pv) return `<span class="good">${raw}</span>`;
+      return raw;
+    };
     const cols = [
       { label: timeGran === 'day' ? '日期' : '周起始(周一)', value: (r) => `<span class="num">${r.date}</span>` },
       ...(timeGran === 'day' ? [] : [{ label: '覆盖天数', className: 'num', value: (r) => `<span class="num">${r.days ?? ''}</span>` }]),
-      { label: '曝光占比', className: 'num', value: (r) => fmtRate(r.opsShare, 2) },
-      { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
-      { label: '运营宣推点击', className: 'num', value: (r) => fmtInt(r.clk) },
-      { label: '运营宣推阅读', className: 'num', value: (r) => fmtInt(r.read) },
-      { label: '运营宣推付费用户', className: 'num', value: (r) => fmtInt(r.payu) },
-      { label: '运营宣推收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
-      { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
-      { label: 'CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
-      { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
-      { label: '付费率', className: 'num', value: (r) => fmtRate(r.pay_rate, 2) },
+      { label: '曝光占比', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.opsShare, (v) => fmtRate(v, 2)) },
+      { label: '运营宣推曝光', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.imp, (v) => fmtInt(v)) },
+      { label: '运营宣推点击', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.clk, (v) => fmtInt(v)) },
+      { label: '运营宣推阅读', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.read, (v) => fmtInt(v)) },
+      { label: '运营宣推付费用户', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.payu, (v) => fmtInt(v)) },
+      { label: '运营宣推收入', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.rev, (v) => fmtMoney(v, 2)) },
+      { label: '每曝光收入', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.rev_per_imp, (v) => fmtMoney(v, 4)) },
+      { label: 'CTR', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.ctr, (v) => fmtRate(v, 2)) },
+      { label: '阅读率', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.read_rate, (v) => fmtRate(v, 2)) },
+      { label: '付费率', className: 'num', value: (r, i, data) => wowWrap(r, i, data, (x) => x?.pay_rate, (v) => fmtRate(v, 2)) },
     ];
-    buildTable($('opsDailyTable'), cols, series.slice(-60));
+    buildTable($('opsDailyTable'), cols, dataRows);
   }
 
   // 2) 各业务宣发效率（趋势） – 固定运营宣推口径
@@ -1646,6 +1792,17 @@ async function parseCsvText(text, fileName = null) {
   }
 }
 
+async function resolveOpsSubdirHandle(rootHandle) {
+  for (const name of OPS_SUBDIR_CANDIDATES) {
+    try {
+      const h = await rootHandle.getDirectoryHandle(name, { create: false });
+      return { handle: h, name };
+    } catch (_) {}
+  }
+  const list = OPS_SUBDIR_CANDIDATES.map((x) => `「${x}」`).join(' 或 ');
+  throw new Error(`未找到运营宣推子文件夹（需要在绑定目录下创建 ${list} 文件夹）。`);
+}
+
 async function loadAllCsvFromBoundFolder() {
   if (!state.boundDirHandle) {
     $('statusHint').textContent = '请先点击“绑定数据文件夹”。';
@@ -1658,11 +1815,12 @@ async function loadAllCsvFromBoundFolder() {
       $('statusHint').textContent = '未获得文件夹读取权限，无法更新。';
       return;
     }
-    $('statusHint').textContent = '正在扫描并合并文件夹中的 CSV...';
+    const { handle: opsDir, name: subName } = await resolveOpsSubdirHandle(state.boundDirHandle);
+    $('statusHint').textContent = `正在扫描并合并「${subName}」文件夹中的 CSV...`;
 
     const allRows = [];
     let fileCount = 0;
-    for await (const entry of state.boundDirHandle.values()) {
+    for await (const entry of opsDir.values()) {
       if (entry.kind !== 'file') continue;
       if (!entry.name.toLowerCase().endsWith('.csv')) continue;
       const file = await entry.getFile();
@@ -1674,11 +1832,11 @@ async function loadAllCsvFromBoundFolder() {
     }
 
     if (!fileCount) {
-      $('statusHint').textContent = '绑定文件夹下未找到 CSV 文件。';
+      $('statusHint').textContent = '运营宣推子文件夹下未找到 CSV 文件。';
       return;
     }
-    await loadRows(allRows, `文件夹模式（${fileCount}个CSV）`);
-    $('statusHint').textContent = `更新完成：已合并 ${fileCount} 个 CSV，去重后 ${state.rows.length.toLocaleString('zh-CN')} 行。`;
+    await loadRows(allRows, `文件夹模式/${subName}（${fileCount}个CSV）`);
+    $('statusHint').textContent = `更新完成：已合并「${subName}」下 ${fileCount} 个 CSV，去重后 ${state.rows.length.toLocaleString('zh-CN')} 行。`;
   } catch (err) {
     $('statusHint').textContent = `文件夹更新失败：${err?.message || err}`;
   }
@@ -2000,14 +2158,18 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Pi
     <div class="meta">导出时间：${new Date().toLocaleString('zh-CN')} · 本地解析，未上传原始数据。分享方式：将报告链接粘贴到浏览器地址栏即可查看。</div>
 
     <section>
-      <div class="sectionTitle">最新周总览与调配建议</div>
+      <div class="sectionTitle">结论（最新周总览与调配建议）</div>
       <div class="adviceBox">${getHtml('latestWeekSummary') || '（无数据）'}</div>
+      ${getTableHtml('latestWeekWowTable') ? `<div class="subTitle">1. 当周运营宣推资源效率环比上周</div>${getTableHtml('latestWeekWowTable')}` : ''}
+      ${getTableHtml('latestWeekSourceTable') ? `<div class="subTitle">2. 各宣发来源 Top5 环比</div>${getTableHtml('latestWeekSourceTable')}` : ''}
+      <div class="subTitle">3. 各资源位使用情况</div>
+      ${getTableHtml('latestWeekTable') || '—'}
+      <div class="subTitle">4. 综合效率最高投放项目 Top5</div>
+      ${getTableHtml('latestWeekTopProjectsTable') || '—'}
       <div class="subTitle">当周 KPI</div>
-      <div class="kpis">${getHtml('latestWeekKpis') || '<div class="kpi"><div class="kpi__label">—</div><div class="kpi__value">—</div></div>'}</div>
+      <div class="kpis">${getHtml('latestWeekKpis') || getHtml('opsKpis') || '<div class="kpi"><div class="kpi__label">—</div><div class="kpi__value">—</div></div>'}</div>
       <div class="subTitle">资源位 × 宣发来源效率矩阵</div>
       ${matrixImg ? `<img src="${matrixImg}" alt="热力图" class="chartImg"/>` : (getMatrixHtml() ? getMatrixHtml() : '')}
-      <div class="subTitle">当周运营宣推周环比总览</div>
-      ${getTableHtml('latestWeekWowTable') || '—'}
       <div class="subTitle">宣发来源周度明细</div>
       ${getTableHtml('sourceWeeklyTable') || '—'}
     </section>
@@ -2015,7 +2177,6 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Pi
     <section>
       <div class="sectionTitle">运营宣推大盘趋势</div>
       <div class="kpis">${getHtml('opsKpis') || '—'}</div>
-      <div class="adviceBox">${getHtml('opsWeeklySummary') || ''}</div>
       <div class="adviceBox">${getHtml('opsBalanceHint') || ''}</div>
       ${chartDataUrls.opsTrendChart ? `<img src="${chartDataUrls.opsTrendChart}" alt="大盘趋势" class="chartImg"/>` : ''}
     </section>
@@ -2061,5 +2222,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Pi
   return { html, dataUrl, shareUrl };
 }
 
-if (!window.__reportView) setup();
+if (!window.__reportView) {
+  setup();
+  if (window.__SNAPSHOT_DATA && window.__SNAPSHOT_DATA.opsAppRows) {
+    state.rows = mergeRowsDedup(window.__SNAPSHOT_DATA.opsAppRows);
+    state.lastFileName = '快照数据';
+    render();
+    const h = $('statusHint');
+    if (h) h.textContent = `快照模式：已加载 ${state.rows.length} 行运营宣推数据。`;
+  }
+}
 

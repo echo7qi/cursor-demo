@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>数据看板（汇总）</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="all">
+    <div class="appShell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">数据看板</div>
+        <nav class="sidebar__nav">
+          <button id="navOps" class="sidebar__link is-active" type="button">运营宣推</button>
+          <button id="navWishbar" class="sidebar__link" type="button">祈愿bar访问贡献</button>
+          <button id="navReach" class="sidebar__link" type="button">祈愿宣发触达</button>
+        </nav>
+        <div class="sidebar__actions">
+          <button id="bindAllBtn" class="sidebar__link" type="button">📂 绑定数据文件夹</button>
+          <button id="updateAllBtn" class="sidebar__link" type="button">🔄 一键更新全部</button>
+          <button id="exportAllBtn" class="sidebar__link" type="button">📤 导出整站快照</button>
+        </div>
+        <div class="sidebar__hint muted">本地解析 CSV，不上传数据</div>
+      </aside>
+
+      <div class="appShell__content">
+        <main class="container" style="margin-top:0;padding-top:0">
+          <section class="card card--full">
+            <div class="card__body" style="padding:0">
+              <div class="embedTabs">
+                <iframe id="frameOps" class="embedFrame" title="运营宣推" src="./index.html" allow="file-system-access; clipboard-read; clipboard-write"></iframe>
+                <iframe id="frameWishbar" class="embedFrame" title="祈愿bar访问贡献" src="./wishbar.html" style="display:none" allow="file-system-access; clipboard-read; clipboard-write"></iframe>
+                <iframe id="frameReach" class="embedFrame" title="祈愿宣发触达" src="./reach.html" style="display:none" allow="file-system-access; clipboard-read; clipboard-write"></iframe>
+              </div>
+            </div>
+          </section>
+        </main>
+
+      </div>
+    </div>
+
+    <script>
+      const DB_NAME = 'ops-dashboard-local-db';
+      const DB_STORE = 'kv';
+      const DB_KEY_DIR_HANDLE = 'boundDirHandle';
+
+      function openDb() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function dbSet(key, value) {
+        const db = await openDb();
+        try {
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction(DB_STORE, 'readwrite');
+            const store = tx.objectStore(DB_STORE);
+            const req = store.put(value, key);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+          });
+        } finally {
+          db.close();
+        }
+      }
+
+      async function exportAllSnapshot() {
+        var btn = document.getElementById('exportAllBtn');
+        btn.textContent = '正在生成…';
+        btn.disabled = true;
+        try {
+          var fOps = document.getElementById('frameOps');
+          var fWish = document.getElementById('frameWishbar');
+          var fReach = document.getElementById('frameReach');
+
+          var opsAppRows = [], wishbarRows = [], reachRows = [], reachOpsRows = [];
+          try { opsAppRows = fOps.contentWindow.state.rows || []; } catch(_){}
+          try { wishbarRows = fWish.contentWindow.rawRows || []; } catch(_){}
+          try { reachRows = fReach.contentWindow.rows || []; } catch(_){}
+          try { reachOpsRows = fReach.contentWindow.opsRows || []; } catch(_){}
+
+          if (!opsAppRows.length && !wishbarRows.length && !reachRows.length) {
+            alert('请先在各模块加载数据，再导出快照。');
+            return;
+          }
+
+          var dataObj = { opsAppRows: opsAppRows, wishbarRows: wishbarRows, rows: reachRows, opsRows: reachOpsRows };
+          var dataPayload = JSON.stringify(dataObj);
+
+          var results = await Promise.all([
+            fetch('./styles.css').then(function(r){return r.text()}),
+            fetch('./app.js?' + Date.now()).then(function(r){return r.text()}),
+            fetch('./wishbar.js?' + Date.now()).then(function(r){return r.text()}),
+            fetch('./reach.js?' + Date.now()).then(function(r){return r.text()}),
+          ]);
+          var cssText = results[0], appJs = results[1], wishbarJs = results[2], reachJs = results[3];
+
+          function buildModulePage(title, innerHtml, jsCode) {
+            var hide = '.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}'
+              + '.header__actions .file,.header__actions [id*=Bind],.header__actions [id*=Update],.header__actions [id*=Clear],.header__actions [id*=Export],.header__actions [id*=export]{display:none!important}'
+              + '.header{position:static!important;top:auto!important}';
+            return '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>'
+              + '<title>' + title + '</title>'
+              + '<style>' + cssText + '</style><style>' + hide + '</style></head><body>'
+              + innerHtml
+              + '<scr' + 'ipt>window.__SNAPSHOT_DATA=' + dataPayload + ';</scr' + 'ipt>'
+              + '<scr' + 'ipt src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></scr' + 'ipt>'
+              + '<scr' + 'ipt src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></scr' + 'ipt>'
+              + '<scr' + 'ipt>' + jsCode + '</scr' + 'ipt>'
+              + '</body></html>';
+          }
+
+          function extractModuleContent(doc, title) {
+            var main = doc.querySelector('main.container');
+            var mainHtml = main ? main.innerHTML : '';
+            return '<div class="appShell"><div class="appShell__content">'
+              + '<header class="header"><div class="header__title"><h1>' + title + '</h1>'
+              + '<div class="header__subtitle">快照模块（可交互）</div></div><div class="header__actions"></div></header>'
+              + '<main class="container">' + mainHtml + '</main>'
+              + '</div></div>';
+          }
+
+          var opsPage = buildModulePage('运营宣推', extractModuleContent(fOps.contentDocument, '运营宣推数据看板'), appJs);
+          var wishPage = buildModulePage('祈愿bar访问贡献', extractModuleContent(fWish.contentDocument, '祈愿bar访问贡献看板'), wishbarJs);
+          var reachPage = buildModulePage('祈愿宣发触达', extractModuleContent(fReach.contentDocument, '祈愿宣发触达看板'), reachJs);
+
+          var now = new Date();
+          var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+          function toDataUri(html) {
+            return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+          }
+
+          var shellHtml = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>'
+            + '<title>\u6570\u636e\u770b\u677f\u5feb\u7167 ' + ts + '</title>'
+            + '<style>' + cssText + '</style>'
+            + '<style>.snap-banner{background:linear-gradient(135deg,#f0f4ff,#fdf4ff);border-bottom:1px solid rgba(79,124,255,.15);padding:10px 18px;font-size:12px;color:rgba(15,23,42,.7)}.snap-banner strong{color:rgba(15,23,42,.9)}</style>'
+            + '</head><body><div class="appShell"><aside class="sidebar"><div class="sidebar__brand">\u6570\u636e\u770b\u677f</div>'
+            + '<nav class="sidebar__nav"><button id="navOps" class="sidebar__link is-active" type="button">\u8fd0\u8425\u5ba3\u63a8</button>'
+            + '<button id="navWishbar" class="sidebar__link" type="button">\u7948\u613f\u5ba3\u53d1</button>'
+            + '<button id="navReach" class="sidebar__link" type="button">\u76ee\u6807\u7528\u6237\u89e6\u8fbe</button></nav>'
+            + '<div class="sidebar__hint muted">\u53ef\u4ea4\u4e92\u5feb\u7167 \u00b7 ' + ts + '</div></aside>'
+            + '<div class="appShell__content">'
+            + '<div class="snap-banner">\ud83d\udccb <strong>\u53ef\u4ea4\u4e92\u5feb\u7167</strong>\u3000\u6240\u6709\u7b5b\u9009/\u56fe\u8868/\u5c55\u5f00\u5747\u53ef\u6b63\u5e38\u4f7f\u7528\u3000\u00b7\u3000' + ts + '</div>'
+            + '<header class="header"><div class="header__title"><h1>\u6570\u636e\u770b\u677f\uff08\u5feb\u7167\uff09</h1></div>'
+            + '<div class="header__actions">'
+            + '<button id="tabOps" class="btn" type="button">\u8fd0\u8425\u5ba3\u63a8</button>'
+            + '<button id="tabWishbar" class="btn btn--ghost" type="button">\u7948\u613f\u5ba3\u53d1</button>'
+            + '<button id="tabReach" class="btn btn--ghost" type="button">\u76ee\u6807\u7528\u6237\u89e6\u8fbe</button>'
+            + '</div></header>'
+            + '<main class="container"><section class="card card--full"><div class="card__body" style="padding:0"><div class="embedTabs">'
+            + '<iframe id="frameOps" class="embedFrame" title="\u8fd0\u8425\u5ba3\u63a8"></iframe>'
+            + '<iframe id="frameWishbar" class="embedFrame" title="\u7948\u613f\u5ba3\u53d1" style="display:none"></iframe>'
+            + '<iframe id="frameReach" class="embedFrame" title="\u76ee\u6807\u7528\u6237\u89e6\u8fbe" style="display:none"></iframe>'
+            + '</div></div></section></main>'
+            + '</div></div>'
+            + '<scr' + 'ipt>'
+            + 'var opsUri=' + JSON.stringify(toDataUri(opsPage)) + ';'
+            + 'var wishUri=' + JSON.stringify(toDataUri(wishPage)) + ';'
+            + 'var reachUri=' + JSON.stringify(toDataUri(reachPage)) + ';'
+            + 'document.getElementById("frameOps").src=opsUri;'
+            + 'document.getElementById("frameWishbar").src=wishUri;'
+            + 'document.getElementById("frameReach").src=reachUri;'
+            + 'function setTab(w){'
+            + 'var fs=["frameOps","frameWishbar","frameReach"];var ns=["Ops","Wishbar","Reach"];var ks=["ops","wishbar","reach"];'
+            + 'fs.forEach(function(f,i){document.getElementById(f).style.display=ks[i]===w?"block":"none"});'
+            + 'ns.forEach(function(n,i){var b=document.getElementById("tab"+n);if(b)b.className=ks[i]===w?"btn":"btn btn--ghost";'
+            + 'var nb=document.getElementById("nav"+n);if(nb)nb.className=ks[i]===w?"sidebar__link is-active":"sidebar__link"});}'
+            + '["tabOps","tabWishbar","tabReach","navOps","navWishbar","navReach"].forEach(function(id){'
+            + 'var el=document.getElementById(id);if(el)el.addEventListener("click",function(){setTab(id.replace("tab","").replace("nav","").toLowerCase())})});'
+            + '</scr' + 'ipt></body></html>';
+
+          var blob = new Blob([shellHtml], { type: 'text/html;charset=utf-8' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          var d = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+          a.download = '\u6570\u636e\u770b\u677f\u5feb\u7167_' + d + '.html';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 1000);
+        } catch(e) {
+          alert('导出失败：' + (e.message || e));
+        } finally {
+          btn.textContent = '\u5bfc\u51fa\u6574\u7ad9\u5feb\u7167';
+          btn.disabled = false;
+        }
+      }
+      document.getElementById('exportAllBtn').addEventListener('click', exportAllSnapshot);
+
+      document.getElementById('bindAllBtn')?.addEventListener('click', async () => {
+        try {
+          if (!window.showDirectoryPicker) {
+            alert('当前浏览器不支持绑定文件夹，请使用 Chrome/Edge。');
+            return;
+          }
+          const handle = await window.showDirectoryPicker({ mode: 'read' });
+          await dbSet(DB_KEY_DIR_HANDLE, handle);
+          alert('绑定成功：已共享给运营宣推 / 祈愿bar访问贡献 / 祈愿宣发触达。');
+        } catch (e) {
+          if (e && e.name === 'AbortError') return;
+          alert('绑定失败：' + (e?.message || e));
+        }
+      });
+
+      document.getElementById('updateAllBtn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('updateAllBtn');
+        btn.textContent = '更新中…';
+        btn.disabled = true;
+        async function clickAndWait(frameId, btnId) {
+          try {
+            const frame = document.getElementById(frameId);
+            const target = frame?.contentDocument?.getElementById(btnId);
+            if (!target) return;
+            target.click();
+            await new Promise(r => setTimeout(r, 1500));
+          } catch (_) {}
+        }
+        await clickAndWait('frameOps', 'updateFolderBtn');
+        await clickAndWait('frameWishbar', 'wishbarUpdateBtn');
+        await clickAndWait('frameReach', 'reachUpdateBtn');
+        btn.textContent = '一键更新全部模块';
+        btn.disabled = false;
+      });
+    </script>
+    <script>
+      (function () {
+        const tabOps = document.getElementById('tabOps');
+        const tabWishbar = document.getElementById('tabWishbar');
+        const tabReach = document.getElementById('tabReach');
+        const frameOps = document.getElementById('frameOps');
+        const frameWishbar = document.getElementById('frameWishbar');
+        const frameReach = document.getElementById('frameReach');
+        const navOps = document.getElementById('navOps');
+        const navWishbar = document.getElementById('navWishbar');
+        const navReach = document.getElementById('navReach');
+        const loaded = { ops: false, wishbar: false, reach: false };
+        let activeKey = 'ops';
+        let resizeTimer = null;
+
+        function resizeFrame(frame) {
+          try {
+            const doc = frame.contentDocument;
+            if (!doc) return;
+            const h = Math.max(
+              doc.body ? doc.body.scrollHeight : 0,
+              doc.documentElement ? doc.documentElement.scrollHeight : 0,
+            );
+            if (h > 0) frame.style.height = `${h + 8}px`;
+          } catch (_) {}
+        }
+
+        function startAutoResize() {
+          if (resizeTimer) clearInterval(resizeTimer);
+          resizeTimer = setInterval(() => {
+            const frame = activeKey === 'ops' ? frameOps : activeKey === 'wishbar' ? frameWishbar : frameReach;
+            resizeFrame(frame);
+          }, 500);
+        }
+
+        function loadFrame(key) {
+          const map = {
+            ops: [frameOps, './index.html?embed=1&autoload=1'],
+            wishbar: [frameWishbar, './wishbar.html?embed=1&autoload=1'],
+            reach: [frameReach, './reach.html?embed=1&autoload=1'],
+          };
+          if (loaded[key]) return;
+          loaded[key] = true;
+          const [frame, url] = map[key];
+          frame.addEventListener('load', () => {
+            resizeFrame(frame);
+            setTimeout(() => resizeFrame(frame), 800);
+            setTimeout(() => resizeFrame(frame), 1800);
+            setTimeout(() => resizeFrame(frame), 3200);
+          }, { once: true });
+          frame.src = url;
+        }
+
+        function setTab(which) {
+          activeKey = which;
+          loadFrame(which);
+          const keys = ['ops', 'wishbar', 'reach'];
+          const frames = [frameOps, frameWishbar, frameReach];
+          const navs = [navOps, navWishbar, navReach];
+          keys.forEach((k, i) => {
+            frames[i].style.display = k === which ? 'block' : 'none';
+            if (navs[i]) navs[i].className = k === which ? 'sidebar__link is-active' : 'sidebar__link';
+          });
+          const activeFrame = which === 'ops' ? frameOps : which === 'wishbar' ? frameWishbar : frameReach;
+          resizeFrame(activeFrame);
+          startAutoResize();
+        }
+
+        navOps?.addEventListener('click', () => setTab('ops'));
+        navWishbar?.addEventListener('click', () => setTab('wishbar'));
+        navReach?.addEventListener('click', () => setTab('reach'));
+        setTab('ops');
+      })();
+    </script>
+  </body>
+</html>
+
