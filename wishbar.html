@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>祈愿bar访问贡献</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260336" />
   </head>
-  <body>
+  <body data-page="wishbar">
     <script>
       if (new URLSearchParams(location.search).get('embed') === '1') {
         document.body.classList.add('is-embed');
@@ -73,7 +73,6 @@
             <div class="panel__hint" id="wishbarStatusHint">请选择/拖入 CSV 文件开始分析。</div>
           </section>
 
-          <!-- 宣推结论（置顶，与模块二共用「选定周」） -->
           <section class="panel panel--wishbarInsight">
             <div class="panel__title">周度宣推简报</div>
             <div class="panel__row cardControls" style="margin-bottom:10px">
@@ -211,6 +210,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="./wishbar.js?v=20260334"></script>
+    <script src="./wishbar.js?v=20260336"></script>
   </body>
 </html>

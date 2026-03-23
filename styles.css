@@ -197,6 +197,28 @@ body[data-page="all"] .container{
 
 .container{max-width:1200px;margin:16px auto;padding:0 16px}
 
+/* 运营宣推 / 祈愿 bar / 触达：主内容区铺满右侧栏宽度（与汇总页一致思路） */
+body[data-page="ops"] .container,
+body[data-page="wishbar"] .container,
+body[data-page="reach"] .container{
+  max-width:none;
+  width:100%;
+  margin:16px 0;
+  padding:0 18px;
+  box-sizing:border-box;
+}
+body[data-page="ops"] .footer__text,
+body[data-page="wishbar"] .footer__text,
+body[data-page="reach"] .footer__text{
+  max-width:none;
+}
+body.is-embed[data-page="ops"] .container,
+body.is-embed[data-page="wishbar"] .container,
+body.is-embed[data-page="reach"] .container{
+  margin:8px 0;
+  padding:0 10px;
+}
+
 .panel{
   border:1px solid var(--border);
   background: rgba(255,255,255,.78);
@@ -223,9 +245,10 @@ body[data-page="all"] .container{
 }
 .wishbarInsightBody:empty{display:none}
 
-/* 祈愿 bar 周度简报 */
+/* 祈愿 bar 周度简报（宽度随简报区域铺满，不再限 920px） */
 .wishbarReport{
-  max-width:920px;
+  max-width:none;
+  width:100%;
 }
 .wishbarReport__meta{
   font-size:12px;
