@@ -1,0 +1,14 @@
+{
+  "name": "cursor-demo-automation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "quickcan:login": "node automation/quickcan.login.mjs",
+    "quickcan:sync": "node automation/quickcan.sync.mjs",
+    "quickcan:install-schedule": "node automation/install-launchd.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.54.2",
+    "xlsx": "^0.18.5"
+  }
+}

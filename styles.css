@@ -203,6 +203,7 @@ body[data-page="all"] .container{
   border-radius:14px;
   padding:14px;
 }
+.panel__title{font-weight:600;font-size:14px;margin-bottom:8px;color:var(--text)}
 .panel__row{
   display:flex;
   gap:12px;
@@ -210,6 +211,321 @@ body[data-page="all"] .container{
   align-items:flex-end;
 }
 .panel__hint{margin-top:10px;font-size:12px;color:var(--muted)}
+
+.panel--wishbarInsight{
+  border-color:rgba(79,124,255,.22);
+  background:linear-gradient(135deg,rgba(79,124,255,.07),rgba(168,85,247,.05));
+}
+.wishbarInsightBody{
+  font-size:13px;
+  line-height:1.6;
+  color:rgba(15,23,42,.82);
+}
+.wishbarInsightBody:empty{display:none}
+
+/* 祈愿 bar 周度简报 */
+.wishbarReport{
+  max-width:920px;
+}
+.wishbarReport__meta{
+  font-size:12px;
+  color:var(--muted);
+  margin:0 0 14px;
+  padding-bottom:10px;
+  border-bottom:1px dashed rgba(79,124,255,.2);
+}
+.wishbarReport__block{
+  margin-bottom:18px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.72);
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.06);
+}
+.wishbarReport__block--action{
+  border-color:rgba(79,124,255,.18);
+  background:linear-gradient(135deg,rgba(79,124,255,.06),rgba(255,255,255,.9));
+}
+.wishbarReport__h{
+  margin:0 0 10px;
+  font-size:14px;
+  font-weight:600;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.wishbarReport__badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:700;
+  color:#fff;
+  background:linear-gradient(135deg,#4f7cff,#7c5cff);
+}
+.wishbarReport__lead{
+  margin:0 0 8px;
+  font-size:13px;
+  line-height:1.55;
+  color:rgba(15,23,42,.88);
+}
+.wishbarReport__p{
+  margin:0 0 8px;
+  font-size:13px;
+  line-height:1.55;
+  color:rgba(15,23,42,.82);
+}
+.wishbarReport__p:last-child{margin-bottom:0}
+.wishbarReport__ul{
+  margin:0;
+  padding-left:1.15rem;
+  font-size:13px;
+  line-height:1.65;
+  color:rgba(15,23,42,.84);
+}
+.wishbarReport__ul--action{
+  padding-left:1.2rem;
+}
+.wishbarReport__ul li{margin-bottom:6px}
+.wishbarReport__note{
+  margin:8px 0 0;
+  font-size:11px;
+  line-height:1.5;
+  color:var(--muted);
+}
+.wishbarReport__muted{
+  margin:0;
+  font-size:12px;
+  color:var(--muted);
+}
+.wishbarReport__tight.wishbarReport__muted{
+  margin:0 0 8px;
+  font-size:12.5px;
+}
+.wishbarReport__subblock{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px dashed rgba(15,23,42,.1);
+}
+.wishbarReport__subh{
+  margin:0 0 8px;
+  font-size:13px;
+  font-weight:600;
+  color:rgba(15,23,42,.9);
+}
+.wishbarReport__ol{
+  margin:8px 0 0;
+  padding-left:1.25rem;
+  font-size:13px;
+  line-height:1.65;
+  color:rgba(15,23,42,.85);
+}
+.wishbarReport__ol li{margin-bottom:8px}
+.wishbarReport__rank{
+  display:inline-block;
+  min-width:1.25rem;
+  font-weight:700;
+  color:rgba(79,124,255,.95);
+}
+.wishbarReport__head{
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:8px 14px;
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px dashed rgba(79,124,255,.2);
+}
+.wishbarReport__week{
+  font-size:15px;
+  font-weight:700;
+  color:rgba(15,23,42,.95);
+}
+.wishbarReport__metaInline{
+  font-size:12px;
+  color:var(--muted);
+}
+.wishbarReport__kpiRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:12px;
+}
+.wishbarReport__chip{
+  flex:1 1 100px;
+  min-width:88px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(79,124,255,.08);
+  border:1px solid rgba(79,124,255,.14);
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  align-items:stretch;
+}
+.wishbarReport__chipAttr{
+  margin-top:6px;
+  padding-top:6px;
+  border-top:1px solid rgba(79,124,255,.14);
+  font-size:10.5px;
+  line-height:1.45;
+  color:rgba(15,23,42,.62);
+  word-break:break-word;
+}
+.wishbarReport__chipAttr strong{color:rgba(15,23,42,.88);font-weight:600}
+.wishbarReport__chipVal{
+  font-size:14px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  color:rgba(15,23,42,.95);
+  line-height:1.35;
+}
+.wishbarReport__chipWow{
+  display:inline;
+  margin-left:3px;
+  font-size:12px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+.wishbarReport__chipWow--up{color:rgba(22,163,74,.95)}
+.wishbarReport__chipWow--down{color:rgba(220,80,80,.95)}
+.wishbarReport__chipWow--flat{color:var(--muted);font-weight:500}
+.wishbarReport__chipWow--na{color:var(--muted);font-weight:500}
+.wishbarReport__chipLab{
+  font-size:11px;
+  color:var(--muted);
+}
+.wishbarReport__tight{
+  margin:0 0 8px;
+  font-size:12.5px;
+  line-height:1.55;
+  color:rgba(15,23,42,.86);
+}
+.wishbarReport__tight:last-child{margin-bottom:0}
+.wishbarReport__lab{
+  display:inline-block;
+  margin-right:6px;
+  font-size:11px;
+  font-weight:600;
+  text-transform:none;
+  letter-spacing:0;
+  color:var(--muted);
+}
+.wishbarReport__labHint{
+  font-size:11px;
+  font-weight:400;
+  color:var(--muted);
+}
+.wishbarReport__highlights{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:rgba(15,23,42,.03);
+  border:1px solid rgba(15,23,42,.06);
+}
+.wishbarReport__highlightsLead{
+  margin:0 0 8px;
+  font-size:12px;
+  line-height:1.5;
+  color:rgba(15,23,42,.78);
+}
+.wishbarReport__highlightsList{
+  margin:0;
+  padding-left:1.1rem;
+  font-size:12.5px;
+  line-height:1.55;
+  color:rgba(15,23,42,.88);
+}
+.wishbarReport__highlightsList li{margin-bottom:5px}
+.wishbarReport__highlightsList li:last-child{margin-bottom:0}
+.wishbarReport__hlMetric{
+  display:inline-block;
+  min-width:6.5em;
+  font-size:11px;
+  font-weight:600;
+  color:var(--muted);
+}
+.wishbarReport__hlVal{
+  font-variant-numeric:tabular-nums;
+  color:rgba(15,23,42,.82);
+}
+.wishbarReport__highlightsNote{
+  margin:10px 0 0;
+  padding-top:8px;
+  border-top:1px dashed rgba(15,23,42,.1);
+  font-size:12px;
+  line-height:1.5;
+  color:rgba(15,23,42,.82);
+}
+.wishbarReport__h--sm{
+  margin:0 0 8px;
+  font-size:13px;
+}
+.wishbarReport__block--split{
+  padding:10px 12px;
+}
+.wishbarReport__split{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px 20px;
+}
+@media (max-width:720px){
+  .wishbarReport__split{grid-template-columns:1fr}
+}
+.wishbarReport__splitCol{
+  min-width:0;
+}
+.wishbarReport__tableScroll{
+  overflow-x:auto;
+  margin-top:6px;
+  -webkit-overflow-scrolling:touch;
+}
+.wishbarReport__table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  line-height:1.45;
+}
+.wishbarReport__table th,
+.wishbarReport__table td{
+  padding:6px 8px;
+  text-align:left;
+  border-bottom:1px solid rgba(15,23,42,.08);
+  vertical-align:top;
+}
+.wishbarReport__table th{
+  font-weight:600;
+  color:var(--muted);
+  font-size:11px;
+}
+.wishbarReport__table--tight th,
+.wishbarReport__table--tight td{padding:5px 6px}
+.wishbarReport__tdNum{
+  width:2rem;
+  font-weight:700;
+  color:rgba(79,124,255,.95);
+  font-variant-numeric:tabular-nums;
+}
+.wishbarReport__tdSub{
+  font-size:11.5px;
+  color:rgba(15,23,42,.65);
+}
+.wishbarReport__tag{
+  display:inline-block;
+  margin-left:6px;
+  padding:1px 6px;
+  border-radius:6px;
+  font-size:10px;
+  font-weight:600;
+  vertical-align:middle;
+  color:rgba(79,124,255,.95);
+  background:rgba(79,124,255,.12);
+}
+.wishbarReport__ul--tight li{margin-bottom:4px}
+.wishbarReport__ul--tight{font-size:12.5px;line-height:1.5}
 
 .control{min-width:220px}
 .control--wide{flex:1; min-width:340px}

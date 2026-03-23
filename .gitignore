@@ -2,3 +2,5 @@
 *.log
 node_modules/
 .env
+automation/.auth/
+automation/logs/

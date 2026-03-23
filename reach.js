@@ -585,6 +585,7 @@ function hydrateColumns() {
   columns = rows.length ? Object.keys(rows[0]) : [];
   initEvalDayOptions();
   initTargetTypeOptionsFromData();
+  applyReachQueryDefaults();
   initBucketPresets();
   initCategoryOptions();
 }
@@ -610,7 +611,19 @@ function initTargetTypeOptionsFromData() {
   const fallback = ['整体', '阅读', '单点'];
   const options = vals.length ? vals : fallback;
   sel.innerHTML = ['(全部)', ...options].map((t) => `<option value="${t}">${t}</option>`).join('');
-  sel.value = '整体';
+  // 数据口径默认：有「整体」则选整体，否则选「(全部)」避免筛出空集
+  sel.value = options.includes('整体') ? '整体' : '(全部)';
+}
+
+/** URL 覆盖活动标识：?activity=整体 或 ?targetType=整体（须在选项中存在） */
+function applyReachQueryDefaults() {
+  const sel = $('reachTargetType');
+  if (!sel || !sel.options.length) return;
+  const params = new URLSearchParams(window.location.search);
+  const want = (params.get('activity') || params.get('targetType') || '').trim();
+  if (!want) return;
+  const ok = Array.from(sel.options).some((o) => o.value === want);
+  if (ok) sel.value = want;
 }
 
 function initBucketPresets() {
