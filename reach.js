@@ -35,6 +35,24 @@ const OPS_COLS = {
 
 let rows = [];
 let opsRows = [];
+/** 汇总页快照导出：let 不会挂 window */
+if (typeof window !== 'undefined') {
+  window.__SNAPSHOT_REACH__ = {};
+  Object.defineProperty(window.__SNAPSHOT_REACH__, 'rows', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return rows;
+    },
+  });
+  Object.defineProperty(window.__SNAPSHOT_REACH__, 'opsRows', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return opsRows;
+    },
+  });
+}
 let chart = null;
 let columns = [];
 let selectedCategories = new Set(); // empty = all

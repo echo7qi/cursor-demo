@@ -1191,6 +1191,16 @@ let chart = null;
 let volumeChart = null;
 let parsed = null;
 let rawRows = [];
+/** 汇总页快照导出：let 不会挂 window，供父页 iframe 读取 */
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__SNAPSHOT_WISHBAR_ROWS__', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return rawRows;
+    },
+  });
+}
 let globalL1Set = new Set();
 let globalL2Set = new Set();
 let trendSelectedL1 = new Set();

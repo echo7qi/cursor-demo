@@ -81,10 +81,20 @@
           var fReach = document.getElementById('frameReach');
 
           var opsAppRows = [], wishbarRows = [], reachRows = [], reachOpsRows = [];
-          try { opsAppRows = fOps.contentWindow.state.rows || []; } catch(_){}
-          try { wishbarRows = fWish.contentWindow.rawRows || []; } catch(_){}
-          try { reachRows = fReach.contentWindow.rows || []; } catch(_){}
-          try { reachOpsRows = fReach.contentWindow.opsRows || []; } catch(_){}
+          try {
+            const wops = fOps.contentWindow;
+            opsAppRows = wops.__SNAPSHOT_OPS__?.rows || wops.state?.rows || [];
+          } catch (_) {}
+          try {
+            const ww = fWish.contentWindow;
+            wishbarRows = ww.__SNAPSHOT_WISHBAR_ROWS__ || ww.rawRows || [];
+          } catch (_) {}
+          try {
+            const wr = fReach.contentWindow;
+            const snap = wr.__SNAPSHOT_REACH__;
+            reachRows = snap?.rows || wr.rows || [];
+            reachOpsRows = snap?.opsRows || wr.opsRows || [];
+          } catch (_) {}
 
           if (!opsAppRows.length && !wishbarRows.length && !reachRows.length) {
             alert('请先在各模块加载数据，再导出快照。');

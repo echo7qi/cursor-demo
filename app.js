@@ -39,6 +39,9 @@ const state = {
   boundDirHandle: null,
 };
 
+/** 汇总页「导出整站快照」iframe 读取（const state 不会挂到 window） */
+if (typeof window !== 'undefined') window.__SNAPSHOT_OPS__ = state;
+
 const DB_NAME = 'ops-dashboard-local-db';
 const DB_STORE = 'kv';
 const DB_KEY_DIR_HANDLE = 'boundDirHandle';
