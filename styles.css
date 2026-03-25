@@ -68,7 +68,7 @@ body.is-embed .grid{
   gap: 10px;
 }
 
-/* 祈愿单项目复盘：整页自适应高宽，主区仅内嵌报告 */
+/* 祈愿单项目复盘：视口内布局 + 主区动态看板可滚动 */
 body[data-page="wish-review"] .appShell{
   min-height: 100vh;
   min-height: 100dvh;
@@ -100,6 +100,11 @@ body[data-page="wish-review"] .reviewEmbedMain{
   padding: 0 14px 14px;
   width: 100%;
 }
+body[data-page="wish-review"] .reviewEmbedMain--dynamic{
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
 body[data-page="wish-review"] .reviewEmbed{
   flex: 1;
   width: 100%;
@@ -113,6 +118,167 @@ body[data-page="wish-review"] .reviewEmbed{
   body[data-page="wish-review"] .reviewEmbedMain{
     padding: 0 10px 10px;
   }
+}
+
+/* 祈愿复盘 · 动态看板 */
+.wishReviewDash{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.wishReviewDash__toolbar{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.wishReviewDash__search{
+  flex: 1;
+  min-width: min(200px, 100%);
+  max-width: min(520px, 100%);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.95);
+}
+.wishReviewDash__search:focus{
+  outline: 2px solid rgba(79, 124, 255, 0.35);
+  outline-offset: 1px;
+  border-color: rgba(79, 124, 255, 0.35);
+}
+.wishReviewDash__status{
+  font-size: 13px;
+}
+.wishReviewDash__source{
+  font-size: 12px;
+  width: 100%;
+  flex-basis: 100%;
+}
+.wishReviewDash__grid{
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 960px){
+  .wishReviewDash__grid{
+    grid-template-columns: 1fr;
+  }
+}
+.wishReviewDash__section{
+  margin-bottom: 18px;
+}
+.wishReviewDash__h{
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: rgba(15, 23, 42, 0.88);
+}
+.wishReviewDash__topicList{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wishReviewDash__topicBtn{
+  text-align: left;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.wishReviewDash__topicBtn:hover{
+  border-color: rgba(79, 124, 255, 0.4);
+  background: #fff;
+}
+.wishReviewDash__topicBtn.is-active{
+  border-color: rgba(79, 124, 255, 0.55);
+  background: rgba(79, 124, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(79, 124, 255, 0.12);
+}
+.wishReviewDash__topicName{
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+}
+.wishReviewDash__topicSub{
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.wishReviewDash__badge{
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(79, 124, 255, 0.15);
+  color: #315fe6;
+  vertical-align: middle;
+}
+.wishReviewDash__detail{
+  overflow: hidden;
+}
+.wishReviewDash__detailTitle{
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.wishReviewDash__detailMeta{
+  margin: 0 0 14px;
+  font-size: 12px;
+}
+.wishReviewDash__kpis{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.wishReviewDash__kpi{
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(246, 248, 255, 0.85);
+}
+.wishReviewDash__kpiL{
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.wishReviewDash__kpi strong{
+  font-size: 15px;
+  font-weight: 700;
+}
+.wishReviewDash__subTitle{
+  font-size: 13px;
+  margin: 16px 0 8px;
+}
+.wishReviewDash__footNote{
+  font-size: 12px;
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.wishReviewDash__empty{
+  margin: 0;
+  padding: 8px 0;
+}
+.table--compact thead th,
+.table--compact tbody td{
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.sidebar__hint--wishReview a{
+  color: #315fe6;
+  font-weight: 600;
 }
 body[data-page="wish-review"].is-embed .sidebar{
   display: none;
@@ -128,6 +294,9 @@ body[data-page="wish-review"].is-embed .reviewEmbedMain{
   flex: 1;
   min-height: 0;
   height: 100%;
+}
+body[data-page="wish-review"].is-embed .reviewEmbedMain--dynamic{
+  overflow-y: auto;
 }
 body[data-page="wish-review"].is-embed .appShell__content--wishReview{
   height: 100vh;
@@ -173,6 +342,15 @@ body[data-page="wish-review"].is-embed .reviewEmbed{
 .wishReviewSidebarTools .btn--ghost:hover{
   background: #fff;
   border-color: rgba(79, 124, 255, 0.35);
+}
+.wishReviewSidebarTools--tight{
+  margin-top: 0;
+  padding-top: 8px;
+  border-top: none;
+}
+.wishReviewSidebarTools__full{
+  width: 100%;
+  justify-content: center;
 }
 .sidebar__hint--wishReview{
   margin-top: 14px;

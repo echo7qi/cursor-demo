@@ -261,11 +261,54 @@ async function runScan() {
   }
 }
 
+/** 读取绑定目录下「祈愿收入复盘/整体数据监测」内最新监测表 CSV 全文（供动态看板解析） */
+async function readMonitorCsvFromBoundRoot() {
+  const root = await getBoundDirHandle();
+  if (!root) {
+    return { ok: false, error: '尚未绑定数据文件夹。请先在左侧点击「绑定数据文件夹」。' };
+  }
+  const perm = await root.queryPermission?.({ mode: 'read' });
+  if (perm !== 'granted') {
+    const req = await root.requestPermission?.({ mode: 'read' });
+    if (req !== 'granted') {
+      return { ok: false, error: '未获得文件夹读取权限。' };
+    }
+  }
+  const review = await resolveFirstChildDir(root, REVIEW_ROOT_CANDIDATES);
+  if (!review) {
+    return {
+      ok: false,
+      error: `未找到「${REVIEW_ROOT_CANDIDATES.join('」或「')}」文件夹。`,
+    };
+  }
+  const mainSub = await resolveFirstChildDir(review.handle, BUNDLE_SUBS.main);
+  if (!mainSub) {
+    return { ok: false, error: `未找到子文件夹「${BUNDLE_SUBS.main[0]}」。` };
+  }
+  const mainFiles = await listCsvWithMtime(mainSub.handle);
+  const mainP = pickLatestForMain(mainFiles);
+  if (!mainP) {
+    return { ok: false, error: '「整体数据监测」文件夹内未找到监测表 CSV。' };
+  }
+  const fh = await mainSub.handle.getFileHandle(mainP.name);
+  const file = await fh.getFile();
+  const text = await file.text();
+  return {
+    ok: true,
+    fileName: file.name,
+    lastModified: file.lastModified,
+    text,
+  };
+}
+
+window.wishReviewReadMonitorCsv = readMonitorCsvFromBoundRoot;
+
 function onBindClick() {
   (async () => {
     try {
       await pickAndBindFolder();
       await runScan();
+      document.dispatchEvent(new CustomEvent('wishreview:datasource-updated'));
     } catch (e) {
       if (e?.name === 'AbortError') return;
       console.warn('[wish-review] 绑定失败', e?.message || e);
@@ -281,10 +324,16 @@ function bindClicks(selector, handler) {
 
 function setup() {
   bindClicks('.js-wish-review-bind', onBindClick);
-  bindClicks('.js-wish-review-scan', () => runScan());
+  bindClicks('.js-wish-review-scan', async () => {
+    await runScan();
+    document.dispatchEvent(new CustomEvent('wishreview:datasource-updated'));
+  });
 
-  getBoundDirHandle().then((h) => {
-    if (h) runScan();
+  getBoundDirHandle().then(async (h) => {
+    if (h) {
+      await runScan();
+      document.dispatchEvent(new CustomEvent('wishreview:datasource-updated'));
+    }
   });
 }
 
