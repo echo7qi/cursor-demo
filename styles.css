@@ -68,11 +68,28 @@ body.is-embed .grid{
   gap: 10px;
 }
 
-/* 祈愿单项目复盘：右侧内嵌整页 HTML */
+/* 祈愿单项目复盘：整页自适应高宽，主区仅内嵌报告 */
+body[data-page="wish-review"] .appShell{
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  align-items: stretch;
+}
+body[data-page="wish-review"] .sidebar{
+  height: 100%;
+  max-height: 100dvh;
+  overflow: auto;
+}
 body[data-page="wish-review"] .appShell__content--wishReview{
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+body[data-page="wish-review"] .header{
+  flex-shrink: 0;
 }
 body[data-page="wish-review"] .reviewEmbedMain{
   flex: 1;
@@ -80,16 +97,22 @@ body[data-page="wish-review"] .reviewEmbedMain{
   flex-direction: column;
   min-height: 0;
   margin: 0;
-  padding: 0 18px 20px;
+  padding: 0 14px 14px;
+  width: 100%;
 }
 body[data-page="wish-review"] .reviewEmbed{
   flex: 1;
   width: 100%;
-  min-height: 480px;
+  min-height: 0;
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 4px 28px rgba(15, 23, 42, 0.07);
+}
+@media (max-width: 900px){
+  body[data-page="wish-review"] .reviewEmbedMain{
+    padding: 0 10px 10px;
+  }
 }
 body[data-page="wish-review"].is-embed .sidebar{
   display: none;
@@ -102,12 +125,18 @@ body[data-page="wish-review"].is-embed .header{
 }
 body[data-page="wish-review"].is-embed .reviewEmbedMain{
   padding: 0;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+body[data-page="wish-review"].is-embed .appShell__content--wishReview{
   height: 100vh;
+  height: 100dvh;
 }
 body[data-page="wish-review"].is-embed .reviewEmbed{
   border: 0;
   border-radius: 0;
-  min-height: 100vh;
+  min-height: 0;
   box-shadow: none;
 }
 
@@ -165,48 +194,6 @@ body[data-page="wish-review"].is-embed .reviewEmbed{
 .sidebar__hint--wishReview code{
   color: rgba(15, 23, 42, 0.88);
   font-weight: 600;
-}
-
-/* 祈愿复盘 · 主区数据源卡片 */
-.wishReviewDataPanel{
-  max-width: none;
-  padding: 0 0 14px;
-  margin: 0;
-}
-.wishReviewDataCard{
-  margin-bottom: 0;
-  border: 1px solid rgba(79, 124, 255, 0.12);
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-}
-.wishReviewDataCard .card__titleSub{
-  line-height: 1.55;
-}
-.wishReviewDataCard .card__titleSub code{
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(79, 124, 255, 0.08);
-  border: 1px solid rgba(79, 124, 255, 0.12);
-}
-.wishReviewDataCard__actions{
-  margin-bottom: 14px;
-  align-items: center;
-  gap: 10px;
-}
-.wishReviewDataCard__hint{
-  font-size: 12px;
-  line-height: 1.45;
-  flex: 1;
-  min-width: 160px;
-}
-.wishReviewScanStatus{
-  margin: 0 0 12px;
-  font-size: 13px;
-  line-height: 1.5;
-  min-height: 1.25em;
-}
-.wishReviewBundleTable .tableWrap{
-  border-radius: 10px;
 }
 
 /* 汇总页：更紧凑、减少左侧到内容区视觉割裂 */

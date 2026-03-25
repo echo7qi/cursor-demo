@@ -1,6 +1,5 @@
-/* 祈愿单项目复盘：与运营宣推 / 触达共用「资源位数据更新」根目录绑定；对标池 CSV 与「整体数据监测」同夹。 */
-
-const $ = (id) => document.getElementById(id);
+/* 祈愿单项目复盘：与运营宣推 / 触达共用「资源位数据更新」根目录绑定；对标池 CSV 与「整体数据监测」同夹。
+ * 扫描结果写入 window.__WISH_REVIEW_BUNDLE_SCAN__（无主区 UI）。 */
 
 const DB_NAME = 'ops-dashboard-local-db';
 const DB_STORE = 'kv';
@@ -22,15 +21,6 @@ const SUB_LABEL = {
   bench: '历史品类池（与整体数据监测同夹）',
   layer: '分层用户监测',
 };
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 function openDb() {
   return new Promise((resolve, reject) => {
@@ -260,71 +250,14 @@ async function scanBundleFromRoot(rootHandle) {
   return result;
 }
 
-function formatMtime(ts) {
-  if (ts == null) return '—';
-  try {
-    return new Date(ts).toLocaleString('zh-CN', { hour12: false });
-  } catch (_) {
-    return '—';
-  }
-}
-
-function renderBundleTable(scan) {
-  const host = $('wishReviewBundleTable');
-  if (!host) return;
-
-  if (!scan) {
-    host.innerHTML = '<p class="muted">尚未扫描。</p>';
-    return;
-  }
-
-  const rows = scan.rows
-    .map((r) => {
-      const st = r.ok
-        ? `<span style="color:var(--good)">已就绪</span>`
-        : `<span style="color:var(--bad)">缺失</span>`;
-      const file = r.ok
-        ? `${escapeHtml(r.sub)}/${escapeHtml(r.file)} <span class="muted">· ${formatMtime(r.lastModified)}</span>`
-        : escapeHtml(r.detail || '');
-      return `<tr><td>${escapeHtml(r.label)}</td><td>${st}</td><td style="font-size:12px">${file}</td></tr>`;
-    })
-    .join('');
-
-  host.innerHTML = `
-    <p class="muted" style="margin:0 0 10px">已进入「<strong>${escapeHtml(scan.reviewFolderName)}</strong>」，与各数据源子文件夹对齐（与本地 <code>生成_人鱼全期结论表.py --data-bundle</code> 约定一致）。</p>
-    <div class="tableWrap">
-      <table class="table">
-        <thead><tr><th>数据源</th><th>状态</th><th>将使用的 CSV（同夹内最新）</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-  `;
-}
-
-function setHint(msg) {
-  const el = $('wishReviewHint');
-  if (el) el.textContent = msg;
-}
-
 async function runScan() {
-  setHint('扫描中…');
-  renderBundleTable(null);
   try {
     const root = await getBoundDirHandle();
-    if (!root) {
-      setHint('尚未绑定数据文件夹。请先点击「绑定数据文件夹」（与其它看板共用同一目录，一般为「资源位数据更新」）。');
-      $('wishReviewBundleTable').innerHTML = '<p class="muted">未绑定。</p>';
-      return;
-    }
+    if (!root) return;
     const scan = await scanBundleFromRoot(root);
     window.__WISH_REVIEW_BUNDLE_SCAN__ = scan;
-    renderBundleTable(scan);
-    const okn = scan.rows.filter((x) => x.ok).length;
-    setHint(`扫描完成：${okn}/4 项数据源就绪。复盘 HTML 需在本机运行生成脚本（见下方说明）。`);
   } catch (e) {
-    setHint(`扫描失败：${e?.message || e}`);
-    const host = $('wishReviewBundleTable');
-    if (host) host.innerHTML = `<p class="muted">${escapeHtml(e?.message || String(e))}</p>`;
+    console.warn('[wish-review] 扫描失败', e?.message || e);
   }
 }
 
@@ -332,11 +265,10 @@ function onBindClick() {
   (async () => {
     try {
       await pickAndBindFolder();
-      setHint('已绑定，正在扫描…');
       await runScan();
     } catch (e) {
       if (e?.name === 'AbortError') return;
-      setHint(`绑定失败：${e?.message || e}`);
+      console.warn('[wish-review] 绑定失败', e?.message || e);
     }
   })();
 }
@@ -353,9 +285,6 @@ function setup() {
 
   getBoundDirHandle().then((h) => {
     if (h) runScan();
-    else {
-      setHint('与其它看板相同：请先绑定「资源位数据更新」根目录，本页会自动进入「祈愿收入复盘」并校验数据源（对标池与整体数据监测同夹）。');
-    }
   });
 }
 
