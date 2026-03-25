@@ -39,6 +39,25 @@
     });
   }
 
+  /** 多文件合并：同一活动+数据分类+周期+用户类型 只保留一行（后读入的文件覆盖先读的，时间序由 wish-review.js 从旧到新） */
+  function rowDedupeKey(r) {
+    return [
+      val(r, '活动标识'),
+      val(r, '数据分类'),
+      val(r, '数据周期'),
+      val(r, '是否目标用户'),
+    ].join('\x01');
+  }
+
+  function dedupeMonitoringRows(rows) {
+    const m = new Map();
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      m.set(rowDedupeKey(r), r);
+    }
+    return Array.from(m.values());
+  }
+
   function isSummaryAllRow(r) {
     return (
       val(r, '数据分类') === '汇总' &&
@@ -313,32 +332,63 @@
       renderDetail(null);
       return;
     }
-    let parsed;
+    const parts = r.parts && r.parts.length ? r.parts : null;
+    let mergedRows = [];
     try {
-      parsed = Papa.parse(r.text, {
-        header: true,
-        skipEmptyLines: 'greedy',
-      });
+      if (parts) {
+        for (let pi = 0; pi < parts.length; pi++) {
+          const parsed = Papa.parse(parts[pi].text, {
+            header: true,
+            skipEmptyLines: 'greedy',
+          });
+          if (parsed.errors && parsed.errors.length) {
+            console.warn('[wish-review-dynamic]', parts[pi].name, parsed.errors);
+          }
+          mergedRows = mergedRows.concat(normalizeRows(parsed.data || []));
+        }
+      } else if (r.text) {
+        const parsed = Papa.parse(r.text, {
+          header: true,
+          skipEmptyLines: 'greedy',
+        });
+        if (parsed.errors && parsed.errors.length) {
+          console.warn('[wish-review-dynamic]', parsed.errors);
+        }
+        mergedRows = normalizeRows(parsed.data || []);
+      } else {
+        if (status) {
+          status.textContent = '读取结果缺少 CSV 内容，请刷新页面后重试。';
+        }
+        return;
+      }
     } catch (e) {
       if (status) status.textContent = 'CSV 解析失败';
       return;
     }
-    if (parsed.errors && parsed.errors.length) {
-      console.warn('[wish-review-dynamic]', parsed.errors);
-    }
-    state.rows = normalizeRows(parsed.data || []);
+    state.rows = dedupeMonitoringRows(mergedRows);
     const built = buildTopicModels(state.rows);
     state.topics = built.topics;
     state._meta = built;
     state.fileName = r.fileName;
+    state.fileNames =
+      r.fileNames ||
+      (parts ? parts.map((p) => p.name) : r.fileName ? [r.fileName] : []);
     const mtime = new Date(r.lastModified).toLocaleString('zh-CN', { hour12: false });
+    const nFiles = parts ? parts.length : 1;
     if (status) {
       status.textContent =
-        `已加载 ${built.topicCount} 个专题 · ${built.activityDedupCount} 个祈愿活动` +
-        `（汇总·全部 原始 ${built.rawSummaryCount} 行，已按活动标识去重） · CSV 共 ${state.rows.length} 行`;
+        (nFiles > 1
+          ? `已合并 ${nFiles} 个监测 CSV → ${state.rows.length} 行（跨文件去重后）`
+          : `已加载 ${state.rows.length} 行`) +
+        ` · ${built.topicCount} 个专题 · ${built.activityDedupCount} 个祈愿活动` +
+        `（汇总·全部 原始 ${built.rawSummaryCount} 行，专题内按活动标识去重）`;
     }
     if (src) {
-      src.textContent = `${r.fileName} · ${mtime}`;
+      const label =
+        r.fileNames && r.fileNames.length
+          ? r.fileNames.join(' + ')
+          : r.fileName || (parts && parts.map((p) => p.name).join(' + ')) || '—';
+      src.textContent = `${label} · ${mtime}`;
     }
 
     if (!state.selected || !state.topics.some((x) => x.name === state.selected)) {

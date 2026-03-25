@@ -135,6 +135,21 @@ function pickBenchmarkFromMainDir(list) {
   return pool[0];
 }
 
+/** 文件名是否像「品类池/历史池」对标表（需与 pickBenchmarkFromMainDir 逻辑一致，用于多 CSV 合并时排除） */
+function isLikelyBenchmarkPoolCsvFileName(fileName) {
+  const name = String(fileName || '');
+  if (!name.toLowerCase().endsWith('.csv')) return true;
+  if (name.includes('整体数据监测') || /^①/.test(name)) return false;
+  return /池.*历史|历史.*池|池历史数据|漫改耽美池/i.test(name);
+}
+
+/** 整体数据监测夹内：参与合并的全部监测 CSV（排除对标池文件名），按修改时间从旧到新，便于去重时新文件覆盖旧文件 */
+function listMonitoringCsvMetasForMerge(list) {
+  const metas = list.filter((f) => !isLikelyBenchmarkPoolCsvFileName(f.name));
+  metas.sort((a, b) => a.lastModified - b.lastModified);
+  return metas;
+}
+
 function pickLatestForLayer(list) {
   if (!list.length) return null;
   const prefer = list.filter((x) => /^②/.test(x.name) || x.name.includes('分层用户监测'));
@@ -206,22 +221,24 @@ async function scanBundleFromRoot(rootHandle) {
     });
   } else {
     const mainFiles = await listCsvWithMtime(mainSub.handle);
-    const mainP = pickLatestForMain(mainFiles);
-    if (!mainP) {
+    const toMerge = listMonitoringCsvMetasForMerge(mainFiles);
+    if (!toMerge.length) {
       result.rows.push({
         key: 'main',
         label: SUB_LABEL.main,
         ok: false,
-        detail: `「${mainSub.name}」下无监测表 CSV`,
+        detail: `「${mainSub.name}」下无可合并的监测 CSV（已排除对标池类文件名）`,
       });
     } else {
+      const names = toMerge.map((x) => x.name);
       result.rows.push({
         key: 'main',
         label: SUB_LABEL.main,
         ok: true,
         sub: mainSub.name,
-        file: mainP.name,
-        lastModified: mainP.lastModified,
+        file: names.join(' + '),
+        files: names,
+        lastModified: Math.max(...toMerge.map((x) => x.lastModified)),
       });
     }
     const benchP = pickBenchmarkFromMainDir(mainFiles);
@@ -261,7 +278,7 @@ async function runScan() {
   }
 }
 
-/** 读取绑定目录下「祈愿收入复盘/整体数据监测」内最新监测表 CSV 全文（供动态看板解析） */
+/** 读取绑定目录下「祈愿收入复盘/整体数据监测」内全部监测 CSV（排除对标池文件名），按修改时间从旧到新合并（供动态看板解析） */
 async function readMonitorCsvFromBoundRoot() {
   const root = await getBoundDirHandle();
   if (!root) {
@@ -286,18 +303,32 @@ async function readMonitorCsvFromBoundRoot() {
     return { ok: false, error: `未找到子文件夹「${BUNDLE_SUBS.main[0]}」。` };
   }
   const mainFiles = await listCsvWithMtime(mainSub.handle);
-  const mainP = pickLatestForMain(mainFiles);
-  if (!mainP) {
-    return { ok: false, error: '「整体数据监测」文件夹内未找到监测表 CSV。' };
+  const toMerge = listMonitoringCsvMetasForMerge(mainFiles);
+  if (!toMerge.length) {
+    return {
+      ok: false,
+      error:
+        '「整体数据监测」内未找到可合并的监测 CSV（已排除文件名像品类池/历史池的对标表）。',
+    };
   }
-  const fh = await mainSub.handle.getFileHandle(mainP.name);
-  const file = await fh.getFile();
-  const text = await file.text();
+  const parts = [];
+  for (let i = 0; i < toMerge.length; i++) {
+    const meta = toMerge[i];
+    const fh = await mainSub.handle.getFileHandle(meta.name);
+    const file = await fh.getFile();
+    parts.push({
+      name: file.name,
+      text: await file.text(),
+      lastModified: file.lastModified,
+    });
+  }
+  const lastModified = Math.max(...parts.map((p) => p.lastModified));
   return {
     ok: true,
-    fileName: file.name,
-    lastModified: file.lastModified,
-    text,
+    parts,
+    fileNames: parts.map((p) => p.name),
+    fileName: parts.length === 1 ? parts[0].name : `合并 ${parts.length} 个 CSV`,
+    lastModified,
   };
 }
 
