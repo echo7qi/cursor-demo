@@ -18,9 +18,37 @@
     return Number.isFinite(n) ? n : null;
   }
 
+  /** 单元格字符串（去首尾空白，避免导出表含不可见空格导致匹配失败） */
+  function val(r, key) {
+    if (!r) return '';
+    const v = r[key];
+    if (v == null) return '';
+    return String(v).trim();
+  }
+
+  /** 去掉表头 BOM、列名首尾空白，避免首列识别不到「数据分类」 */
+  function normalizeRows(rows) {
+    if (!rows || !rows.length) return rows || [];
+    return rows.map((r) => {
+      const out = {};
+      Object.keys(r).forEach((k) => {
+        const nk = k.replace(/^\uFEFF/, '').trim();
+        out[nk] = r[k];
+      });
+      return out;
+    });
+  }
+
+  function isSummaryAllRow(r) {
+    return (
+      val(r, '数据分类') === '汇总' &&
+      val(r, '数据周期') === '汇总' &&
+      val(r, '是否目标用户') === '全部'
+    );
+  }
+
   function periodNum(row) {
-    const v = row['第x次祈愿'];
-    const n = parseInt(String(v || '0'), 10);
+    const n = parseInt(String(val(row, '第x次祈愿') || '0'), 10);
     return Number.isFinite(n) ? n : 0;
   }
 
@@ -44,13 +72,16 @@
 
   function snapAll(rows, aid, n) {
     const key = `上线${n}日内`;
+    const aidNorm = String(aid || '').trim();
     let allRow = null;
     let yesRow = null;
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
-      if (r['活动标识'] !== aid || r['数据分类'] !== '当前累计' || r['数据周期'] !== key) continue;
-      if (r['是否目标用户'] === '全部') allRow = r;
-      if (r['是否目标用户'] === '是') yesRow = r;
+      if (val(r, '活动标识') !== aidNorm || val(r, '数据分类') !== '当前累计' || val(r, '数据周期') !== key) {
+        continue;
+      }
+      if (val(r, '是否目标用户') === '全部') allRow = r;
+      if (val(r, '是否目标用户') === '是') yesRow = r;
     }
     return { pa: allRow, pyes: yesRow, n };
   }
@@ -62,22 +93,28 @@
     return snapAll(rows, aid, n);
   }
 
+  /**
+   * 与脚本一致：只认「汇总 / 汇总 / 全部」汇总行；同一专题下同一活动标识只保留一行（取期次更大者），
+   * 避免导出重复行把「期数」和「专题数」撑大。
+   */
   function buildTopicModels(rows) {
-    const summaries = rows.filter(
-      (r) =>
-        r['数据分类'] === '汇总' &&
-        r['数据周期'] === '汇总' &&
-        r['是否目标用户'] === '全部',
-    );
+    const summaries = rows.filter(isSummaryAllRow);
+    const rawSummaryCount = summaries.length;
+
+    /** 专题名称 -> 活动标识 -> 行 */
     const byTopic = new Map();
     for (let i = 0; i < summaries.length; i++) {
       const r = summaries[i];
-      const name = String(r['专题名称'] || '').trim();
+      const name = val(r, '专题名称');
       if (!name) continue;
-      const aid = r['活动标识'];
+      const aid = val(r, '活动标识');
       if (!aid) continue;
-      if (!byTopic.has(name)) byTopic.set(name, []);
-      byTopic.get(name).push(r);
+      if (!byTopic.has(name)) byTopic.set(name, new Map());
+      const m = byTopic.get(name);
+      const prev = m.get(aid);
+      if (!prev || periodNum(r) >= periodNum(prev)) {
+        m.set(aid, r);
+      }
     }
 
     const topics = [];
@@ -85,10 +122,13 @@
     const now = Date.now();
     const sevenAgo = now - 7 * 86400000;
 
-    byTopic.forEach((arr, name) => {
+    let activityDedupCount = 0;
+    byTopic.forEach((aidMap, name) => {
+      const arr = Array.from(aidMap.values());
+      activityDedupCount += arr.length;
       arr.sort((a, b) => periodNum(b) - periodNum(a));
       const latest = arr[0];
-      const launchMs = parseLaunchDate(latest['上线日期']);
+      const launchMs = parseLaunchDate(val(latest, '上线日期'));
       const inThisWeek = launchMs != null && launchMs >= weekStart;
       const in7d = launchMs != null && launchMs >= sevenAgo;
       topics.push({
@@ -102,7 +142,12 @@
     });
 
     topics.sort((a, b) => (b.launchMs || 0) - (a.launchMs || 0));
-    return topics;
+    return {
+      topics,
+      rawSummaryCount,
+      activityDedupCount,
+      topicCount: topics.length,
+    };
   }
 
   let state = {
@@ -137,16 +182,16 @@
       return;
     }
     const { latest, periods } = t;
-    const aid = latest['活动标识'];
-    const days = toNum(latest['已上线天数']) ?? 9;
+    const aid = val(latest, '活动标识');
+    const days = toNum(val(latest, '已上线天数')) ?? 9;
     const { pa, n } = snapRowN(state.rows, aid, days);
 
     let kpiBlock = '';
     if (pa) {
-      const rev = toNum(pa['总收入']);
-      const join = toNum(pa['参与付费率']);
-      const tgt = toNum(pa['目标触达率']);
-      const tuv = toNum(pa['触达用户数']);
+      const rev = toNum(val(pa, '总收入'));
+      const join = toNum(val(pa, '参与付费率'));
+      const tgt = toNum(val(pa, '目标触达率'));
+      const tuv = toNum(val(pa, '触达用户数'));
       kpiBlock = `
         <div class="wishReviewDash__kpis">
           <div class="wishReviewDash__kpi"><span class="wishReviewDash__kpiL">上线${n}日·累计收入</span><strong>${fmtInt(rev)}</strong></div>
@@ -164,9 +209,9 @@
     const periodRows = periods
       .map((r) => {
         const p = periodNum(r);
-        const pool = esc(r['活动名称【修正】'] || r['活动名称'] || '—');
-        const ld = esc(r['上线日期'] || '—');
-        const d0 = esc(r['已上线天数'] ?? '—');
+        const pool = esc(val(r, '活动名称【修正】') || val(r, '活动名称') || '—');
+        const ld = esc(val(r, '上线日期') || '—');
+        const d0 = esc(val(r, '已上线天数') || '—');
         return `<tr><td>第 ${p} 期</td><td>${pool}</td><td>${ld}</td><td>${d0}</td></tr>`;
       })
       .join('');
@@ -174,7 +219,7 @@
     host.innerHTML = `
       <div class="wishReviewDash__detailHead">
         <h2 class="wishReviewDash__detailTitle">${esc(t.name)}</h2>
-        <p class="muted wishReviewDash__detailMeta">品类：${esc(latest['品类'] || '—')} · 监测表最新期：第 ${periodNum(latest)} 期 · 上线 ${esc(latest['上线日期'] || '—')}</p>
+        <p class="muted wishReviewDash__detailMeta">品类：${esc(val(latest, '品类') || '—')} · 监测表最新期：第 ${periodNum(latest)} 期 · 上线 ${esc(val(latest, '上线日期') || '—')}</p>
       </div>
       ${kpiBlock}
       <h3 class="wishReviewDash__subTitle">专题内各期（汇总行）</h3>
@@ -281,12 +326,16 @@
     if (parsed.errors && parsed.errors.length) {
       console.warn('[wish-review-dynamic]', parsed.errors);
     }
-    state.rows = parsed.data || [];
-    state.topics = buildTopicModels(state.rows);
+    state.rows = normalizeRows(parsed.data || []);
+    const built = buildTopicModels(state.rows);
+    state.topics = built.topics;
+    state._meta = built;
     state.fileName = r.fileName;
     const mtime = new Date(r.lastModified).toLocaleString('zh-CN', { hour12: false });
     if (status) {
-      status.textContent = `已加载 ${state.topics.length} 个专题 · 共 ${state.rows.length} 行`;
+      status.textContent =
+        `已加载 ${built.topicCount} 个专题 · ${built.activityDedupCount} 个祈愿活动` +
+        `（汇总·全部 原始 ${built.rawSummaryCount} 行，已按活动标识去重） · CSV 共 ${state.rows.length} 行`;
     }
     if (src) {
       src.textContent = `${r.fileName} · ${mtime}`;
