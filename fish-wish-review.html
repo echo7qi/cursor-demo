@@ -243,16 +243,11 @@
       background: #fafafa;
       border-bottom: 1px solid #e8e8e8;
     }
-    .dash-work-search-label {
-      font-size: 13px;
-      color: #595959;
-      flex-shrink: 0;
-      font-weight: 500;
-    }
     .dash-work-search-input {
       flex: 1;
-      min-width: min(200px, 100%);
-      max-width: min(480px, 100%);
+      min-width: 0;
+      width: 100%;
+      max-width: none;
       font: inherit;
       font-size: 14px;
       padding: 8px 12px;
@@ -1100,27 +1095,21 @@
     <div class="dash-top-actions" aria-label="顶栏操作">
       <span class="dash-tool-ghost" aria-hidden="true">导出 ▾</span>
       <span class="dash-tool-ghost" aria-hidden="true">快捷查询 ▾</span>
-      <button type="button" class="dash-tool-toggle" id="toggle-filter-panel" aria-expanded="true" aria-controls="dash-filter-wrap">筛选栏 ▴</button>
       <span class="dash-tool-ghost" aria-hidden="true">更多 ▾</span>
       <button type="button" class="btn-usage" id="open-usage-modal">使用说明</button>
     </div>
   </header>
 
-  <div id="dash-filter-wrap" class="dash-filter-wrap is-expanded">
-    <div class="dash-filter-rows">
-      <div class="dash-filter-row">
-        <div class="dash-field"><span class="dash-field-label">专题</span><span class="dash-field-val">人鱼陷落 · 特典祈愿</span></div>
-        <div class="dash-field"><span class="dash-field-label">活动形态</span><span class="dash-field-val">纯抽池</span></div>
-        <div class="dash-field"><span class="dash-field-label">品类参照</span><span class="dash-field-val">漫改耽美历史池（59 活动）</span></div>
-        <div class="dash-field"><span class="dash-field-label">对齐口径</span><span class="dash-field-val">上线满9日·当前累计</span></div>
-        <div class="dash-field"><span class="dash-field-label">期次范围</span><span class="dash-field-val">第15期 → 第2期</span></div>
-      </div>
-      <div class="dash-filter-row dash-filter-row-actions">
-        <div class="dash-field dash-field-wide"><span class="dash-field-label">本页性质</span><span class="dash-field-val">静态复盘 HTML · 下列「清空 / 查询」仅为看板式占位</span></div>
-        <button type="button" class="dash-btn-secondary" disabled>清空</button>
-        <button type="button" class="dash-btn-primary" disabled>查询</button>
-      </div>
-    </div>
+  <div class="dash-work-search-bar" role="search" aria-label="按作品名模糊搜索">
+    <input
+      type="search"
+      id="fish-work-q"
+      class="dash-work-search-input"
+      placeholder="按作品名模糊搜索，展示该作品在监测表中的最新一期复盘（回车或点搜索）"
+      autocomplete="off"
+    />
+    <button type="button" class="dash-work-search-btn" id="fish-work-search-go">搜索</button>
+    <button type="button" class="dash-work-search-clear" id="fish-work-clear">清空</button>
   </div>
 
   <nav class="dash-tabs" role="tablist" aria-label="章节切换">
@@ -1128,13 +1117,6 @@
     <button type="button" class="dash-tab" role="tab" aria-selected="false" data-target="panel-detail">② 整体数据监测（第15期五维）</button>
     <button type="button" class="dash-tab" role="tab" aria-selected="false" data-target="panel-appendix">③ 附录与约定</button>
   </nav>
-
-  <div class="dash-work-search-bar" role="search" aria-label="按作品名筛选复盘期次">
-    <label class="dash-work-search-label" for="fish-work-q">作品名</label>
-    <input type="search" id="fish-work-q" class="dash-work-search-input" placeholder="模糊搜索，如：人鱼、人鱼陷落" autocomplete="off" />
-    <button type="button" class="dash-work-search-btn" id="fish-work-search-go">搜索</button>
-    <button type="button" class="dash-work-search-clear" id="fish-work-clear">清空</button>
-  </div>
   </div>
 
   <main class="dash-main">
@@ -1183,7 +1165,7 @@
 
   <p class="sub" id="fish-report-lead">
     五维：<strong>规模、效率、深度、结构、节奏</strong> · 全期 <strong>13</strong> 期（第15期→第2期）· 口径 <strong>上线满9日·当前累计</strong>。<br />
-    完整口径、<strong>全期卡读法</strong>、目标达成度/30日预估与<strong>模型 MAPE 回测</strong>请点击顶栏 <strong>使用说明</strong>；版式对齐内部「特典祈愿看板」顶栏 + 筛选条 + Tab。
+    完整口径、<strong>全期卡读法</strong>、目标达成度/30日预估与<strong>模型 MAPE 回测</strong>请点击顶栏 <strong>使用说明</strong>；上方搜索框可按作品名筛选最新期复盘。
   </p>
 
   <section id="panel-overview" class="exec">
@@ -2842,19 +2824,6 @@
       });
       document.addEventListener("keydown", function (ev) {
         if (ev.key === "Escape" && modal.open) modal.close();
-      });
-    }
-
-    var filterWrap = document.getElementById("dash-filter-wrap");
-    var filterToggle = document.getElementById("toggle-filter-panel");
-    if (filterWrap && filterToggle) {
-      function setFilterExpanded(exp) {
-        filterWrap.classList.toggle("is-expanded", exp);
-        filterToggle.setAttribute("aria-expanded", exp ? "true" : "false");
-        filterToggle.textContent = exp ? "筛选栏 ▴" : "筛选栏 ▾";
-      }
-      filterToggle.addEventListener("click", function () {
-        setFilterExpanded(!filterWrap.classList.contains("is-expanded"));
       });
     }
 
