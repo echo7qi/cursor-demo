@@ -1,4 +1,4 @@
-/* 祈愿单项目复盘：与运营宣推 / 触达共用「资源位数据更新」根目录绑定，进入「祈愿收入复盘」下四套子文件夹校验并列出最新 CSV。 */
+/* 祈愿单项目复盘：与运营宣推 / 触达共用「资源位数据更新」根目录绑定；对标池 CSV 与「整体数据监测」同夹。 */
 
 const $ = (id) => document.getElementById(id);
 
@@ -13,14 +13,13 @@ const REVIEW_ROOT_CANDIDATES = ['祈愿收入复盘'];
 const BUNDLE_SUBS = {
   main: ['整体数据监测'],
   work: ['作品明细表'],
-  bench: ['历史品类池数据-原漫改耽美历史数据', '历史品类池数据'],
   layer: ['分层用户监测'],
 };
 
 const SUB_LABEL = {
   main: '整体数据监测',
   work: '作品明细表',
-  bench: '历史品类池数据（原漫改耽美历史数据）',
+  bench: '历史品类池（与整体数据监测同夹）',
   layer: '分层用户监测',
 };
 
@@ -133,10 +132,17 @@ function pickLatestForWork(list) {
   return pool[0];
 }
 
-function pickLatestForBench(list) {
+function pickBenchmarkFromMainDir(list) {
   if (!list.length) return null;
-  list.sort((a, b) => b.lastModified - a.lastModified);
-  return list[0];
+  const noMonitor = list.filter((x) => !x.name.includes('整体数据监测'));
+  if (!noMonitor.length) return null;
+  const prefer = noMonitor.filter(
+    (x) =>
+      /池.*历史|历史.*池|池历史数据|漫改耽美池/i.test(x.name),
+  );
+  const pool = prefer.length ? prefer : noMonitor;
+  pool.sort((a, b) => b.lastModified - a.lastModified);
+  return pool[0];
 }
 
 function pickLatestForLayer(list) {
@@ -194,9 +200,61 @@ async function scanBundleFromRoot(rootHandle) {
     });
   }
 
-  await one('main', BUNDLE_SUBS.main, pickLatestForMain);
+  const mainSub = await resolveFirstChildDir(review.handle, BUNDLE_SUBS.main);
+  if (!mainSub) {
+    result.rows.push({
+      key: 'main',
+      label: SUB_LABEL.main,
+      ok: false,
+      detail: `缺少子文件夹「${BUNDLE_SUBS.main[0]}」`,
+    });
+    result.rows.push({
+      key: 'bench',
+      label: SUB_LABEL.bench,
+      ok: false,
+      detail: '依赖「整体数据监测」文件夹',
+    });
+  } else {
+    const mainFiles = await listCsvWithMtime(mainSub.handle);
+    const mainP = pickLatestForMain(mainFiles);
+    if (!mainP) {
+      result.rows.push({
+        key: 'main',
+        label: SUB_LABEL.main,
+        ok: false,
+        detail: `「${mainSub.name}」下无监测表 CSV`,
+      });
+    } else {
+      result.rows.push({
+        key: 'main',
+        label: SUB_LABEL.main,
+        ok: true,
+        sub: mainSub.name,
+        file: mainP.name,
+        lastModified: mainP.lastModified,
+      });
+    }
+    const benchP = pickBenchmarkFromMainDir(mainFiles);
+    if (!benchP) {
+      result.rows.push({
+        key: 'bench',
+        label: SUB_LABEL.bench,
+        ok: false,
+        detail: `「${mainSub.name}」内除监测表外未找到对标池 CSV（如 *池历史数据*.csv）`,
+      });
+    } else {
+      result.rows.push({
+        key: 'bench',
+        label: SUB_LABEL.bench,
+        ok: true,
+        sub: `${mainSub.name}（同夹）`,
+        file: benchP.name,
+        lastModified: benchP.lastModified,
+      });
+    }
+  }
+
   await one('work', BUNDLE_SUBS.work, pickLatestForWork);
-  await one('bench', BUNDLE_SUBS.bench, pickLatestForBench);
   await one('layer', BUNDLE_SUBS.layer, pickLatestForLayer);
 
   return result;
@@ -296,7 +354,7 @@ function setup() {
   getBoundDirHandle().then((h) => {
     if (h) runScan();
     else {
-      setHint('与其它看板相同：请先绑定「资源位数据更新」根目录，本页会自动进入「祈愿收入复盘」并校验四套子文件夹。');
+      setHint('与其它看板相同：请先绑定「资源位数据更新」根目录，本页会自动进入「祈愿收入复盘」并校验数据源（对标池与整体数据监测同夹）。');
     }
   });
 }
