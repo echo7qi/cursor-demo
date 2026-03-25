@@ -68,6 +68,49 @@ body.is-embed .grid{
   gap: 10px;
 }
 
+/* 祈愿单项目复盘：右侧内嵌整页 HTML */
+body[data-page="wish-review"] .appShell__content--wishReview{
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+body[data-page="wish-review"] .reviewEmbedMain{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+  padding: 0 16px 16px;
+}
+body[data-page="wish-review"] .reviewEmbed{
+  flex: 1;
+  width: 100%;
+  min-height: 480px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, .04);
+}
+body[data-page="wish-review"].is-embed .sidebar{
+  display: none;
+}
+body[data-page="wish-review"].is-embed .appShell{
+  grid-template-columns: 1fr;
+}
+body[data-page="wish-review"].is-embed .header{
+  display: none;
+}
+body[data-page="wish-review"].is-embed .reviewEmbedMain{
+  padding: 0;
+  height: 100vh;
+}
+body[data-page="wish-review"].is-embed .reviewEmbed{
+  border: 0;
+  border-radius: 0;
+  min-height: 100vh;
+  box-shadow: none;
+}
+
 /* 汇总页：更紧凑、减少左侧到内容区视觉割裂 */
 body[data-page="all"] .container{
   max-width: none;

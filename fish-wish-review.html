@@ -1,0 +1,2800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>人鱼陷落 · 第15期祈愿效果复盘（五维）</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --good: #0d9488;
+      --good-bg: #ccfbf1;
+      --warn: #ca8a04;
+      --warn-bg: #fef9c3;
+      --bad: #dc2626;
+      --bad-bg: #fee2e2;
+      --accent: #4f46e5;
+      --accent-soft: #e0e7ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background: #eceef2;
+      color: var(--text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    .dash-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .dash-head-sticky {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .dash-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 52px;
+      padding: 0 20px;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .dash-product-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #262626;
+      line-height: 1.35;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      .dash-product-title { white-space: normal; }
+    }
+    .dash-top-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 2px 6px;
+      flex-shrink: 0;
+    }
+    .dash-tool-ghost {
+      font-size: 13px;
+      color: #8c8c8c;
+      padding: 6px 8px;
+      user-select: none;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .dash-tool-toggle {
+      font-family: inherit;
+      font-size: 13px;
+      color: #262626;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 6px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .dash-tool-toggle:hover {
+      background: #f5f5f5;
+      border-color: #e8e8e8;
+    }
+    .dash-tool-toggle:focus-visible {
+      outline: 2px solid #4f46e5;
+      outline-offset: 1px;
+    }
+    .btn-usage {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      background: #4f46e5;
+      border: 1px solid #4338ca;
+      border-radius: 4px;
+      padding: 6px 14px;
+      cursor: pointer;
+      margin-left: 4px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-usage:hover {
+      background: #4338ca;
+      border-color: #3730a3;
+    }
+    .btn-usage:focus-visible {
+      outline: 2px solid #6366f1;
+      outline-offset: 2px;
+    }
+    .dash-filter-wrap {
+      display: none;
+      background: #f5f5f5;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 12px 20px 14px;
+    }
+    .dash-filter-wrap.is-expanded {
+      display: block;
+    }
+    .dash-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .dash-filter-row:last-child {
+      margin-bottom: 0;
+    }
+    .dash-filter-row-actions {
+      align-items: stretch;
+    }
+    .dash-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      background: #fff;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 6px 12px;
+      min-height: 32px;
+      min-width: 0;
+    }
+    .dash-field-wide {
+      flex: 1;
+      min-width: 200px;
+    }
+    .dash-field-label {
+      color: #8c8c8c;
+      flex-shrink: 0;
+    }
+    .dash-field-val {
+      color: #262626;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 220px;
+    }
+    @media (max-width: 640px) {
+      .dash-field-val { max-width: 140px; white-space: normal; }
+    }
+    .dash-btn-secondary,
+    .dash-btn-primary {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 16px;
+      border-radius: 4px;
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+    .dash-btn-secondary {
+      background: #fff;
+      border: 1px solid #d9d9d9;
+      color: #595959;
+    }
+    .dash-btn-primary {
+      background: #262626;
+      border: 1px solid #262626;
+      color: #fff;
+    }
+    .dash-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 0 12px 0 20px;
+    }
+    .dash-tab {
+      font-family: inherit;
+      font-size: 14px;
+      color: #595959;
+      background: transparent;
+      border: none;
+      padding: 14px 16px 11px;
+      margin-bottom: -1px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .dash-tab:hover {
+      color: #262626;
+    }
+    .dash-tab.is-active {
+      color: #262626;
+      font-weight: 600;
+      border-bottom-color: #262626;
+    }
+    .dash-tab:focus-visible {
+      outline: 2px solid #4f46e5;
+      outline-offset: -2px;
+    }
+    .dash-main {
+      flex: 1;
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
+      background: var(--bg);
+      box-sizing: border-box;
+    }
+    .usage-modal {
+      width: min(640px, calc(100vw - 32px));
+      max-height: min(85vh, 720px);
+      padding: 0;
+      border: none;
+      border-radius: 14px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    }
+    .usage-modal::backdrop {
+      background: rgba(15, 23, 42, 0.45);
+    }
+    .usage-modal-card {
+      display: flex;
+      flex-direction: column;
+      max-height: min(85vh, 720px);
+    }
+    .usage-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+      border-radius: 14px 14px 0 0;
+    }
+    .usage-modal-head h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .usage-modal-x {
+      font-size: 1.5rem;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: #f1f5f9;
+      color: #64748b;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .usage-modal-x:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .usage-modal-scroll {
+      overflow-y: auto;
+      padding: 16px 18px 20px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #334155;
+    }
+    .usage-modal-scroll h3 {
+      margin: 18px 0 10px;
+      font-size: 0.92rem;
+      color: #3730a3;
+    }
+    .usage-modal-scroll h3:first-child {
+      margin-top: 0;
+    }
+    .usage-modal-scroll .usage-lead {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+    .usage-modal .exec-calib-note {
+      margin-top: 0;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 24px;
+    }
+    .exec {
+      background: linear-gradient(135deg, #eef2ff 0%, #e0f2fe 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    .exec h2 { font-size: 1rem; margin: 0 0 12px; color: #3730a3; }
+    .exec ul { margin: 0; padding-left: 1.2rem; }
+    .exec li { margin-bottom: 8px; }
+    .fish-period-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 8px;
+    }
+    .period-board {
+      background: #fff;
+      border: 1px solid #c7d2fe;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.06);
+    }
+    .period-head {
+      padding: 14px 16px;
+      background: linear-gradient(180deg, #eef2ff 0%, #fff 100%);
+      border-bottom: 1px solid #e0e7ff;
+    }
+    .period-head-text {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 8px 12px;
+    }
+    .period-badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #312e81;
+      background: #e0e7ff;
+      padding: 2px 10px;
+      border-radius: 999px;
+    }
+    .period-theme {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .period-sub {
+      font-size: 0.78rem;
+      color: #64748b;
+      width: 100%;
+    }
+    .period-one-liner {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #1e1b4b;
+      line-height: 1.55;
+    }
+    .period-one-liner .one-liner-label {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #4338ca;
+      letter-spacing: 0.04em;
+      margin-right: 8px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #e0e7ff;
+      vertical-align: 0.05em;
+    }
+    .period-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+      gap: 8px 10px;
+      margin-top: 12px;
+    }
+    .kpi-pill-goal strong {
+      color: #64748b;
+      font-weight: 600;
+    }
+    .kpi-pill {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .kpi-pill .kpi-l {
+      display: block;
+      font-size: 0.68rem;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .kpi-pill strong {
+      font-size: 0.88rem;
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .kpi-pill .kpi-level {
+      font-weight: 600;
+      font-size: 0.78em;
+      color: #64748b;
+    }
+    .kpi-pill .kpi-level--high {
+      color: #dc2626;
+    }
+    .kpi-pill .kpi-level--low {
+      color: #16a34a;
+    }
+    .review-mod strong .kpi-level {
+      font-weight: 600;
+      font-size: 0.88em;
+      color: #64748b;
+    }
+    .review-mod strong .kpi-level--high {
+      color: #dc2626;
+    }
+    .review-mod strong .kpi-level--low {
+      color: #16a34a;
+    }
+    .review-modules {
+      padding: 14px 16px 8px;
+      background: linear-gradient(180deg, #fafbff 0%, #f8fafc 100%);
+      border-top: 1px solid #e0e7ff;
+      border-bottom: 1px solid #eef2ff;
+    }
+    .review-mod {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: #334155;
+    }
+    .review-mod--hero {
+      margin-bottom: 12px;
+      border-color: #c7d2fe;
+      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.06);
+    }
+    .review-mod-title {
+      margin: 0 0 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #1e1b4b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .review-mod-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 6px;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+    .review-mod-cols {
+      display: grid;
+      grid-template-columns: minmax(200px, 1fr) minmax(0, 1.15fr);
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 720px) {
+      .review-mod-cols { grid-template-columns: 1fr; }
+    }
+    .review-chart-title {
+      margin: 10px 0 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: none;
+      letter-spacing: 0.02em;
+    }
+    .review-mod-chart .review-chart-title:first-child { margin-top: 0; }
+    .review-mod-prose p {
+      margin: 0 0 10px;
+    }
+    .review-mod-prose p:last-child { margin-bottom: 0; }
+    .review-mod-note {
+      margin: 0;
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+    .review-mod-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .review-mod-grid { grid-template-columns: 1fr; }
+    }
+    .review-mod--layer {
+      margin-top: 2px;
+    }
+    .review-mod--synthesis {
+      margin-top: 12px;
+      margin-bottom: 0;
+      padding: 12px 0 0;
+      border-top: 1px dashed #cbd5e1;
+    }
+    .review-mod--synthesis .review-mod-note {
+      color: #475569;
+    }
+    .review-layer-insight {
+      margin: 0 0 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .review-layer-inner {
+      margin-top: 6px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid #e0e7ff;
+      border-radius: 8px;
+      font-size: 0.82rem;
+    }
+    .review-bullets {
+      margin: 10px 0 0;
+      padding-left: 1.1rem;
+      color: #475569;
+      font-size: 0.78rem;
+    }
+    .review-bullets li { margin-bottom: 6px; }
+    .review-conclusions {
+      margin: 10px 0 0;
+      padding-left: 1.35rem;
+      color: #475569;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+    .review-conclusions li { margin-bottom: 6px; }
+    .review-grid-hint {
+      margin: 0;
+      padding: 8px 16px 0;
+      font-size: 0.76rem;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .review-chart-foot {
+      margin: 6px 0 0;
+      font-size: 0.7rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+    .period-metrics-fold {
+      margin: 0 0 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fafbfc;
+    }
+    .period-metrics-fold-sum {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.82rem;
+      color: #334155;
+      padding: 10px 14px;
+      list-style: none;
+    }
+    .period-metrics-fold-sum::-webkit-details-marker { display: none; }
+    .period-metrics-fold[open] .period-metrics-fold-sum {
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .period-metrics-fold .period-grid {
+      padding-top: 0;
+    }
+    .review-mod-warn {
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      background: #fef9c3;
+      border: 1px solid #fde047;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: #713f12;
+    }
+    .rv-hbar-row {
+      display: grid;
+      grid-template-columns: 7.5rem 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+    }
+    @media (max-width: 480px) {
+      .rv-hbar-row { grid-template-columns: 1fr; gap: 4px; }
+    }
+    .rv-hbar-lab { color: #64748b; }
+    .rv-hbar-track {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .rv-hbar-fill {
+      height: 100%;
+      border-radius: 5px;
+      min-width: 2px;
+      transition: width 0.2s ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rv-hbar-fill { transition: none; }
+    }
+    .rv-hbar-val {
+      font-weight: 700;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .rv-meter-wrap {
+      display: grid;
+      grid-template-columns: 7.5rem 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.75rem;
+    }
+    .rv-meter {
+      height: 12px;
+      background: linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 100%);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .rv-meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #818cf8, #4f46e5);
+      border-radius: 6px;
+      min-width: 4px;
+    }
+    .rv-stack-bar {
+      display: flex;
+      width: 100%;
+      height: 22px;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .rv-stack-s {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+    .rv-stack-g { background: #0d9488; }
+    .rv-stack-t { background: #6366f1; }
+    .rv-stack-o { background: #94a3b8; }
+    .rv-stack-cap {
+      margin: 0 0 8px;
+      font-size: 0.72rem;
+      color: #64748b;
+    }
+    .rv-metric-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      align-items: baseline;
+      margin: 8px 0;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .rv-metric-line strong {
+      color: #0f172a;
+      font-weight: 700;
+      margin-right: 12px;
+    }
+    .period-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 14px 16px 16px;
+    }
+    @media (max-width: 640px) {
+      .period-grid { grid-template-columns: 1fr; }
+    }
+    .period-layer-wrap {
+      margin: 0 16px 16px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      border: 1px solid #e0e7ff;
+      border-radius: 10px;
+      font-size: 0.82rem;
+    }
+    .period-layer-title {
+      margin: 0 0 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #3730a3;
+    }
+    .layer-table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .layer-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.74rem;
+      min-width: 900px;
+    }
+    .layer-table th,
+    .layer-table td {
+      border: 1px solid #e2e8f0;
+      padding: 6px 8px;
+      text-align: right;
+      vertical-align: top;
+      line-height: 1.35;
+    }
+    .layer-table th:first-child,
+    .layer-table td:first-child {
+      text-align: left;
+      white-space: nowrap;
+    }
+    .layer-table th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+    }
+    .mini-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .mini-card-title {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #4338ca;
+      letter-spacing: 0.02em;
+    }
+    .mini-con {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 0 0 10px;
+      line-height: 1.45;
+    }
+    .mini-stats .data-line {
+      font-size: 0.76rem;
+      color: #475569;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .mini-stats .data-line strong { color: #0f172a; font-weight: 600; }
+    .mini-details {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed #e2e8f0;
+    }
+    .mini-details summary {
+      cursor: pointer;
+      font-size: 0.74rem;
+      color: #4f46e5;
+      font-weight: 500;
+      list-style: none;
+    }
+    .mini-details summary::-webkit-details-marker { display: none; }
+    .mini-details summary::before {
+      content: '▸ ';
+      display: inline-block;
+      width: 0.9em;
+      transition: transform 0.12s ease;
+    }
+    .mini-details[open] summary::before { transform: rotate(90deg); }
+    .mini-details .detail-inner {
+      margin-top: 8px;
+      font-size: 0.76rem;
+      color: #64748b;
+      line-height: 1.55;
+    }
+    .exec .diag-peek {
+      margin: 0 0 8px;
+      font-size: 0.72rem;
+      color: #92400e;
+      background: #fffbeb;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #fcd34d;
+      line-height: 1.4;
+    }
+    .exec .diag-tip {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #fffbeb;
+      border-left: 3px solid #f59e0b;
+      color: #78350f;
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+    .exec-next-strategy {
+      margin: 0 0 20px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fff 55%);
+      border: 1px solid #fcd34d;
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(120, 53, 15, 0.06);
+    }
+    .exec-next-strategy-title {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #5c3d2e;
+    }
+    .exec-next-strategy-hint {
+      margin: 0 0 12px;
+      font-size: 0.8rem;
+      color: #a67c52;
+      line-height: 1.55;
+    }
+    .exec-next-strategy-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      font-size: 0.82rem;
+      color: #334155;
+      line-height: 1.6;
+    }
+    .exec-next-strategy-list li { margin-bottom: 8px; }
+    .exec-next-strategy-list strong { color: #0f172a; }
+    .exec-playbook {
+      font-size: 0.82rem;
+      color: #334155;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      line-height: 1.55;
+    }
+    .exec-playbook strong { color: #0f172a; }
+    .latest-period-meta {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+      border: 1px solid #e0e7ff;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .latest-period-meta--empty {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      color: #64748b;
+    }
+    .latest-period-meta-kicker {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+    .latest-period-no {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #4f46e5;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+    .latest-period-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px 20px;
+      margin: 0;
+    }
+    .latest-period-meta-grid > div {
+      display: grid;
+      grid-template-columns: 4.5rem 1fr;
+      gap: 6px 10px;
+      align-items: baseline;
+    }
+    @media (max-width: 520px) {
+      .latest-period-meta-grid > div {
+        grid-template-columns: 1fr;
+      }
+    }
+    .latest-period-meta-grid dt {
+      margin: 0;
+      font-weight: 600;
+      color: #475569;
+      font-size: 0.78rem;
+    }
+    .latest-period-meta-grid dd {
+      margin: 0;
+      font-weight: 600;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+    }
+    .latest-period-meta-sub {
+      display: block;
+      margin-top: 2px;
+      font-weight: 400;
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
+    .usage-modal .exec-playbook {
+      margin-bottom: 10px;
+    }
+    .exec-meta {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      background: #fff;
+    }
+    .exec-meta summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #475569;
+      list-style: none;
+    }
+    .exec-meta summary::-webkit-details-marker { display: none; }
+    .exec-meta[open] summary { margin-bottom: 8px; }
+    .exec-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .badge-good { background: var(--good-bg); color: #115e59; }
+    .badge-warn { background: var(--warn-bg); color: #854d0e; }
+    .badge-bad { background: var(--bad-bg); color: #991b1b; }
+    .badge-neu { background: #e2e8f0; color: #475569; }
+
+    .dim {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .dim h3 {
+      font-size: 1.05rem;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dim .hint { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
+    .row-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    @media (max-width: 640px) { .row-compare { grid-template-columns: 1fr; } }
+    .metric {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+    }
+    .metric strong { display: block; font-size: 1.1rem; margin-top: 4px; }
+    .bar-wrap { margin: 10px 0 4px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+    .bar-track {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+      display: flex;
+    }
+    .bar-a { height: 100%; background: var(--accent); min-width: 2px; }
+    .bar-b { height: 100%; background: #94a3b8; min-width: 2px; }
+    .legend { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+    .legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+    .chart-cap { font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+
+    svg.chart { width: 100%; height: auto; max-height: 220px; }
+    .appendix {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border);
+    }
+    .appendix h2 { font-size: 1.1rem; margin-bottom: 12px; }
+    .appendix table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .appendix th, .appendix td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+    .appendix th { background: #f1f5f9; }
+    .exec-calib-note {
+      font-size: 0.82rem;
+      color: #334155;
+      margin: 0 0 12px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      line-height: 1.55;
+    }
+    .exec-calib-detail { max-width: 920px; margin-left: auto; margin-right: auto; }
+  </style>
+</head>
+<body>
+
+<div class="dash-page">
+  <div class="dash-head-sticky">
+  <header class="dash-topbar">
+    <h1 class="dash-product-title">人鱼陷落 · 祈愿效果复盘（全期数结论卡 + 第15期详解）</h1>
+    <div class="dash-top-actions" aria-label="顶栏操作">
+      <span class="dash-tool-ghost" aria-hidden="true">导出 ▾</span>
+      <span class="dash-tool-ghost" aria-hidden="true">快捷查询 ▾</span>
+      <button type="button" class="dash-tool-toggle" id="toggle-filter-panel" aria-expanded="true" aria-controls="dash-filter-wrap">筛选栏 ▴</button>
+      <span class="dash-tool-ghost" aria-hidden="true">更多 ▾</span>
+      <button type="button" class="btn-usage" id="open-usage-modal">使用说明</button>
+    </div>
+  </header>
+
+  <div id="dash-filter-wrap" class="dash-filter-wrap is-expanded">
+    <div class="dash-filter-rows">
+      <div class="dash-filter-row">
+        <div class="dash-field"><span class="dash-field-label">专题</span><span class="dash-field-val">人鱼陷落 · 特典祈愿</span></div>
+        <div class="dash-field"><span class="dash-field-label">活动形态</span><span class="dash-field-val">纯抽池</span></div>
+        <div class="dash-field"><span class="dash-field-label">品类参照</span><span class="dash-field-val">漫改耽美历史池（59 活动）</span></div>
+        <div class="dash-field"><span class="dash-field-label">对齐口径</span><span class="dash-field-val">上线满9日·当前累计</span></div>
+        <div class="dash-field"><span class="dash-field-label">期次范围</span><span class="dash-field-val">第15期 → 第2期</span></div>
+      </div>
+      <div class="dash-filter-row dash-filter-row-actions">
+        <div class="dash-field dash-field-wide"><span class="dash-field-label">本页性质</span><span class="dash-field-val">静态复盘 HTML · 下列「清空 / 查询」仅为看板式占位</span></div>
+        <button type="button" class="dash-btn-secondary" disabled>清空</button>
+        <button type="button" class="dash-btn-primary" disabled>查询</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="dash-tabs" role="tablist" aria-label="章节切换">
+    <button type="button" class="dash-tab is-active" role="tab" aria-selected="true" data-target="panel-overview">① 全期结论与策略</button>
+    <button type="button" class="dash-tab" role="tab" aria-selected="false" data-target="panel-detail">② 整体数据监测（第15期五维）</button>
+    <button type="button" class="dash-tab" role="tab" aria-selected="false" data-target="panel-appendix">③ 附录与约定</button>
+  </nav>
+  </div>
+
+  <main class="dash-main">
+
+  <dialog id="usage-modal" class="usage-modal" aria-labelledby="usage-modal-title">
+    <div class="usage-modal-card">
+      <header class="usage-modal-head">
+        <h2 id="usage-modal-title">使用说明</h2>
+        <button type="button" class="usage-modal-x" id="close-usage-modal" aria-label="关闭">×</button>
+      </header>
+      <div class="usage-modal-scroll">
+        <p class="usage-lead">面向非数据背景读者；以下内容与每次运行 <code>生成_人鱼全期结论表.py</code> 后的数据一致。</p>
+
+        <h3>页面与口径</h3>
+        <p>
+          五维框架：<strong>规模、效率、深度、结构、节奏</strong>。<br />
+          <strong>全期数卡片区：</strong>共 <strong>13</strong> 期，自上而下<strong>由新到旧</strong>（第15期→第2期）；「较上期」指时间线上<strong>相邻上一期</strong>（非列表下一块）。<br />
+          <strong>对齐口径：</strong>效果列统一用<strong>上线满 9 天</strong>「当前累计」快照（若该期导出时不足 9 天则用已满天数）；「累计上线天数」为导出时该活动已在线总天数，可与全周期汇总对照。<br />
+          品类参照：<strong>漫改耽美历史祈愿池</strong>（<code>漫改耽美池历史数据.csv</code>，<strong>59</strong> 个活动；分位与作品后台子品类标签无关）。<br />
+          卡片顶栏「<strong>目标达成度</strong>」为监测表同口径行可选列；「<strong>30日收入预估</strong>」由脚本按历史回测自动选模型并写入（详见下一节）。<br />
+          数据来源：<code>① 整体数据监测 … .csv</code> + <code>漫改耽美池历史数据.csv</code> · 口径以你们后台为准。<br />
+          <strong>每期卡片结构：</strong>顶部 KPI 与<strong>一句话总结</strong>（较相邻上期同期收入走势、对标池分位与综合「好 / 一般 / 不好」；参与付费率较上期明显走弱会略拉低综合分；收入规模与 30 日预判已在 KPI 条括号标注）→ <strong>①②③</strong> 并列（付费表现、抽池与收入结构、宣发与触达；有序结论）→ <strong>④ 付费分层表现</strong>（条形 + 要点 +《② 分层用户监测》表；数据自 <code>② 分层用户监测*.csv</code> 同目录最新一份；与①～⑤、⑥ 及顶栏 KPI 同一「当前累计 · 上线 n 日内」快照）→ <strong>⑤ 综合判断（跨维度）</strong>（跨指标归纳；有序结论；紧接在④之后）→ <strong>⑥</strong> 六格指标明细（折叠展开，可查看算式）。<br />
+          <strong>复抽率：</strong>付费抽用户中多次付费抽的比例，衡量<strong>付费深度</strong>；与<strong>参与付费率</strong>（付费「面」）、收入一起看，不单列定成败。<br />
+          <strong>抽到最高等级用户占比：</strong>抽卡用户中曾获得最高档奖励的比例，衡量大奖<strong>覆盖与可达性感知</strong>；与「顶配人均抽数」、池子/保底规则联读；占比变化可能来自难度调整或样本波动，不必然等于体验好坏。
+        </p>
+
+        <h3>全期数结论卡 · 怎么读</h3>
+        <div class="exec-playbook">
+          <strong>怎么对照「触达够了，但收入不及预期」？</strong><br />
+          1）看<strong>触达效率</strong>小卡或顶栏「目标触达率」是否已不低于你们目标，或<strong>不低于本表各期的中位水平</strong>（脚本每期会与全期快照中位对比）。<br />
+          2）再看<strong>收入规模 / 同品类表现</strong>是否仍偏弱（较上期明显下滑，或品类分位偏低）。<br />
+          3）若 1+2 同时成立，看<strong>客单价</strong>小卡中的<strong>纯免费抽占抽卡用户</strong>是否<strong>高于各期中位</strong>：偏高时，优先怀疑「赠抽过多 / 免费门槛低 / 未把用户带进付费抽」；若不偏高，则更看同卡<strong>参与付费率</strong>及池子难度、礼包引导。<br />
+          满足 1+2 时，<strong>客单价</strong>小卡会给出黄色<strong>对照提示</strong>（默认折叠在「展开说明」里，重要期在结论上方有一行浅黄预览）；建议按 <strong>①②③④⑤</strong> 自上而下阅读，再展开 <strong>⑥</strong> 六格指标明细；<strong>⑤</strong> 综合判断在 <strong>④</strong> 付费分层之后，汇总跨指标结论。
+        </div>
+        <p class="usage-modal-footnote" style="font-size:0.85rem;color:var(--muted);margin:0 0 8px;line-height:1.55;">
+          <strong>最新在上</strong>：首卡为当期复盘；其下为脚本生成的<strong>给业务的下一步策略</strong>（判断 + 可执行动作）；再下为历史期卡片。每卡含一句话总结、顶栏 KPI（含水平标注）、①～⑤ 复盘块，以及文末折叠的 <strong>⑥</strong>（2×3 六格指标明细）；<strong>无需横滑</strong>。
+        </p>
+
+        <h3>30 日收入预估 · 模型与回测（脚本自动生成）</h3>
+<!--FISH_30D_MODEL_NOTE-->
+<p class="exec-calib-note"><strong>30 日收入预估</strong>已用本专题历史<strong>真实 30 日累计收入</strong>做留一法回测；特征均来自监测表<strong>9 日·当前累计·全部</strong>行（目标触达率、触达 ARPU、目标付费 ARPU、参与付费率）；OLS 仅用上述四维，<strong>目标用户数</strong>等同口径字段因满月样本偏少暂未并入回归以防过拟合。其余模型为 R30/R9 的 k 类或 k×单因子校正。 满月可评样本 <strong>12</strong> 期；当前选用<strong>MAPE 最低</strong>模型：<strong>人鱼留一 + 耽美池混合 k（0.55/0.45）</strong>，回测 MAPE <strong>11.9%</strong>、MdAPE <strong>6.0%</strong>（越低越好，仍受样本量与档期噪声影响）。</p><p class="exec-calib-detail" style="font-size:0.78rem;color:#64748b;margin:6px 0 0;line-height:1.55;"><strong>各模型回测（留一法）</strong>：<br />★ 人鱼留一 + 耽美池混合 k（0.55/0.45） — MAPE 11.9% · MdAPE 6.0%<br />人鱼留一法 R30/R9 中位 k — MAPE 12.1% · MdAPE 6.3%<br />耽美池 R30/R9 中位数 k（全局常数） — MAPE 12.3% · MdAPE 6.9%<br />混合 k × 参与付费率 相对留一中位校正 — MAPE 25.5% · MdAPE 27.9%<br />混合 k × 触达 ARPU 相对留一中位校正 — MAPE 29.0% · MdAPE 30.3%<br />OLS：目标触达率+触达ARPU+目标付费ARPU+参与付费率→R30/R9 — MAPE 57.2% · MdAPE 56.0%<br />线性外推 30/9（无业务特征） — MAPE 117.4% · MdAPE 126.2%<br /><span style="color:#94a3b8">说明：MAPE=平均绝对百分比误差；生产预测在胜出的模型上用<strong>全部满月样本重估参数</strong>后再算各期卡片。</span></p>
+        <!--END_FISH_30D_MODEL_NOTE-->
+      </div>
+    </div>
+  </dialog>
+
+  <p class="sub">
+    五维：<strong>规模、效率、深度、结构、节奏</strong> · 全期 <strong>13</strong> 期（第15期→第2期）· 口径 <strong>上线满9日·当前累计</strong>。<br />
+    完整口径、<strong>全期卡读法</strong>、目标达成度/30日预估与<strong>模型 MAPE 回测</strong>请点击顶栏 <strong>使用说明</strong>；版式对齐内部「特典祈愿看板」顶栏 + 筛选条 + Tab。
+  </p>
+
+  <section id="panel-overview" class="exec">
+<!--FISH_LATEST_PERIOD_META-->
+<div class="latest-period-meta" aria-label="最新期概况"><p class="latest-period-meta-kicker">默认展示 <strong>监测表内最新期</strong> <span class="latest-period-no">第 15 期</span></p><dl class="latest-period-meta-grid"><div><dt>作品名</dt><dd>人鱼陷落</dd></div><div><dt>品类</dt><dd>漫改耽美</dd></div><div><dt>卡池名</dt><dd>鱼喵请闭眼·特典祈愿</dd></div><div><dt>上线时间</dt><dd>2026-03-16</dd></div><div><dt>截止已上线天数</dt><dd>9<span class="latest-period-meta-sub">（相对上线时间，取监测表「汇总」行；随导出刷新）</span></dd></div></dl></div>
+        <!--END_FISH_LATEST_PERIOD_META-->
+    <div class="fish-period-stack" id="fish-period-cards">
+<!--FISH_LATEST_PERIOD-->
+<article class="period-board" data-period="15">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 15 期</span>
+            <span class="period-theme">鱼喵请闭眼·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 9 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入与相邻上一期基本持平。较同品类：在同品类对标池中约超 61% 同行，属中上段位。综合：本期整体「一般」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>33,104<span class="kpi-level">（往期持平）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>47,834 · 进度69%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>12.7%<span class="kpi-level kpi-level--low">（偏低）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>1,655<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>9.73<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>20.00<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:12.7%;background:#0d9488"></div></div><span class="rv-hbar-val">12.7%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:87.3%;background:#ca8a04"></div></div><span class="rv-hbar-val">87.3%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:94.3%;background:#6366f1"></div></div><span class="rv-hbar-val">94.3%</span></div><ol class="review-conclusions"><li>参与付费率约 12.7%，「中等略偏低」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「很高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏高」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:28.97%">礼</span><span class="rv-stack-s rv-stack-t" style="width:54.25%">券</span><span class="rv-stack-s rv-stack-o" style="width:16.78%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 29% · 祈愿券 54% · 其余 17%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:11.5%;background:#0891b2"></div></div><span class="rv-hbar-val">11.5%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:17.0%;background:#0e7490"></div></div><span class="rv-hbar-val">17.0%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>76,379</strong><span>触达 ARPU</span><strong>0.432</strong></div><div class="rv-metric-line"><span>宣发曝光量级（近7日）</span><strong>555,679<span class="kpi-level kpi-level--high">（高于前一周）</span></strong><span>pCTR（近7日）</span><strong>2.49%<span class="kpi-level">（与前一周接近）</span></strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值高于上期；目标用户覆盖偏弱。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·[1-20)</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:26.4%;background:#4f46e5"></div></div><span class="rv-hbar-val">26.4%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:72.6%;background:#0d9488"></div></div><span class="rv-hbar-val">73%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:91.0%;background:#6366f1"></div></div><span class="rv-hbar-val">91%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>高价层礼包收入占比高。后续建议综合评估：礼包卖法与排期是否贴合目标。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li><li>各层复抽率整体偏高。后续建议综合评估：续抽意愿强时，是否更缺新进付费。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>3.5%</td><td>50.0%</td><td>92.3%</td><td>19.2%</td><td>43.2</td><td>43.2</td><td>10.3</td><td>72.6%</td><td>24.7%</td></tr>
+<tr><td>[100-200)</td><td>6.6%</td><td>41.3%</td><td>91.2%</td><td>10.9%</td><td>28.2</td><td>32.2</td><td>5.2</td><td>26.0%</td><td>41.6%</td></tr>
+<tr><td>[50-100)</td><td>8.8%</td><td>37.8%</td><td>91.1%</td><td>11.0%</td><td>38.3</td><td>40.0</td><td>5.3</td><td>38.6%</td><td>57.9%</td></tr>
+<tr><td>[20-50)</td><td>13.8%</td><td>37.2%</td><td>95.1%</td><td>7.6%</td><td>33.0</td><td>34.5</td><td>5.5</td><td>15.0%</td><td>40.5%</td></tr>
+<tr><td>[1-20)</td><td>26.4%</td><td>30.6%</td><td>96.2%</td><td>6.7%</td><td>26.4</td><td>27.6</td><td>3.8</td><td>20.9%</td><td>61.9%</td></tr>
+<tr><td>(0-1)</td><td>2.2%</td><td>25.4%</td><td>96.7%</td><td>5.5%</td><td>21.8</td><td>24.8</td><td>2.2</td><td>26.2%</td><td>71.6%</td></tr>
+<tr><td>[0]</td><td>20.1%</td><td>8.7%</td><td>96.8%</td><td>3.0%</td><td>11.5</td><td>20.4</td><td>0.7</td><td>36.5%</td><td>61.1%</td></tr>
+<tr><td>非目标用户</td><td>18.6%</td><td>9.8%</td><td>91.0%</td><td>2.0%</td><td>12.6</td><td>21.6</td><td>0.7</td><td>31.1%</td><td>52.6%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 61% 的历史祈愿活动；参与付费率约 12.7%，「中等略偏低」。后续建议综合评估：人群是不是变了、赠抽是不是偏多、进付费抽的引导清不清楚、池子定价和大奖好不好。</li><li>目标触达率约 11.5%；目标用户付费率约 0.7%、参与付费率约 12.7%（分母不同，不作简单高低对比）。后续建议综合评估：看见后进池与付费抽是否跟上、赠抽是否压住首单付费、少单纯加曝光、可对照上文分层表看哪一档掉队。</li><li>参与付费率偏低、复抽率偏高，「老客愿续抽、新客难进场」。后续建议综合评估：赠抽与进付费抽引导、免费抽停留、池内后续抽次，少先怀疑老客不抽。</li><li>「[0]」与「非目标用户」收入合计约 38.7%；目标触达率约 11.5%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li><li>全量礼包收入占比较高，高价分层礼包收入占比也很高。后续建议综合评估：礼包、直抽、祈愿券搭配与本期收入目标是否一致。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日基本持平</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>33,104</strong>｜上期同期 <strong>32,943</strong>｜品类分位 <strong>约超 61%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>0.5%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值高于上期；目标用户覆盖偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>76,379</strong>｜触达 ARPU <strong>0.432</strong>｜目标触达率 <strong>11.5%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化弱于上期；单抽均价偏低；顶配用户占比较上期更低</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>2.06</strong>｜目标付费 ARPU <strong>0.141</strong>｜参与付费率 <strong>12.7%</strong>｜纯免费抽占抽卡用户 <strong>87.3%</strong>｜复抽率 <strong>94.3%</strong>｜顶配用户占比 <strong>3.3%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更集中目标用户；礼包占比较高</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>81.4%</strong>｜礼包 <strong>29.0%</strong>｜祈愿券 <strong>54.3%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计与上期接近</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>33,104</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类中游偏上；参与付费率偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 61%</strong>｜参与付费率 <strong>12.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+        <!--END_FISH_LATEST_PERIOD-->
+    <aside class="exec-next-strategy" aria-label="针对最新一期的下一步策略">
+      <h3 class="exec-next-strategy-title">给业务的下一步策略</h3>
+<!--FISH_NEXT_STRATEGY_BODY-->
+<p class="exec-next-strategy-hint">针对<strong>第 15 期 · 鱼喵请闭眼·特典祈愿</strong>（上线满 <strong>9</strong> 日口径，与<strong>相邻上一期</strong>对照），下列为脚本依据当前快照<strong>自动给出的判断与动作</strong>，定稿前请结合五维红绿灯与业务会商微调。</p>
+<ol class="exec-next-strategy-list">
+<li><strong>规模：</strong><strong>判断</strong>：与上期同期收入基本持平。 <strong>动作</strong>：盘子相对稳定，不必单恋加曝光；把预算与运营精力转向触达质量与付费转化（见效率、深度）。</li>
+<li><strong>效率：</strong><strong>判断</strong>：触达更「值钱」但核心人群覆盖不足，典型「高精尖但面窄」。 <strong>动作</strong>：在保持素材调性的前提下，增补目标人群包曝光或召回位；与推荐/关注链路透传对齐，避免只靠窄圈自转。</li>
+<li><strong>深度：</strong><strong>判断</strong>：抽后付费转化偏弱；纯免费抽用户占比偏高（约 87%）；付费单抽均价偏低。 <strong>动作</strong>：拉通产品与运营看池子体验、保底感知与付费引导动线；抽查是否大量用户停在免费抽；评估赠抽活动节奏与金爱心获取成本，设计低成本首笔付费触点（小礼包、首次付费祈愿引导）；检查礼包是否压价、大额券占比；在不影响体验前提下，引导单抽与付费券组合，避免只靠低价礼包凑数。</li>
+<li><strong>结构：</strong><strong>判断</strong>：礼包收入占比较高（约 29%），人群与券结构需对齐策略。 <strong>动作</strong>：与商业化确认礼包是否为刻意拉新/冲量；若长期依赖礼包，需设「祈愿本体收入」底线并迭代券规则。</li>
+<li><strong>节奏：</strong><strong>判断</strong>：前 9 日与上期节奏接近。 <strong>动作</strong>：用分日曲线找异常日；长尾阶段保持常规提醒与内容二创即可。</li>
+<li><strong>品类（耽美池）：</strong><strong>判断</strong>：耽美池 9 日收入约超 61% 同行。收入段位不差，但参与付费率明显偏弱。 <strong>动作</strong>：少再加曝光，优先把池子体验、付费动机与礼包引导做到位，对齐多数同行的「抽后付费」水平。</li>
+</ol>
+        <!--END_FISH_NEXT_STRATEGY_BODY-->
+    </aside>
+<!--FISH_OLDER_PERIODS-->
+<article class="period-board" data-period="14">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 14 期</span>
+            <span class="period-theme">深海誓约·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 58 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显好于相邻上一期。较同品类：在同品类对标池中约超 59% 同行，属中上段位。综合：本期整体「一般」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>32,943<span class="kpi-level kpi-level--high">（高于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>47,600 · 进度112%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>17.8%<span class="kpi-level kpi-level--low">（偏低）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>2,562<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>9.19<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>12.86<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:17.8%;background:#0d9488"></div></div><span class="rv-hbar-val">17.8%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:82.2%;background:#ca8a04"></div></div><span class="rv-hbar-val">82.2%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:94.2%;background:#6366f1"></div></div><span class="rv-hbar-val">94.2%</span></div><ol class="review-conclusions"><li>参与付费率约 17.8%，「中等略偏低」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「很高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏高」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:21.36%">礼</span><span class="rv-stack-s rv-stack-t" style="width:64.75%">券</span><span class="rv-stack-s rv-stack-o" style="width:13.89%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 21% · 祈愿券 65% · 其余 14%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:14.4%;background:#0891b2"></div></div><span class="rv-hbar-val">14.4%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:13.2%;background:#0e7490"></div></div><span class="rv-hbar-val">13.2%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>108,371</strong><span>触达 ARPU</span><strong>0.303</strong></div><div class="rv-metric-line"><span>宣发曝光量级（近7日）</span><strong>294,722<span class="kpi-level kpi-level--high">（高于前一周）</span></strong><span>pCTR（近7日）</span><strong>3.74%<span class="kpi-level kpi-level--high">（高于前一周）</span></strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值低于上期。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·非目标用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:31.7%;background:#4f46e5"></div></div><span class="rv-hbar-val">31.7%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:56.7%;background:#0d9488"></div></div><span class="rv-hbar-val">57%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:89.6%;background:#6366f1"></div></div><span class="rv-hbar-val">90%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>高价层礼包收入占比高。后续建议综合评估：礼包卖法与排期是否贴合目标。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li><li>各层复抽率整体偏高。后续建议综合评估：续抽意愿强时，是否更缺新进付费。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>4.2%</td><td>70.0%</td><td>92.9%</td><td>40.0%</td><td>38.1</td><td>38.1</td><td>22.3</td><td>56.7%</td><td>37.7%</td></tr>
+<tr><td>[100-200)</td><td>4.0%</td><td>45.4%</td><td>93.2%</td><td>13.4%</td><td>33.8</td><td>36.2</td><td>6.1</td><td>43.3%</td><td>48.8%</td></tr>
+<tr><td>[50-100)</td><td>9.7%</td><td>49.0%</td><td>94.1%</td><td>17.8%</td><td>26.9</td><td>32.0</td><td>7.0</td><td>16.7%</td><td>54.4%</td></tr>
+<tr><td>[20-50)</td><td>8.7%</td><td>50.4%</td><td>94.4%</td><td>10.9%</td><td>32.3</td><td>34.0</td><td>5.9</td><td>11.6%</td><td>44.9%</td></tr>
+<tr><td>[1-20)</td><td>18.3%</td><td>37.5%</td><td>96.9%</td><td>11.5%</td><td>21.6</td><td>26.2</td><td>4.1</td><td>16.7%</td><td>75.1%</td></tr>
+<tr><td>(0-1)</td><td>4.6%</td><td>38.3%</td><td>99.1%</td><td>7.3%</td><td>18.9</td><td>25.4</td><td>4.0</td><td>8.4%</td><td>90.9%</td></tr>
+<tr><td>[0]</td><td>18.8%</td><td>12.1%</td><td>97.7%</td><td>6.3%</td><td>13.8</td><td>26.5</td><td>1.0</td><td>17.4%</td><td>78.8%</td></tr>
+<tr><td>非目标用户</td><td>31.7%</td><td>16.6%</td><td>89.6%</td><td>4.8%</td><td>10.6</td><td>22.4</td><td>1.3</td><td>24.9%</td><td>60.8%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 59% 的历史祈愿活动；参与付费率约 17.8%，「中等略偏低」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>「[0]」与「非目标用户」收入合计约 50.5%；目标触达率约 14.4%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏高（约 +49%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>32,943</strong>｜上期同期 <strong>22,090</strong>｜品类分位 <strong>约超 59%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>49.1%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值低于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>108,371</strong>｜触达 ARPU <strong>0.303</strong>｜目标触达率 <strong>14.4%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化弱于上期；单抽均价偏低</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>1.40</strong>｜目标付费 ARPU <strong>0.142</strong>｜参与付费率 <strong>17.8%</strong>｜纯免费抽占抽卡用户 <strong>82.2%</strong>｜复抽率 <strong>94.2%</strong>｜顶配用户占比 <strong>6.4%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更分散</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>68.3%</strong>｜礼包 <strong>21.4%</strong>｜祈愿券 <strong>64.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计强于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>32,943</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类中游偏上；参与付费率偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 59%</strong>｜参与付费率 <strong>17.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="13">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 13 期</span>
+            <span class="period-theme">掠心诊疗·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 107 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显好于相邻上一期。较同品类：在同品类对标池中约超 44% 同行，属中游段位。综合：本期整体「好」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>22,090<span class="kpi-level kpi-level--high">（高于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>31,919 · 进度97%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>24.4%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>2,268<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>8.19<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>9.74<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:24.4%;background:#0d9488"></div></div><span class="rv-hbar-val">24.4%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:75.6%;background:#ca8a04"></div></div><span class="rv-hbar-val">75.6%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:95.8%;background:#6366f1"></div></div><span class="rv-hbar-val">95.8%</span></div><ol class="review-conclusions"><li>参与付费率约 24.4%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「偏高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏高」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:11.09%">礼</span><span class="rv-stack-s rv-stack-t" style="width:68.48%">券</span><span class="rv-stack-s rv-stack-o" style="width:20.43%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 11% · 祈愿券 68% · 其余 20%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:12.4%;background:#0891b2"></div></div><span class="rv-hbar-val">12.4%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:14.3%;background:#0e7490"></div></div><span class="rv-hbar-val">14.3%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>64,855</strong><span>触达 ARPU</span><strong>0.339</strong></div><div class="rv-metric-line"><span>宣发曝光量级（近7日）</span><strong>313,114<span class="kpi-level kpi-level--high">（高于前一周）</span></strong><span>pCTR（近7日）</span><strong>2.77%<span class="kpi-level">（无环比周）</span></strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值高于上期。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·[1-20)</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:24.1%;background:#4f46e5"></div></div><span class="rv-hbar-val">24.1%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:18.3%;background:#0d9488"></div></div><span class="rv-hbar-val">18%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:88.9%;background:#6366f1"></div></div><span class="rv-hbar-val">89%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li><li>各层复抽率整体偏高。后续建议综合评估：续抽意愿强时，是否更缺新进付费。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>3.6%</td><td>72.4%</td><td>90.5%</td><td>13.8%</td><td>42.0</td><td>42.0</td><td>12.0</td><td>18.3%</td><td>68.0%</td></tr>
+<tr><td>[100-200)</td><td>9.1%</td><td>59.0%</td><td>88.9%</td><td>19.7%</td><td>40.6</td><td>40.6</td><td>11.3</td><td>9.9%</td><td>43.2%</td></tr>
+<tr><td>[50-100)</td><td>12.0%</td><td>60.2%</td><td>91.8%</td><td>15.5%</td><td>32.8</td><td>34.1</td><td>7.9</td><td>19.2%</td><td>50.9%</td></tr>
+<tr><td>[20-50)</td><td>10.6%</td><td>67.0%</td><td>95.9%</td><td>15.4%</td><td>25.2</td><td>27.7</td><td>7.8</td><td>12.4%</td><td>70.3%</td></tr>
+<tr><td>[1-20)</td><td>24.1%</td><td>51.3%</td><td>96.5%</td><td>10.1%</td><td>23.3</td><td>27.3</td><td>5.0</td><td>12.4%</td><td>69.0%</td></tr>
+<tr><td>(0-1)</td><td>1.5%</td><td>36.3%</td><td>98.8%</td><td>7.1%</td><td>11.5</td><td>14.4</td><td>2.3</td><td>33.4%</td><td>64.3%</td></tr>
+<tr><td>[0]</td><td>20.6%</td><td>15.9%</td><td>98.3%</td><td>5.4%</td><td>13.2</td><td>21.6</td><td>1.2</td><td>8.5%</td><td>85.5%</td></tr>
+<tr><td>非目标用户</td><td>18.4%</td><td>24.5%</td><td>93.6%</td><td>3.8%</td><td>11.8</td><td>15.7</td><td>1.6</td><td>3.7%</td><td>72.1%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 44% 的历史祈愿活动；参与付费率约 24.4%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>「[0]」与「非目标用户」收入合计约 39.0%；目标触达率约 12.4%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏高（约 +176%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>22,090</strong>｜上期同期 <strong>7,991</strong>｜品类分位 <strong>约超 44%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>176.4%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值高于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>64,855</strong>｜触达 ARPU <strong>0.339</strong>｜目标触达率 <strong>12.4%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化好于上期；单抽均价偏低；纯免费抽占比低于上期；顶配用户占比较上期更低</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>1.19</strong>｜目标付费 ARPU <strong>0.099</strong>｜参与付费率 <strong>24.4%</strong>｜纯免费抽占抽卡用户 <strong>75.6%</strong>｜复抽率 <strong>95.8%</strong>｜顶配用户占比 <strong>5.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">人群结构与上期接近</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>81.6%</strong>｜礼包 <strong>11.1%</strong>｜祈愿券 <strong>68.5%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计强于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>22,090</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类中游</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 44%</strong>｜参与付费率 <strong>24.4%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="12">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 12 期</span>
+            <span class="period-theme">独占专情·回忆流光</span>
+            <span class="period-sub">视频卡-漫改耽美 · 已上线 130 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显好于相邻上一期。较同品类：在同品类对标池中约超 14% 同行，属偏低段位。综合：本期整体「一般」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>7,991<span class="kpi-level kpi-level--high">（高于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>11,547 · 进度99%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>10.0%<span class="kpi-level kpi-level--low">（偏低）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>1,224<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>7.72<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>6.53<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:10.0%;background:#0d9488"></div></div><span class="rv-hbar-val">10.0%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:90.0%;background:#ca8a04"></div></div><span class="rv-hbar-val">90.0%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:93.4%;background:#6366f1"></div></div><span class="rv-hbar-val">93.4%</span></div><ol class="review-conclusions"><li>参与付费率约 10.0%，「偏低」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「很高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏高」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:4.50%">礼</span><span class="rv-stack-s rv-stack-t" style="width:70.57%">券</span><span class="rv-stack-s rv-stack-o" style="width:24.93%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 4% · 祈愿券 71% · 其余 25%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:12.5%;background:#0891b2"></div></div><span class="rv-hbar-val">12.5%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:13.9%;background:#0e7490"></div></div><span class="rv-hbar-val">13.9%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>87,942</strong><span>触达 ARPU</span><strong>0.090</strong></div><div class="rv-metric-line"><span>宣发曝光量级（近7日）</span><strong>152,429<span class="kpi-level kpi-level--low">（低于前一周）</span></strong><span>pCTR（近7日）</span><strong>1.26%<span class="kpi-level kpi-level--low">（低于前一周）</span></strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值低于上期；目标用户覆盖改善。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·[0]</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:28.9%;background:#4f46e5"></div></div><span class="rv-hbar-val">28.9%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:2.0%;background:#0d9488"></div></div><span class="rv-hbar-val">0%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:87.6%;background:#6366f1"></div></div><span class="rv-hbar-val">88%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li><li>各层复抽率整体偏高。后续建议综合评估：续抽意愿强时，是否更缺新进付费。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>1.5%</td><td>53.8%</td><td>100.0%</td><td>69.2%</td><td>5.9</td><td>7.0</td><td>5.4</td><td>0.0%</td><td>33.9%</td></tr>
+<tr><td>[100-200)</td><td>4.6%</td><td>20.9%</td><td>88.9%</td><td>30.2%</td><td>4.3</td><td>6.3</td><td>4.9</td><td>0.0%</td><td>69.8%</td></tr>
+<tr><td>[50-100)</td><td>8.1%</td><td>34.9%</td><td>98.1%</td><td>53.7%</td><td>4.6</td><td>6.2</td><td>4.6</td><td>5.0%</td><td>95.0%</td></tr>
+<tr><td>[20-50)</td><td>13.9%</td><td>33.1%</td><td>98.2%</td><td>42.8%</td><td>4.4</td><td>5.5</td><td>4.2</td><td>0.0%</td><td>49.0%</td></tr>
+<tr><td>[1-20)</td><td>18.0%</td><td>26.6%</td><td>98.9%</td><td>38.6%</td><td>3.9</td><td>5.5</td><td>2.3</td><td>0.2%</td><td>66.9%</td></tr>
+<tr><td>(0-1)</td><td>2.2%</td><td>17.5%</td><td>97.4%</td><td>32.3%</td><td>3.8</td><td>6.2</td><td>1.4</td><td>0.0%</td><td>100.0%</td></tr>
+<tr><td>[0]</td><td>28.9%</td><td>6.8%</td><td>96.9%</td><td>27.3%</td><td>3.0</td><td>5.6</td><td>0.6</td><td>13.2%</td><td>86.2%</td></tr>
+<tr><td>非目标用户</td><td>22.6%</td><td>9.1%</td><td>87.6%</td><td>26.0%</td><td>2.6</td><td>4.9</td><td>0.5</td><td>1.0%</td><td>57.7%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 14% 的历史祈愿活动；参与付费率约 10.0%，「偏低」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>目标触达率约 12.5%；目标用户付费率约 0.5%、参与付费率约 10.0%（分母不同，不作简单高低对比）。后续建议综合评估：看见后进池与付费抽是否跟上、赠抽是否压住首单付费、少单纯加曝光、可对照上文分层表看哪一档掉队。</li><li>参与付费率偏低、复抽率偏高，「老客愿续抽、新客难进场」。后续建议综合评估：赠抽与进付费抽引导、免费抽停留、池内后续抽次，少先怀疑老客不抽。</li><li>「[0]」与「非目标用户」收入合计约 51.6%；目标触达率约 12.5%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏高（约 +175%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>7,991</strong>｜上期同期 <strong>2,910</strong>｜品类分位 <strong>约超 14%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>174.6%</strong>。<p class="diag-tip"><strong>横向阅读：</strong>对照「触达效率」目标触达率 + 「客单价」纯免费抽占比 + 参与付费率；触达已达标时，重点排查付费转化链路。</p> 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值低于上期；目标用户覆盖改善</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>87,942</strong>｜触达 ARPU <strong>0.090</strong>｜目标触达率 <strong>12.5%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化弱于上期；单抽均价偏低；纯免费抽占比明显高于上期；复抽率高于上期；顶配用户占比较上期更低</p>
+          <div class="diag-peek">对照：目标触达≥各期中位，但收入偏弱 — <strong>纯免费抽占比 90.0%</strong> 偏高可疑，见「展开说明」</div>
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>0.85</strong>｜目标付费 ARPU <strong>0.031</strong>｜参与付费率 <strong>10.0%</strong>｜纯免费抽占抽卡用户 <strong>90.0%</strong>｜复抽率 <strong>93.4%</strong>｜顶配用户占比 <strong>28.0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。<p class="diag-tip"><strong>触达够了但钱不够？</strong> 目标触达率 <strong>12.5%</strong> 不低于本表各期<strong>中位 12.5%</strong>；同期9日收入仍偏弱（较上期明显下滑或品类分位偏低）。 纯免费抽占抽卡用户 <strong>90.0%</strong>，高于各期中位约 <strong>76.1%</strong>。 若与业务预期不符，可优先排查：赠抽是否过多、免费门槛低、池子/大奖付费吸引力、礼包是否未把用户带入付费抽。</p></div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更分散</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>77.4%</strong>｜礼包 <strong>4.5%</strong>｜祈愿券 <strong>70.6%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计强于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>7,991</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类偏低；参与付费率偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 14%</strong>｜参与付费率 <strong>10.0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="11">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 11 期</span>
+            <span class="period-theme">萌趣纪事·回忆流光</span>
+            <span class="period-sub">视频卡-漫改耽美 · 已上线 160 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显弱于相邻上一期。较同品类：在同品类对标池中约超 0% 同行，属偏低段位。综合：本期整体「不好」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>2,910<span class="kpi-level kpi-level--low">（低于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>4,205 · 进度373%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>42.8%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>426<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>7.20<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>6.83<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:42.8%;background:#0d9488"></div></div><span class="rv-hbar-val">42.8%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:57.2%;background:#ca8a04"></div></div><span class="rv-hbar-val">57.2%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:89.7%;background:#6366f1"></div></div><span class="rv-hbar-val">89.7%</span></div><ol class="review-conclusions"><li>参与付费率约 42.8%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「一般」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「中等偏上」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:0.27%">礼</span><span class="rv-stack-s rv-stack-t" style="width:81.55%">券</span><span class="rv-stack-s rv-stack-o" style="width:18.18%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 0% · 祈愿券 82% · 其余 18%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:4.0%;background:#0891b2"></div></div><span class="rv-hbar-val">4.0%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:6.0%;background:#0e7490"></div></div><span class="rv-hbar-val">6.0%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>16,615</strong><span>触达 ARPU</span><strong>0.175</strong></div><div class="rv-metric-line"><span>宣发曝光量级（近7日）</span><strong>33,687<span class="kpi-level kpi-level--low">（低于前一周）</span></strong><span>pCTR（近7日）</span><strong>5.08%<span class="kpi-level kpi-level--high">（高于前一周）</span></strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值低于上期；目标用户覆盖偏弱。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·[1-20)</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:28.1%;background:#4f46e5"></div></div><span class="rv-hbar-val">28.1%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:2.0%;background:#0d9488"></div></div><span class="rv-hbar-val">0%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:81.8%;background:#6366f1"></div></div><span class="rv-hbar-val">82%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>0.5%</td><td>83.3%</td><td>100.0%</td><td>33.3%</td><td>10.0</td><td>10.0</td><td>5.8</td><td>0.0%</td><td>100.0%</td></tr>
+<tr><td>[100-200)</td><td>9.7%</td><td>66.7%</td><td>100.0%</td><td>66.7%</td><td>7.8</td><td>7.8</td><td>11.5</td><td>0.0%</td><td>11.3%</td></tr>
+<tr><td>[50-100)</td><td>16.1%</td><td>73.1%</td><td>100.0%</td><td>61.5%</td><td>4.4</td><td>4.7</td><td>11.9</td><td>0.0%</td><td>98.3%</td></tr>
+<tr><td>[20-50)</td><td>7.5%</td><td>83.3%</td><td>100.0%</td><td>70.8%</td><td>6.4</td><td>6.5</td><td>8.5</td><td>0.0%</td><td>100.0%</td></tr>
+<tr><td>[1-20)</td><td>28.1%</td><td>69.1%</td><td>90.8%</td><td>45.5%</td><td>5.0</td><td>5.6</td><td>5.8</td><td>0.8%</td><td>68.2%</td></tr>
+<tr><td>(0-1)</td><td>1.8%</td><td>57.9%</td><td>81.8%</td><td>31.6%</td><td>5.2</td><td>4.6</td><td>3.1</td><td>0.0%</td><td>100.0%</td></tr>
+<tr><td>[0]</td><td>22.0%</td><td>30.4%</td><td>87.5%</td><td>27.8%</td><td>4.0</td><td>4.6</td><td>1.9</td><td>0.2%</td><td>99.8%</td></tr>
+<tr><td>非目标用户</td><td>14.3%</td><td>48.3%</td><td>89.3%</td><td>38.4%</td><td>4.7</td><td>4.6</td><td>2.9</td><td>0.0%</td><td>95.5%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里排位偏后；参与付费率约 42.8%，仍属不弱。后续建议综合评估：档期与竞品、定价与用券、投放与人群是否匹配，不宜单归为用户不愿付费。</li><li>「[0]」与「非目标用户」收入合计约 36.3%；目标触达率约 4.0%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏低（约 -91%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>2,910</strong>｜上期同期 <strong>30,677</strong>｜品类分位 <strong>约超 0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>-90.5%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值低于上期；目标用户覆盖偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>16,615</strong>｜触达 ARPU <strong>0.175</strong>｜目标触达率 <strong>4.0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化好于上期；单抽均价偏低；纯免费抽占比低于上期；复抽率低于上期；顶配用户占比较上期更高</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>0.95</strong>｜目标付费 ARPU <strong>0.013</strong>｜参与付费率 <strong>42.8%</strong>｜纯免费抽占抽卡用户 <strong>57.2%</strong>｜复抽率 <strong>89.7%</strong>｜顶配用户占比 <strong>34.6%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更集中目标用户</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>85.7%</strong>｜礼包 <strong>0.3%</strong>｜祈愿券 <strong>81.5%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计弱于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>2,910</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类偏低</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 0%</strong>｜参与付费率 <strong>42.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="10">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 10 期</span>
+            <span class="period-theme">云端派对·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 186 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显弱于相邻上一期。较同品类：在同品类对标池中约超 54% 同行，属中上段位。综合：本期整体「一般」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>30,677<span class="kpi-level kpi-level--low">（低于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>44,326 · 进度98%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>23.7%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>2,983<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>8.59<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>10.28<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:23.7%;background:#0d9488"></div></div><span class="rv-hbar-val">23.7%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:76.3%;background:#ca8a04"></div></div><span class="rv-hbar-val">76.3%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:95.1%;background:#6366f1"></div></div><span class="rv-hbar-val">95.1%</span></div><ol class="review-conclusions"><li>参与付费率约 23.7%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「偏高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏高」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:3.88%">礼</span><span class="rv-stack-s rv-stack-t" style="width:73.99%">券</span><span class="rv-stack-s rv-stack-o" style="width:22.13%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 4% · 祈愿券 74% · 其余 22%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:13.8%;background:#0891b2"></div></div><span class="rv-hbar-val">13.8%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:10.7%;background:#0e7490"></div></div><span class="rv-hbar-val">10.7%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>117,388</strong><span>触达 ARPU</span><strong>0.260</strong></div><div class="rv-metric-line"><span>宣发曝光量级（近7日）</span><strong>357,013<span class="kpi-level kpi-level--low">（低于前一周）</span></strong><span>pCTR（近7日）</span><strong>4.47%<span class="kpi-level kpi-level--high">（高于前一周）</span></strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值与上期接近。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·非目标用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:23.5%;background:#4f46e5"></div></div><span class="rv-hbar-val">23.5%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:2.0%;background:#0d9488"></div></div><span class="rv-hbar-val">0%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:91.8%;background:#6366f1"></div></div><span class="rv-hbar-val">92%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li><li>各层复抽率整体偏高。后续建议综合评估：续抽意愿强时，是否更缺新进付费。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>4.8%</td><td>77.8%</td><td>92.9%</td><td>44.4%</td><td>46.0</td><td>46.0</td><td>27.3</td><td>0.0%</td><td>51.1%</td></tr>
+<tr><td>[100-200)</td><td>4.4%</td><td>60.5%</td><td>93.9%</td><td>11.1%</td><td>43.1</td><td>43.1</td><td>9.1</td><td>12.2%</td><td>78.0%</td></tr>
+<tr><td>[50-100)</td><td>9.4%</td><td>58.1%</td><td>95.2%</td><td>12.8%</td><td>28.9</td><td>32.3</td><td>8.0</td><td>5.1%</td><td>57.0%</td></tr>
+<tr><td>[20-50)</td><td>11.6%</td><td>62.1%</td><td>94.5%</td><td>14.9%</td><td>27.5</td><td>30.0</td><td>7.8</td><td>1.4%</td><td>57.5%</td></tr>
+<tr><td>[1-20)</td><td>20.2%</td><td>46.5%</td><td>96.6%</td><td>10.1%</td><td>24.4</td><td>28.6</td><td>5.1</td><td>4.1%</td><td>75.8%</td></tr>
+<tr><td>(0-1)</td><td>5.0%</td><td>45.7%</td><td>95.6%</td><td>9.3%</td><td>20.2</td><td>22.4</td><td>4.5</td><td>3.2%</td><td>70.0%</td></tr>
+<tr><td>[0]</td><td>21.0%</td><td>16.2%</td><td>98.0%</td><td>7.2%</td><td>12.6</td><td>19.9</td><td>1.2</td><td>3.5%</td><td>94.2%</td></tr>
+<tr><td>非目标用户</td><td>23.5%</td><td>25.0%</td><td>91.8%</td><td>5.2%</td><td>11.2</td><td>16.5</td><td>1.7</td><td>4.2%</td><td>74.2%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 54% 的历史祈愿活动；参与付费率约 23.7%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>「[0]」与「非目标用户」收入合计约 44.5%；目标触达率约 13.8%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏低（约 -32%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>30,677</strong>｜上期同期 <strong>45,259</strong>｜品类分位 <strong>约超 54%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>-32.2%</strong>。<p class="diag-tip"><strong>横向阅读：</strong>对照「触达效率」目标触达率 + 「客单价」纯免费抽占比 + 参与付费率；触达已达标时，重点排查付费转化链路。</p> 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值与上期接近</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>117,388</strong>｜触达 ARPU <strong>0.260</strong>｜目标触达率 <strong>13.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化与上期接近；单抽均价偏低</p>
+          <div class="diag-peek">对照：触达≥各期中位、收入偏弱 — 免费抽占比未明显高于期中位，重点看参与付费率与池子</div>
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>1.20</strong>｜目标付费 ARPU <strong>0.111</strong>｜参与付费率 <strong>23.7%</strong>｜纯免费抽占抽卡用户 <strong>76.3%</strong>｜复抽率 <strong>95.1%</strong>｜顶配用户占比 <strong>7.1%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。<p class="diag-tip"><strong>触达够了但钱不够？</strong> 目标触达率已不低，但收入偏弱；纯免费抽占比 <strong>76.3%</strong> 未明显高于各期中位（约 <strong>76.1%</strong>）。 建议优先看 <strong>参与付费率</strong>、单抽均价、池子难度与付费路径，避免只归因「免费抽多」。</p></div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更集中目标用户</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>76.5%</strong>｜礼包 <strong>3.9%</strong>｜祈愿券 <strong>74.0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计弱于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>30,677</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类中游偏上</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 54%</strong>｜参与付费率 <strong>23.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="9">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 9 期</span>
+            <span class="period-theme">偷心怪盗·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 254 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入略好于相邻上一期。较同品类：在同品类对标池中约超 75% 同行，属高位段位。综合：本期整体「好」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>45,259<span class="kpi-level kpi-level--high">（高于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>65,396 · 进度111%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>26.4%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>4,924<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>4.86<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>9.19<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:26.4%;background:#0d9488"></div></div><span class="rv-hbar-val">26.4%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:73.6%;background:#ca8a04"></div></div><span class="rv-hbar-val">73.6%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:93.8%;background:#6366f1"></div></div><span class="rv-hbar-val">93.8%</span></div><ol class="review-conclusions"><li>参与付费率约 26.4%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「偏高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏高」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:8.57%">礼</span><span class="rv-stack-s rv-stack-t" style="width:69.24%">券</span><span class="rv-stack-s rv-stack-o" style="width:22.19%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 9% · 祈愿券 69% · 其余 22%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:14.2%;background:#0891b2"></div></div><span class="rv-hbar-val">14.2%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:10.2%;background:#0e7490"></div></div><span class="rv-hbar-val">10.2%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>183,006</strong><span>触达 ARPU</span><strong>0.246</strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值与上期接近。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·非目标用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:30.3%;background:#4f46e5"></div></div><span class="rv-hbar-val">30.3%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:15.4%;background:#0d9488"></div></div><span class="rv-hbar-val">15%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:82.8%;background:#6366f1"></div></div><span class="rv-hbar-val">83%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>3.8%</td><td>56.9%</td><td>82.8%</td><td>21.6%</td><td>26.6</td><td>29.1</td><td>7.7</td><td>15.4%</td><td>36.3%</td></tr>
+<tr><td>[100-200)</td><td>6.8%</td><td>58.5%</td><td>96.1%</td><td>18.2%</td><td>30.2</td><td>31.5</td><td>5.7</td><td>13.2%</td><td>57.3%</td></tr>
+<tr><td>[50-100)</td><td>6.1%</td><td>48.5%</td><td>97.2%</td><td>10.4%</td><td>25.5</td><td>28.0</td><td>3.4</td><td>6.3%</td><td>60.6%</td></tr>
+<tr><td>[20-50)</td><td>11.2%</td><td>49.5%</td><td>95.9%</td><td>13.3%</td><td>27.8</td><td>30.3</td><td>4.2</td><td>15.8%</td><td>68.9%</td></tr>
+<tr><td>[1-20)</td><td>20.5%</td><td>46.4%</td><td>96.8%</td><td>9.9%</td><td>20.3</td><td>23.8</td><td>2.7</td><td>6.1%</td><td>72.0%</td></tr>
+<tr><td>(0-1)</td><td>1.8%</td><td>37.8%</td><td>96.7%</td><td>12.0%</td><td>16.3</td><td>21.3</td><td>1.6</td><td>1.3%</td><td>91.6%</td></tr>
+<tr><td>[0]</td><td>19.4%</td><td>17.0%</td><td>96.7%</td><td>7.1%</td><td>15.4</td><td>23.7</td><td>0.7</td><td>6.3%</td><td>80.9%</td></tr>
+<tr><td>非目标用户</td><td>30.3%</td><td>29.6%</td><td>90.1%</td><td>4.0%</td><td>14.1</td><td>19.1</td><td>1.2</td><td>8.0%</td><td>67.3%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 75% 的历史祈愿活动；参与付费率约 26.4%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>「[0]」与「非目标用户」收入合计约 49.7%；目标触达率约 14.2%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏高（约 +4%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>45,259</strong>｜上期同期 <strong>43,640</strong>｜品类分位 <strong>约超 75%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>3.7%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值与上期接近</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>183,006</strong>｜触达 ARPU <strong>0.246</strong>｜目标触达率 <strong>14.2%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化好于上期；单抽均价偏低；纯免费抽占比低于上期；复抽率高于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>1.89</strong>｜目标付费 ARPU <strong>0.110</strong>｜参与付费率 <strong>26.4%</strong>｜纯免费抽占抽卡用户 <strong>73.6%</strong>｜复抽率 <strong>93.8%</strong>｜顶配用户占比 <strong>6.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更分散</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>69.7%</strong>｜礼包 <strong>8.6%</strong>｜祈愿券 <strong>69.2%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计与上期接近</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>45,259</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类高位</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 75%</strong>｜参与付费率 <strong>26.4%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="8">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 8 期</span>
+            <span class="period-theme">异域王子·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 297 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显弱于相邻上一期。较同品类：在同品类对标池中约超 71% 同行，属高位段位。综合：本期整体「一般」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>43,640<span class="kpi-level kpi-level--low">（低于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>63,056 · 进度110%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>14.8%<span class="kpi-level kpi-level--low">（偏低）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>2,114<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>5.79<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>20.64<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:14.8%;background:#0d9488"></div></div><span class="rv-hbar-val">14.8%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:85.2%;background:#ca8a04"></div></div><span class="rv-hbar-val">85.2%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:31.6%;background:#6366f1"></div></div><span class="rv-hbar-val">31.6%</span></div><ol class="review-conclusions"><li>参与付费率约 14.8%，「中等略偏低」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「很高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏低」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:8.86%">礼</span><span class="rv-stack-s rv-stack-t" style="width:68.29%">券</span><span class="rv-stack-s rv-stack-o" style="width:22.85%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 9% · 祈愿券 68% · 其余 23%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:15.2%;background:#0891b2"></div></div><span class="rv-hbar-val">15.2%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:8.6%;background:#0e7490"></div></div><span class="rv-hbar-val">8.6%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>166,810</strong><span>触达 ARPU</span><strong>0.261</strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值高于上期；目标用户覆盖偏弱。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·[1-20)</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:23.5%;background:#4f46e5"></div></div><span class="rv-hbar-val">23.5%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:2.0%;background:#0d9488"></div></div><span class="rv-hbar-val">1%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:24.1%;background:#6366f1"></div></div><span class="rv-hbar-val">24%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>3.4%</td><td>60.0%</td><td>66.7%</td><td>20.0%</td><td>29.3</td><td>32.9</td><td>8.2</td><td>1.0%</td><td>61.9%</td></tr>
+<tr><td>[100-200)</td><td>8.7%</td><td>46.0%</td><td>54.0%</td><td>18.2%</td><td>32.0</td><td>35.7</td><td>7.1</td><td>6.9%</td><td>69.8%</td></tr>
+<tr><td>[50-100)</td><td>9.1%</td><td>47.1%</td><td>52.8%</td><td>13.8%</td><td>26.0</td><td>28.2</td><td>5.0</td><td>4.0%</td><td>79.1%</td></tr>
+<tr><td>[20-50)</td><td>12.5%</td><td>39.7%</td><td>46.5%</td><td>15.0%</td><td>24.2</td><td>30.2</td><td>4.1</td><td>7.4%</td><td>57.0%</td></tr>
+<tr><td>[1-20)</td><td>23.5%</td><td>29.0%</td><td>40.7%</td><td>8.3%</td><td>23.3</td><td>31.1</td><td>2.4</td><td>13.2%</td><td>65.1%</td></tr>
+<tr><td>(0-1)</td><td>2.6%</td><td>19.7%</td><td>28.4%</td><td>7.4%</td><td>12.5</td><td>21.1</td><td>1.1</td><td>10.8%</td><td>85.3%</td></tr>
+<tr><td>[0]</td><td>17.7%</td><td>7.5%</td><td>26.2%</td><td>5.4%</td><td>10.8</td><td>21.3</td><td>0.3</td><td>6.4%</td><td>78.6%</td></tr>
+<tr><td>非目标用户</td><td>22.5%</td><td>17.5%</td><td>24.1%</td><td>4.3%</td><td>9.9</td><td>18.9</td><td>0.6</td><td>10.8%</td><td>63.8%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 71% 的历史祈愿活动；参与付费率约 14.8%，「中等略偏低」。后续建议综合评估：人群是不是变了、赠抽是不是偏多、进付费抽的引导清不清楚、池子定价和大奖好不好。</li><li>目标触达率约 15.2%；目标用户付费率约 0.6%、参与付费率约 14.8%（分母不同，不作简单高低对比）。后续建议综合评估：看见后进池与付费抽是否跟上、赠抽是否压住首单付费、少单纯加曝光、可对照上文分层表看哪一档掉队。</li><li>「[0]」与「非目标用户」收入合计约 40.2%；目标触达率约 15.2%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏低（约 -53%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>43,640</strong>｜上期同期 <strong>92,998</strong>｜品类分位 <strong>约超 71%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>-53.1%</strong>。<p class="diag-tip"><strong>横向阅读：</strong>对照「触达效率」目标触达率 + 「客单价」纯免费抽占比 + 参与付费率；触达已达标时，重点排查付费转化链路。</p> 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值高于上期；目标用户覆盖偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>166,810</strong>｜触达 ARPU <strong>0.261</strong>｜目标触达率 <strong>15.2%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化弱于上期；顶配用户占比较上期更低</p>
+          <div class="diag-peek">对照：目标触达≥各期中位，但收入偏弱 — <strong>纯免费抽占比 85.2%</strong> 偏高可疑，见「展开说明」</div>
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>3.57</strong>｜目标付费 ARPU <strong>0.119</strong>｜参与付费率 <strong>14.8%</strong>｜纯免费抽占抽卡用户 <strong>85.2%</strong>｜复抽率 <strong>31.6%</strong>｜顶配用户占比 <strong>5.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。<p class="diag-tip"><strong>触达够了但钱不够？</strong> 目标触达率 <strong>15.2%</strong> 不低于本表各期<strong>中位 12.5%</strong>；同期9日收入仍偏弱（较上期明显下滑或品类分位偏低）。 纯免费抽占抽卡用户 <strong>85.2%</strong>，高于各期中位约 <strong>76.1%</strong>。 若与业务预期不符，可优先排查：赠抽是否过多、免费门槛低、池子/大奖付费吸引力、礼包是否未把用户带入付费抽。</p></div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更集中目标用户</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>77.5%</strong>｜礼包 <strong>8.9%</strong>｜祈愿券 <strong>68.3%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计弱于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>43,640</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类高位；参与付费率偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 71%</strong>｜参与付费率 <strong>14.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="7">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 7 期</span>
+            <span class="period-theme">爱意枷锁·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 417 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显好于相邻上一期。较同品类：在同品类对标池中约超 93% 同行，属高位段位。综合：本期整体「好」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>92,998<span class="kpi-level kpi-level--high">（高于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>134,377 · 进度102%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>19.7%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>4,883<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>5.08<span class="kpi-level">（与上期接近）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>19.05<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:19.7%;background:#0d9488"></div></div><span class="rv-hbar-val">19.7%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:80.3%;background:#ca8a04"></div></div><span class="rv-hbar-val">80.3%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:30.6%;background:#6366f1"></div></div><span class="rv-hbar-val">30.6%</span></div><ol class="review-conclusions"><li>参与付费率约 19.7%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「偏高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏低」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:15.59%">礼</span><span class="rv-stack-s rv-stack-t" style="width:53.69%">券</span><span class="rv-stack-s rv-stack-o" style="width:30.72%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 16% · 祈愿券 54% · 其余 31%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:20.4%;background:#0891b2"></div></div><span class="rv-hbar-val">20.4%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:4.8%;background:#0e7490"></div></div><span class="rv-hbar-val">4.8%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>520,493</strong><span>触达 ARPU</span><strong>0.178</strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值高于上期；目标用户覆盖改善。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·非目标用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:33.7%;background:#4f46e5"></div></div><span class="rv-hbar-val">33.7%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:24.6%;background:#0d9488"></div></div><span class="rv-hbar-val">25%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:24.1%;background:#6366f1"></div></div><span class="rv-hbar-val">24%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>3.9%</td><td>58.2%</td><td>62.3%</td><td>17.6%</td><td>35.1</td><td>36.7</td><td>8.8</td><td>24.6%</td><td>39.0%</td></tr>
+<tr><td>[100-200)</td><td>5.8%</td><td>41.8%</td><td>51.7%</td><td>19.9%</td><td>23.7</td><td>30.8</td><td>4.9</td><td>13.6%</td><td>65.0%</td></tr>
+<tr><td>[50-100)</td><td>10.7%</td><td>46.2%</td><td>52.8%</td><td>16.7%</td><td>26.7</td><td>30.4</td><td>4.7</td><td>14.3%</td><td>44.2%</td></tr>
+<tr><td>[20-50)</td><td>10.9%</td><td>40.1%</td><td>48.7%</td><td>10.9%</td><td>23.9</td><td>27.1</td><td>3.3</td><td>9.4%</td><td>50.7%</td></tr>
+<tr><td>[1-20)</td><td>18.2%</td><td>32.3%</td><td>37.8%</td><td>11.1%</td><td>19.6</td><td>28.3</td><td>2.0</td><td>17.1%</td><td>55.6%</td></tr>
+<tr><td>(0-1)</td><td>1.8%</td><td>26.1%</td><td>29.5%</td><td>10.3%</td><td>13.2</td><td>23.0</td><td>1.0</td><td>22.8%</td><td>60.5%</td></tr>
+<tr><td>[0]</td><td>15.1%</td><td>7.9%</td><td>26.1%</td><td>8.4%</td><td>14.5</td><td>27.3</td><td>0.4</td><td>17.5%</td><td>58.3%</td></tr>
+<tr><td>非目标用户</td><td>33.7%</td><td>26.7%</td><td>24.1%</td><td>4.1%</td><td>13.2</td><td>23.4</td><td>1.0</td><td>15.2%</td><td>54.0%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 93% 的历史祈愿活动；参与付费率约 19.7%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>「[0]」与「非目标用户」收入合计约 48.8%；目标触达率约 20.4%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏高（约 +467%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>92,998</strong>｜上期同期 <strong>16,399</strong>｜品类分位 <strong>约超 93%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>467.1%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值高于上期；目标用户覆盖改善</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>520,493</strong>｜触达 ARPU <strong>0.178</strong>｜目标触达率 <strong>20.4%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化弱于上期；顶配用户占比较上期更低</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>3.75</strong>｜目标付费 ARPU <strong>0.146</strong>｜参与付费率 <strong>19.7%</strong>｜纯免费抽占抽卡用户 <strong>80.3%</strong>｜复抽率 <strong>30.6%</strong>｜顶配用户占比 <strong>7.5%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更分散</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>66.3%</strong>｜礼包 <strong>15.6%</strong>｜祈愿券 <strong>53.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计强于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>92,998</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类高位</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 93%</strong>｜参与付费率 <strong>19.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="6">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 6 期</span>
+            <span class="period-theme">生动记忆·触动祈愿</span>
+            <span class="period-sub">漫改耽美5c · 已上线 426 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显弱于相邻上一期。较同品类：在同品类对标池中约超 41% 同行，属中游段位。综合：本期整体「不好」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>16,399<span class="kpi-level kpi-level--low">（低于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>23,695 · 进度102%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>25.5%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>1,250<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>5.15<span class="kpi-level">（与上期接近）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>13.12<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:25.5%;background:#0d9488"></div></div><span class="rv-hbar-val">25.5%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:74.5%;background:#ca8a04"></div></div><span class="rv-hbar-val">74.5%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:33.1%;background:#6366f1"></div></div><span class="rv-hbar-val">33.1%</span></div><ol class="review-conclusions"><li>参与付费率约 25.5%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「偏高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏低」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:8.41%">礼</span><span class="rv-stack-s rv-stack-t" style="width:60.82%">券</span><span class="rv-stack-s rv-stack-o" style="width:30.78%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 8% · 祈愿券 61% · 其余 31%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:10.8%;background:#0891b2"></div></div><span class="rv-hbar-val">10.8%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:3.0%;background:#0e7490"></div></div><span class="rv-hbar-val">3.0%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>164,405</strong><span>触达 ARPU</span><strong>0.099</strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>触达单次价值低于上期；目标用户覆盖偏弱。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·非目标用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:21.7%;background:#4f46e5"></div></div><span class="rv-hbar-val">21.7%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:16.4%;background:#0d9488"></div></div><span class="rv-hbar-val">16%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:27.0%;background:#6366f1"></div></div><span class="rv-hbar-val">27%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>5.5%</td><td>63.0%</td><td>58.8%</td><td>51.9%</td><td>6.1</td><td>6.6</td><td>11.1</td><td>16.4%</td><td>60.4%</td></tr>
+<tr><td>[100-200)</td><td>10.2%</td><td>50.0%</td><td>60.0%</td><td>51.2%</td><td>6.0</td><td>8.3</td><td>7.7</td><td>14.8%</td><td>62.3%</td></tr>
+<tr><td>[50-100)</td><td>18.8%</td><td>58.3%</td><td>54.0%</td><td>48.1%</td><td>4.8</td><td>6.1</td><td>9.0</td><td>1.9%</td><td>48.8%</td></tr>
+<tr><td>[20-50)</td><td>10.0%</td><td>51.7%</td><td>32.9%</td><td>40.1%</td><td>3.6</td><td>4.8</td><td>3.1</td><td>3.0%</td><td>37.3%</td></tr>
+<tr><td>[1-20)</td><td>18.0%</td><td>42.4%</td><td>38.4%</td><td>39.6%</td><td>3.2</td><td>3.8</td><td>2.4</td><td>16.4%</td><td>63.0%</td></tr>
+<tr><td>(0-1)</td><td>2.7%</td><td>38.8%</td><td>42.1%</td><td>40.8%</td><td>3.8</td><td>4.7</td><td>2.4</td><td>0.0%</td><td>98.3%</td></tr>
+<tr><td>[0]</td><td>13.0%</td><td>12.2%</td><td>27.0%</td><td>35.1%</td><td>2.4</td><td>3.1</td><td>0.4</td><td>9.2%</td><td>79.5%</td></tr>
+<tr><td>非目标用户</td><td>21.7%</td><td>34.7%</td><td>28.2%</td><td>27.4%</td><td>2.4</td><td>3.3</td><td>1.1</td><td>5.4%</td><td>63.9%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 41% 的历史祈愿活动；参与付费率约 25.5%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>「[0]」与「非目标用户」收入合计约 34.7%；目标触达率约 10.8%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏低（约 -83%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>16,399</strong>｜上期同期 <strong>98,404</strong>｜品类分位 <strong>约超 41%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>-83.3%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达单次价值低于上期；目标用户覆盖偏弱</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>164,405</strong>｜触达 ARPU <strong>0.099</strong>｜目标触达率 <strong>10.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化弱于上期；纯免费抽占比明显高于上期；复抽率低于上期；顶配用户占比较上期更高</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>2.55</strong>｜目标付费 ARPU <strong>0.035</strong>｜参与付费率 <strong>25.5%</strong>｜纯免费抽占抽卡用户 <strong>74.5%</strong>｜复抽率 <strong>33.1%</strong>｜顶配用户占比 <strong>34.3%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更集中目标用户</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>78.3%</strong>｜礼包 <strong>8.4%</strong>｜祈愿券 <strong>60.8%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计弱于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>16,399</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类中游</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 41%</strong>｜参与付费率 <strong>25.5%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="4">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 4 期</span>
+            <span class="period-theme">亵渎神明·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 464 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显好于相邻上一期。较同品类：在同品类对标池中约超 97% 同行，属高位段位。综合：本期整体「好」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>98,404<span class="kpi-level kpi-level--high">（高于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>142,188 · 进度98%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>47.7%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>4,873<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>5.08<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>20.19<span class="kpi-level">（与上期接近）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:47.7%;background:#0d9488"></div></div><span class="rv-hbar-val">47.7%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:52.3%;background:#ca8a04"></div></div><span class="rv-hbar-val">52.3%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:40.8%;background:#6366f1"></div></div><span class="rv-hbar-val">40.8%</span></div><ol class="review-conclusions"><li>参与付费率约 47.7%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「一般」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏低」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:13.04%">礼</span><span class="rv-stack-s rv-stack-t" style="width:57.12%">券</span><span class="rv-stack-s rv-stack-o" style="width:29.83%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 13% · 祈愿券 57% · 其余 30%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「祈愿券」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">目标触达率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:22.2%;background:#0891b2"></div></div><span class="rv-hbar-val">22.2%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">触达抽卡率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:2.9%;background:#0e7490"></div></div><span class="rv-hbar-val">2.9%</span></div><div class="rv-metric-line"><span>触达 UV</span><strong>353,411</strong><span>触达 ARPU</span><strong>0.276</strong></div><ol class="review-conclusions"><li>目标触达率、触达抽卡率、触达 ARPU 已在本模块列出。后续建议综合评估：曝光质量、进池与付费承接，少只靠加曝光量。</li><li>上期触达缺数，仅看本期。后续建议综合评估：对照上期判断是人群还是承接变化，再定投放与落地调整。</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·非目标用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:28.6%;background:#4f46e5"></div></div><span class="rv-hbar-val">28.6%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:3.1%;background:#0d9488"></div></div><span class="rv-hbar-val">3%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:32.0%;background:#6366f1"></div></div><span class="rv-hbar-val">32%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>「[0]」与「非目标用户」收入合计占比偏高。后续建议综合评估：核心盘与铺量目标、长尾流水可接受度。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>5.2%</td><td>76.3%</td><td>73.3%</td><td>37.3%</td><td>33.0</td><td>32.6</td><td>16.6</td><td>3.1%</td><td>42.2%</td></tr>
+<tr><td>[100-200)</td><td>6.3%</td><td>70.2%</td><td>64.4%</td><td>20.8%</td><td>29.2</td><td>29.8</td><td>8.2</td><td>16.0%</td><td>54.7%</td></tr>
+<tr><td>[50-100)</td><td>10.3%</td><td>73.2%</td><td>61.7%</td><td>15.3%</td><td>30.9</td><td>30.9</td><td>6.7</td><td>12.6%</td><td>54.2%</td></tr>
+<tr><td>[20-50)</td><td>13.8%</td><td>77.2%</td><td>59.3%</td><td>18.1%</td><td>26.5</td><td>27.8</td><td>6.8</td><td>10.1%</td><td>51.4%</td></tr>
+<tr><td>[1-20)</td><td>21.7%</td><td>65.1%</td><td>49.9%</td><td>9.9%</td><td>24.8</td><td>27.4</td><td>4.2</td><td>17.1%</td><td>58.2%</td></tr>
+<tr><td>(0-1)</td><td>1.7%</td><td>59.1%</td><td>47.3%</td><td>8.5%</td><td>10.4</td><td>15.6</td><td>2.0</td><td>10.1%</td><td>54.8%</td></tr>
+<tr><td>[0]</td><td>12.4%</td><td>24.1%</td><td>35.6%</td><td>4.6%</td><td>16.1</td><td>25.5</td><td>0.9</td><td>10.4%</td><td>71.6%</td></tr>
+<tr><td>非目标用户</td><td>28.6%</td><td>61.8%</td><td>32.0%</td><td>5.2%</td><td>20.3</td><td>24.0</td><td>2.2</td><td>14.0%</td><td>57.2%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 97% 的历史祈愿活动；参与付费率约 47.7%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>「[0]」与「非目标用户」收入合计约 41.0%；目标触达率约 22.2%。后续建议综合评估：本期主打核心盘还是铺量、触达与长尾流水预期是否一致、勿用同一套标准混评两种目标。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏高（约 +61%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>98,404</strong>｜上期同期 <strong>61,014</strong>｜品类分位 <strong>约超 97%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>61.3%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">上期触达缺数，仅看本期</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>353,411</strong>｜触达 ARPU <strong>0.276</strong>｜目标触达率 <strong>22.2%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化好于上期；纯免费抽占比低于上期；复抽率高于上期；顶配用户占比较上期更低</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>3.98</strong>｜目标付费 ARPU <strong>0.221</strong>｜参与付费率 <strong>47.7%</strong>｜纯免费抽占抽卡用户 <strong>52.3%</strong>｜复抽率 <strong>40.8%</strong>｜顶配用户占比 <strong>7.0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更分散</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>71.4%</strong>｜礼包 <strong>13.0%</strong>｜祈愿券 <strong>57.1%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计强于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>98,404</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类高位</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 97%</strong>｜参与付费率 <strong>47.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="3">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 3 期</span>
+            <span class="period-theme">流绪微梦·生日特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 588 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：同期9日累计收入明显好于相邻上一期。较同品类：在同品类对标池中约超 86% 同行，属高位段位。综合：本期整体「好」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>61,014<span class="kpi-level kpi-level--high">（高于往期）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>88,161 · 进度89%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>30.9%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>3,004<span class="kpi-level kpi-level--low">（低于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>4.84<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>20.31<span class="kpi-level kpi-level--high">（高于上期）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:30.9%;background:#0d9488"></div></div><span class="rv-hbar-val">30.9%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:69.1%;background:#ca8a04"></div></div><span class="rv-hbar-val">69.1%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:33.1%;background:#6366f1"></div></div><span class="rv-hbar-val">33.1%</span></div><ol class="review-conclusions"><li>参与付费率约 30.9%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「一般」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏低」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:45.65%">礼</span><span class="rv-stack-s rv-stack-t" style="width:0.00%">券</span><span class="rv-stack-s rv-stack-o" style="width:54.35%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 46% · 祈愿券 0% · 其余 54%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「其余」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<p class="review-mod-warn">本期触达 UV 为 0，宣发效率条可能失真，请以汇总或重新导出为准。</p><ol class="review-conclusions"><li>触达指标缺数，效率暂不解读</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·[1-20)</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:34.2%;background:#4f46e5"></div></div><span class="rv-hbar-val">34.2%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:58.1%;background:#0d9488"></div></div><span class="rv-hbar-val">58%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:17.7%;background:#6366f1"></div></div><span class="rv-hbar-val">18%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li><li>高价层礼包收入占比高。后续建议综合评估：礼包卖法与排期是否贴合目标。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>5.4%</td><td>78.3%</td><td>63.8%</td><td>33.3%</td><td>16.2</td><td>16.2</td><td>13.1</td><td>58.1%</td><td>0.0%</td></tr>
+<tr><td>[100-200)</td><td>6.8%</td><td>70.5%</td><td>48.4%</td><td>30.2%</td><td>12.2</td><td>13.6</td><td>5.9</td><td>21.8%</td><td>0.0%</td></tr>
+<tr><td>[50-100)</td><td>15.2%</td><td>65.3%</td><td>46.9%</td><td>23.1%</td><td>13.6</td><td>14.3</td><td>6.1</td><td>42.1%</td><td>0.0%</td></tr>
+<tr><td>[20-50)</td><td>13.6%</td><td>67.1%</td><td>41.0%</td><td>21.7%</td><td>13.6</td><td>14.2</td><td>3.9</td><td>47.4%</td><td>0.0%</td></tr>
+<tr><td>[1-20)</td><td>34.2%</td><td>53.7%</td><td>41.8%</td><td>18.7%</td><td>12.4</td><td>13.2</td><td>3.4</td><td>42.7%</td><td>0.0%</td></tr>
+<tr><td>(0-1)</td><td>2.9%</td><td>40.8%</td><td>29.6%</td><td>15.5%</td><td>9.6</td><td>11.8</td><td>1.4</td><td>63.0%</td><td>0.0%</td></tr>
+<tr><td>[0]</td><td>12.3%</td><td>15.3%</td><td>27.6%</td><td>12.1%</td><td>8.4</td><td>11.1</td><td>0.5</td><td>70.2%</td><td>0.0%</td></tr>
+<tr><td>非目标用户</td><td>9.6%</td><td>34.6%</td><td>17.7%</td><td>8.5%</td><td>10.3</td><td>12.5</td><td>0.8</td><td>32.5%</td><td>0.0%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 86% 的历史祈愿活动；参与付费率约 30.9%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li><li>全量礼包收入占比较高，高价分层礼包收入占比也很高。后续建议综合评估：礼包、直抽、祈愿券搭配与本期收入目标是否一致。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">较上期同期9日偏高（约 +8%）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>61,014</strong>｜上期同期 <strong>56,482</strong>｜品类分位 <strong>约超 86%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">对比口径均为<strong>上线满9天</strong>的「当前累计」快照。与上一期（同专题时间线相邻期）同期相比，收入变化约 <strong>8.0%</strong>。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达指标缺数，效率暂不解读</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>—</strong>（9日导出为0，疑口径未回溯）｜全周期触达 <strong>276,286</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。 本期9日快照中触达用户数为0，触达 ARPU/率可能失真，建议以全周期「汇总」或重新跑数为准。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费转化好于上期；复抽率低于上期；顶配用户占比较上期更低</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>4.19</strong>｜目标付费 ARPU <strong>0.107</strong>｜参与付费率 <strong>30.9%</strong>｜纯免费抽占抽卡用户 <strong>69.1%</strong>｜复抽率 <strong>33.1%</strong>｜顶配用户占比 <strong>13.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">收入更集中目标用户；礼包占比较高</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>90.4%</strong>｜礼包 <strong>45.6%</strong>｜祈愿券 <strong>0.0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">前9日累计强于上期</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>61,014</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类高位</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 86%</strong>｜参与付费率 <strong>30.9%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+
+<article class="period-board" data-period="2">
+        <header class="period-head">
+          <div class="period-head-text">
+            <span class="period-badge">第 2 期</span>
+            <span class="period-theme">航海假日·特典祈愿</span>
+            <span class="period-sub">漫改耽美 · 已上线 618 天 · 表内对比 9 日</span>
+          </div>
+          <p class="period-one-liner"><span class="one-liner-label">一句话总结</span>较往期：无上期同期可比。较同品类：在同品类对标池中约超 85% 同行，属高位段位。综合：本期整体「一般」。</p>
+          <div class="period-kpis">
+            <div class="kpi-pill"><span class="kpi-l">9日累计收入</span><strong>56,482<span class="kpi-level">（无上期可比）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>81,612 · 进度117%<span class="kpi-level">（脚本预估）</span></strong></div>
+            <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>—<span class="kpi-level">（未录入）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>23.9%<span class="kpi-level">（相对正常）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>3,505<span class="kpi-level">（无上期可比）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>3.87<span class="kpi-level">（无上期可比）</span></strong></div>
+            <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>16.11<span class="kpi-level">（无上期可比）</span></strong></div>
+          </div>
+        </header>
+        <div class="review-modules">
+        <p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为文末「展开」后的六格指标明细。各块结论均为「事实要点 + 判断 + 后续建议综合评估」。</p>
+        <div class="review-mod-grid">
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>
+<div class="rv-hbar-row"><span class="rv-hbar-lab">参与付费率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:23.9%;background:#0d9488"></div></div><span class="rv-hbar-val">23.9%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">纯免费抽占抽卡用户</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:76.1%;background:#ca8a04"></div></div><span class="rv-hbar-val">76.1%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">复抽率</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:39.9%;background:#6366f1"></div></div><span class="rv-hbar-val">39.9%</span></div><ol class="review-conclusions"><li>参与付费率约 23.9%，「相对正常」。后续建议综合评估：人群、赠抽、进付费抽引导、池子定价与大奖。</li><li>纯免费抽占抽卡用户比例「偏高」。后续建议综合评估：赠抽力度、进付费抽引导与收入目标是否一致。</li><li>复抽率「偏低」。后续建议综合评估：大奖与池难度、发券节奏、与参与付费率一并看。</li><li>顶配用户占比在顶栏 KPI 或折叠区「客单价」小卡中。后续建议综合评估：保底、人均抽数、大奖难易与用户感受。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>
+<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比"><span class="rv-stack-s rv-stack-g" style="width:46.02%">礼</span><span class="rv-stack-s rv-stack-t" style="width:0.00%">券</span><span class="rv-stack-s rv-stack-o" style="width:53.98%">其</span></div><p class="rv-stack-cap">收入结构 · 礼包 46% · 祈愿券 0% · 其余 54%</p><ol class="review-conclusions"><li>付费单抽均价与目标用户收入占比已在本模块图示中列出。后续建议综合评估：礼包折价与用券、勿与站外单价硬比；核心读者贡献是否与目标匹配。</li><li>礼/券/其余结构由堆叠条展示；约七成/五成为经验阈值。后续建议综合评估：核心是否扛收、人群是否变散、当期放券与礼包是否压结构。</li><li>「其余」柱领先。后续建议综合评估：当期礼包、放券或其它动作是否与该主柱一致。</li></ol>          </section>
+          <section class="review-mod">
+            <h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>
+<p class="review-mod-warn">本期触达 UV 为 0，宣发效率条可能失真，请以汇总或重新导出为准。</p><ol class="review-conclusions"><li>触达指标缺数，效率暂不解读</li></ol>          </section>
+        </div>
+        <section class="review-mod review-mod--layer">
+          <h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>
+          <div class="review-layer-insight">
+<div class="rv-hbar-row"><span class="rv-hbar-lab">收入占比最高·[1-20)</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:24.6%;background:#4f46e5"></div></div><span class="rv-hbar-val">24.6%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">高价层·礼包占该层收入</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:37.5%;background:#0d9488"></div></div><span class="rv-hbar-val">38%</span></div><div class="rv-hbar-row"><span class="rv-hbar-lab">各层复抽率·最低档</span><div class="rv-hbar-track"><div class="rv-hbar-fill" style="width:23.8%;background:#6366f1"></div></div><span class="rv-hbar-val">24%</span></div><ol class="review-conclusions"><li>本模块条形标出收入占比最高档，表格列各层参与付费率、复抽率及礼/券占比。后续建议综合评估：分层策略与本期收入目标是否一致。</li><li>高价层较低价层更愿意付费抽、人均付费抽更高，随分层变浅而递减（常见相关非因果）。后续建议综合评估：分层定价与引导是否匹配。</li></ol>          </div>
+          <div class="review-layer-inner">
+<div class="layer-table-scroll">
+            <table class="layer-table">
+              <thead><tr><th scope="col">目标用户分层</th><th scope="col">对应人群收入占比</th><th scope="col">参与付费率</th><th scope="col">复抽率</th><th scope="col">顶配用户<br />占比</th><th scope="col">抽到最高等级卡<br />人均抽数</th><th scope="col">付费抽·顶配<br />人均抽数</th><th scope="col">抽卡用户<br />人均付费抽</th><th scope="col">礼包收入占比</th><th scope="col">祈愿券收入占比</th></tr></thead>
+              <tbody>
+<tr><td>[200+)</td><td>6.9%</td><td>78.2%</td><td>72.1%</td><td>51.3%</td><td>13.9</td><td>14.5</td><td>9.4</td><td>37.5%</td><td>0.0%</td></tr>
+<tr><td>[100-200)</td><td>7.9%</td><td>59.2%</td><td>65.6%</td><td>35.0%</td><td>12.3</td><td>12.8</td><td>4.3</td><td>39.8%</td><td>0.0%</td></tr>
+<tr><td>[50-100)</td><td>12.7%</td><td>59.1%</td><td>60.3%</td><td>29.0%</td><td>12.8</td><td>13.0</td><td>4.0</td><td>56.1%</td><td>0.0%</td></tr>
+<tr><td>[20-50)</td><td>16.8%</td><td>55.0%</td><td>54.1%</td><td>25.7%</td><td>12.5</td><td>13.2</td><td>3.4</td><td>43.6%</td><td>0.0%</td></tr>
+<tr><td>[1-20)</td><td>24.6%</td><td>45.3%</td><td>47.1%</td><td>22.0%</td><td>12.0</td><td>13.2</td><td>2.1</td><td>45.3%</td><td>0.0%</td></tr>
+<tr><td>(0-1)</td><td>2.0%</td><td>32.7%</td><td>47.2%</td><td>24.4%</td><td>12.2</td><td>13.0</td><td>1.0</td><td>55.6%</td><td>0.0%</td></tr>
+<tr><td>[0]</td><td>12.7%</td><td>12.2%</td><td>37.7%</td><td>15.8%</td><td>10.8</td><td>13.2</td><td>0.4</td><td>63.2%</td><td>0.0%</td></tr>
+<tr><td>非目标用户</td><td>16.4%</td><td>23.0%</td><td>23.8%</td><td>9.3%</td><td>9.9</td><td>11.1</td><td>0.5</td><td>33.9%</td><td>0.0%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+        <section class="review-mod review-mod--synthesis">
+          <h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>
+<ol class="review-conclusions"><li>同期收入在「耽美池」样本里高于约 85% 的历史祈愿活动；参与付费率约 23.9%，「相对正常」。后续建议综合评估：人群、赠抽、付费引导、池子与内部目标是否对齐。</li></ol>        </section>
+        </div>
+
+        <details class="period-metrics-fold">
+          <summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（与 ①～⑤ 复盘块及顶栏 KPI 同源快照）</summary>
+        <p class="review-grid-hint">以下为 <strong>⑥ 指标明细</strong>（六格），与上方 <strong>①～⑤</strong> 复盘模块及顶栏 KPI <strong>同一快照</strong>；算式与口径可展开各卡「展开说明」。</p>
+        <div class="period-grid">
+        <section class="mini-card" aria-label="收入规模">
+          <h4 class="mini-card-title">收入规模</h4>
+          <p class="mini-con">首条可比期（无上期）</p>
+          
+          <div class="mini-stats"><div class="data-line">9日累计收入 <strong>56,482</strong>｜品类分位 <strong>约超 85%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">表中收入为上线满 <strong>9</strong> 天累计快照。 全周期累计见后台「汇总」；勿拿本期9日与别作全周期总额直接比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="触达效率">
+          <h4 class="mini-card-title">触达效率</h4>
+          <p class="mini-con">触达指标缺数，效率暂不解读</p>
+          
+          <div class="mini-stats"><div class="data-line">触达 UV <strong>—</strong>（9日导出为0，疑口径未回溯）｜全周期触达 <strong>324,908</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">触达 ARPU=总收入÷触达用户数；目标触达率=目标用户中曾曝光占比。结论已与上期对照（若有）。 本期9日快照中触达用户数为0，触达 ARPU/率可能失真，建议以全周期「汇总」或重新跑数为准。</div></details>
+        </section>
+        <section class="mini-card" aria-label="客单价">
+          <h4 class="mini-card-title">客单价</h4>
+          <p class="mini-con">抽后付费与单抽</p>
+          
+          <div class="mini-stats"><div class="data-line">付费单抽均价 <strong>4.16</strong>｜目标付费 ARPU <strong>0.091</strong>｜参与付费率 <strong>23.9%</strong>｜纯免费抽占抽卡用户 <strong>76.1%</strong>｜复抽率 <strong>39.9%</strong>｜顶配用户占比 <strong>15.7%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">各指标为监测表同名列口径；算式以导出表为准。 <strong>复抽率</strong>：付过费抽卡的人里，多次发生付费抽的比例。 <strong>顶配用户占比</strong>：抽卡用户中曾获得最高档奖励的比例；建议结合人均抽数与保底规则。</div></details>
+        </section>
+        <section class="mini-card" aria-label="结构">
+          <h4 class="mini-card-title">结构</h4>
+          <p class="mini-con">人群结构；礼包占比较高</p>
+          
+          <div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>83.6%</strong>｜礼包 <strong>46.0%</strong>｜祈愿券 <strong>0.0%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>
+        </section>
+        <section class="mini-card" aria-label="收入节奏">
+          <h4 class="mini-card-title">收入节奏</h4>
+          <p class="mini-con">无上期可比对</p>
+          
+          <div class="mini-stats"><div class="data-line">同期9日累计收入 <strong>56,482</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">节奏主要依据与上期<strong>同期9日累计</strong>对比；逐日曲线需用导出表分日作图。</div></details>
+        </section>
+        <section class="mini-card" aria-label="同品类表现">
+          <h4 class="mini-card-title">同品类表现</h4>
+          <p class="mini-con">9日收入处品类高位</p>
+          
+          <div class="mini-stats"><div class="data-line">耽美池样本 <strong>59</strong>｜9日收入分位 <strong>约超 85%</strong>｜参与付费率 <strong>23.9%</strong></div></div>
+          <details class="mini-details"><summary>展开说明</summary><div class="detail-inner">分位基于《漫改耽美池历史数据》中品类=<strong>漫改耽美</strong>的全部活动「上线9日内·全部」收入排序，约有多少比例低于本期<strong>同期9日</strong>收入。与当前专题后台品类标签（如视频卡）无关，仅用于横向参照。</div></details>
+        </section>
+        </div>
+        </details>
+      </article>
+        <!--END_FISH_OLDER_PERIODS-->
+    </div>
+    <details class="exec-meta">
+      <summary>版式说明 · 维度是否够用 · 如何更新全期卡片区</summary>
+      <p class="exec-note">
+        <strong>结构：</strong>首卡为最新期；其下<strong>给业务的下一步策略</strong>由脚本根据最新一期快照自动生成「判断 + 动作」列表（<code>FISH_NEXT_STRATEGY_BODY</code>）；再下为历史期卡片。每卡含一句话总结、顶栏 KPI（含水平标注）、①～⑤ 复盘块，以及文末折叠的 <strong>⑥</strong>（2×3 六格指标明细）。<br />
+        <strong>更新：</strong>替换 CSV 后执行 <code>python3 生成_人鱼全期结论表.py</code>，会重写最新期、策略体、历史期三处标记内 HTML；标题「给业务的下一步策略」保留在标记外。
+      </p>
+    </details>
+  </section>
+
+  <!-- 规模 -->
+  <section id="panel-detail" class="dim">
+    <h3>① 规模 —— 盘子有多大？</h3>
+    <p class="hint">看什么：总收入、有多少人能触达、目标用户池子有多大。规模答的是「做了多大生意」，不直接等于「做得好」。</p>
+    <div class="row-compare">
+      <div class="metric">第15期 · 上线9天累计收入<strong>33,104</strong></div>
+      <div class="metric">第14期 · 同期9天累计收入<strong>32,943</strong></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>累计收入（同期9天）</span><span>对齐对比</span></div>
+      <div class="bar-track" style="max-width:100%">
+        <div class="bar-a" style="width:50.12%"></div>
+        <div class="bar-b" style="width:49.88%"></div>
+      </div>
+      <p class="legend"><span style="background:var(--accent)"></span>第15期（略高） <span style="background:#94a3b8"></span>第14期同期</p>
+    </div>
+    <div class="row-compare">
+      <div class="metric">第15期 目标用户规模<strong>160,896</strong> 人</div>
+      <div class="metric">第14期 同期 目标用户<strong>145,138</strong> 人</div>
+    </div>
+    <div class="row-compare">
+      <div class="metric">第15期 触达 UV<strong>76,379</strong></div>
+      <div class="metric">第14期 同期 触达 UV<strong>108,371</strong></div>
+    </div>
+    <p class="chart-cap"><strong>解读：</strong>收入规模同期持平；本期「刷到活动」的人更少，但并没拖累同期总收入——后面效率维度会展开。</p>
+  </section>
+
+  <!-- 效率 -->
+  <section class="dim">
+    <h3>② 效率 —— 同样的人/触达，钱转得怎么样？</h3>
+    <p class="hint">看什么：目标付费 ARPU（目标用户人均贡献）、触达 ARPU（每个曝光用户人均贡献）、目标触达率（目标用户里有多少人真的看到池子）。</p>
+    <div class="row-compare">
+      <div class="metric">目标付费 ARPU · 15期<strong>0.141</strong> · 14期同期<strong>0.142</strong><br/><span style="color:var(--muted);font-size:0.85rem">几乎持平</span></div>
+      <div class="metric">触达 ARPU · 15期<strong>0.432</strong> · 14期同期<strong>0.303</strong><br/><span style="color:var(--good);font-size:0.85rem">+约42%（触达人更少但更值钱）</span></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>触达 ARPU（越大越好）</span></div>
+      <div class="bar-track">
+        <div class="bar-b" style="width:70%"></div>
+      </div>
+      <div class="bar-track" style="margin-top:6px">
+        <div class="bar-a" style="width:100%"></div>
+      </div>
+      <p class="legend">上灰条=第14期同期（归一化基准）　下紫条=第15期（更高）</p>
+    </div>
+    <div class="row-compare">
+      <div class="metric">目标触达率 · 15期<strong>11.5%</strong></div>
+      <div class="metric">目标触达率 · 14期同期<strong>14.4%</strong></div>
+    </div>
+    <p class="chart-cap"><strong>解读：</strong>「核心盘人均贡献」稳定；「看到活动的人」变少却抬高了单次触达价值，同时<strong>目标用户被活动覆盖的比例偏低</strong>——若希望长期健康，通常希望触达率不要被资源位或排期压得太低。</p>
+  </section>
+
+  <!-- 深度 -->
+  <section class="dim">
+    <h3>③ 深度 —— 用户愿意抽多深、付多少？</h3>
+    <p class="hint">看什么：付费单抽均价、复抽率、参与付费率（参与抽卡里最终付费的比例）、大奖获得情况（感知价值）。</p>
+    <div class="row-compare">
+      <div class="metric">付费单抽均价 · 15期<strong>2.06</strong> · 14期同期<strong>1.40</strong></div>
+      <div class="metric">复抽率 · 15期<strong>94.3%</strong> · 14期同期<strong>94.2%</strong><br/><span style="color:var(--muted);font-size:0.85rem">付费用户里多次抽的比例，仍极高</span></div>
+    </div>
+    <div class="row-compare">
+      <div class="metric">参与付费率 · 15期<strong>12.7%</strong></div>
+      <div class="metric">参与付费率 · 14期同期<strong>17.8%</strong></div>
+    </div>
+    <div class="row-compare">
+      <div class="metric">抽到最高等级用户占比 · 15期<strong>3.3%</strong></div>
+      <div class="metric">抽到最高等级用户占比 · 14期同期<strong>6.4%</strong></div>
+    </div>
+    <p class="chart-cap"><strong>解读：</strong>本期「每次付费抽更贵」、重复抽习惯仍在，但<strong>从抽卡到付费的转化变窄</strong>，且<strong>摸到顶配卡的用户占比更低</strong>——要警惕「池子更难出 / 感知变差」带来的轻中度用户流失；需结合池子配置与保底，不宜单看收入。</p>
+  </section>
+
+  <!-- 结构 -->
+  <section class="dim">
+    <h3>④ 结构 —— 钱从哪些人群、哪些付费方式来的？</h3>
+    <p class="hint">看什么：目标用户贡献的收入占比；金爱心礼包 vs 付费祈愿券占收入的比例（付费路径是否变化）。</p>
+    <div class="row-compare">
+      <div class="metric">目标用户贡献收入占比 · 15期<strong>81.4%</strong></div>
+      <div class="metric">目标用户贡献收入占比 · 14期同期<strong>68.3%</strong></div>
+    </div>
+    <p class="chart-cap">本期收入更依赖「事前圈定的核心读者/粉丝」，站外或泛流量贡献相对更小。</p>
+    <div class="row-compare">
+      <div class="metric">礼包收入占当期总收入 · 15期<strong>29.0%</strong> · 14期同期<strong>21.4%</strong></div>
+      <div class="metric">付费祈愿券占当期总收入 · 15期<strong>54.3%</strong> · 14期同期<strong>64.8%</strong></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>付费结构示意（第15期）</span></div>
+      <div class="bar-track">
+        <div class="bar-a" style="width:29%;background:#6366f1" title="礼包"></div>
+        <div class="bar-a" style="width:54.3%;background:#818cf8" title="祈愿券"></div>
+        <div class="bar-a" style="width:16.7%;background:#c4b5fd" title="其他"></div>
+      </div>
+      <p class="legend"><span style="background:#6366f1"></span>礼包约29% <span style="background:#818cf8"></span>祈愿券约54% <span style="background:#c4b5fd"></span>其余约17%（含直充爱心等）</p>
+    </div>
+    <p class="chart-cap"><strong>解读：</strong>礼包抬升、券略降，可能是<strong>档位设计或运营主推**与上期不同**；适合核对是否「策略性」而非异常。</p>
+  </section>
+
+  <!-- 节奏 -->
+  <section class="dim">
+    <h3>⑤ 节奏 —— 钱是按什么曲线进来的？</h3>
+    <p class="hint">看什么：上线后第1天、第3天、第7天…累计收入曲线，判断是「首发猛」还是「细水长流」。</p>
+    <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="xMidYMid meet" aria-label="累计收入曲线对比">
+      <!-- 网格 -->
+      <line x1="48" y1="170" x2="500" y2="170" stroke="#cbd5e1" stroke-width="1" />
+      <line x1="48" y1="30" x2="500" y2="30" stroke="#e2e8f0" stroke-width="1" />
+      <text x="46" y="175" text-anchor="end" font-size="9" fill="#64748b">0</text>
+      <text x="46" y="38" text-anchor="end" font-size="9" fill="#64748b">3.5万</text>
+      <!-- 曲线14：来自导出表「当前累计」第1～9日总收入（元） -->
+      <polyline fill="none" stroke="#94a3b8" stroke-width="2.5"
+        points="48,128.7 104.5,112.5 161,101.7 217.5,90.8 274,78.4 330.5,67.3 387,52.3 443.5,44.9 500,38.1" />
+      <!-- 曲线15：同上 -->
+      <polyline fill="none" stroke="#4f46e5" stroke-width="2.5"
+        points="48,120.9 104.5,100.6 161,88.2 217.5,79.2 274,69.5 330.5,55.9 387,47.6 443.5,42.9 500,37.6" />
+      <!-- X labels -->
+      <text x="48" y="188" text-anchor="middle" font-size="9" fill="#64748b">D1</text>
+      <text x="161" y="188" text-anchor="middle" font-size="9" fill="#64748b">D3</text>
+      <text x="274" y="188" text-anchor="middle" font-size="9" fill="#64748b">D5</text>
+      <text x="387" y="188" text-anchor="middle" font-size="9" fill="#64748b">D7</text>
+      <text x="500" y="188" text-anchor="middle" font-size="9" fill="#64748b">D9</text>
+      <text x="274" y="22" text-anchor="middle" font-size="11" font-weight="600" fill="#334155">累计收入（同期前9天）</text>
+    </svg>
+    <p class="legend" style="margin-top:4px">
+      <span style="background:#4f46e5"></span>第15期鱼喵请闭眼
+      <span style="background:#94a3b8"></span>第14期深海誓约（同期）
+    </p>
+    <p class="chart-cap"><strong>读图提示：</strong>紫线全程在灰线<strong>上方</strong>，表示<strong>前9天每一天的累计收入都略高于第14期同期</strong>；第14期活动仍在线更久，<strong>全周期总收入会随时间继续涨</strong>，不能用「本期只跑了9天」去和「上期跑满58天」比总额。</p>
+  </section>
+
+  <!-- 品类对照 -->
+  <section class="dim" style="border-color:#c7d2fe;background:linear-gradient(180deg,#fafbff 0%,#fff 40%);">
+    <h3>⑥ 品类参照 —— 在「漫改耽美」历史池里处于什么位置？</h3>
+    <p class="hint">
+      样本：<code>漫改耽美池历史数据.csv</code> 中品类=漫改耽美、共 <strong>59</strong> 个不同活动。<br />
+      <strong>分位怎么读：</strong>表中「约超过 X% 同类」表示：按该指标从低到高排序，本期大约高于其中 X% 的池子（粗略经验分位，并列值会有误差）。<br />
+      <strong>重要提醒：</strong>不要用「汇总总收入」和已上线几百天的活动比绝对额——下表<strong>以「上线9日内·当前累计·全部」为主</strong>，与本期已上线 9 天对齐。
+    </p>
+    <table style="margin-top:12px;border-collapse:collapse;width:100%;font-size:0.88rem;">
+      <thead>
+        <tr style="background:#eef2ff;">
+          <th style="border:1px solid var(--border);padding:8px;text-align:left;">指标（9日同口径）</th>
+          <th style="border:1px solid var(--border);padding:8px;">本期</th>
+          <th style="border:1px solid var(--border);padding:8px;">品类中位（约）</th>
+          <th style="border:1px solid var(--border);padding:8px;">位置感</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="border:1px solid var(--border);padding:8px;">累计总收入</td><td style="border:1px solid var(--border);padding:8px;">33,104</td><td style="border:1px solid var(--border);padding:8px;">26,878</td><td style="border:1px solid var(--border);padding:8px;">高于中位，约超过 <strong>61%</strong> 同类</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">目标付费 ARPU</td><td style="border:1px solid var(--border);padding:8px;">0.141</td><td style="border:1px solid var(--border);padding:8px;">0.110</td><td style="border:1px solid var(--border);padding:8px;">约超过 <strong>68%</strong> 同类</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">触达 ARPU</td><td style="border:1px solid var(--border);padding:8px;">0.432</td><td style="border:1px solid var(--border);padding:8px;">0.177</td><td style="border:1px solid var(--border);padding:8px;">很靠前，约超过 <strong>94%</strong> 同类</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">触达付费率</td><td style="border:1px solid var(--border);padding:8px;">2.16%</td><td style="border:1px solid var(--border);padding:8px;">1.19%</td><td style="border:1px solid var(--border);padding:8px;">约超过 <strong>89%</strong> 同类</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">目标触达率</td><td style="border:1px solid var(--border);padding:8px;">11.5%</td><td style="border:1px solid var(--border);padding:8px;">13.8%</td><td style="border:1px solid var(--border);padding:8px;">偏靠后，仅约超过 <strong>24%</strong> 同类</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">参与付费率</td><td style="border:1px solid var(--border);padding:8px;">12.7%</td><td style="border:1px solid var(--border);padding:8px;">26.4%</td><td style="border:1px solid var(--border);padding:8px;">明显偏低，仅约超过 <strong>10%</strong> 同类</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">付费单抽均价</td><td style="border:1px solid var(--border);padding:8px;">2.06</td><td style="border:1px solid var(--border);padding:8px;">3.57</td><td style="border:1px solid var(--border);padding:8px;">低于品类中位，约超过 <strong>37%</strong> 同类（定价/池子结构与其他作不同，勿单独判好坏）</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">复抽率</td><td style="border:1px solid var(--border);padding:8px;">94.3%</td><td style="border:1px solid var(--border);padding:8px;">46.3%</td><td style="border:1px solid var(--border);padding:8px;">约超过 <strong>86%</strong> 同类（付费用户里多次付费抽极普遍）</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:8px;">金爱心礼包收入占比</td><td style="border:1px solid var(--border);padding:8px;">29.0%</td><td style="border:1px solid var(--border);padding:8px;">14.4%</td><td style="border:1px solid var(--border);padding:8px;">礼包偏重，约超过 <strong>81%</strong> 同类</td></tr>
+      </tbody>
+    </table>
+    <p class="chart-cap" style="margin-top:12px"><strong>给业务同事的一句话：</strong>这期在耽美池里属于「<strong>首周收成不差、单次触达很值钱</strong>」，但「<strong>看到的人里愿意付钱抽的比例</strong>」在同类里偏难看了，建议一定要和<strong>池子难度、免费赠抽、礼包引导</strong>一起复盘，而不是只盯总收入。</p>
+    <p class="chart-cap"><strong>勿误读：</strong>若把「汇总总收入」拿去和已上线很久的活动比，本期会落在约 42% 分位——那是因为<strong>别人多跑了几十天～几百天</strong>，不是本期弱。</p>
+  </section>
+
+  <section id="panel-appendix" class="appendix">
+    <h2>综合判断表（五维红绿灯）</h2>
+    <table>
+      <thead>
+        <tr><th>维度</th><th>相对第14期（同期9天）</th><th>灯号</th><th>给业务的一句话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>规模</td><td>总收入基本持平；触达人数更少</td><td>🟢</td><td>同期收成不差，但曝光面收窄</td></tr>
+        <tr><td>效率</td><td>目标ARPU持平；触达ARPU更高；目标触达率偏低</td><td>🟡</td><td>触达更「精」但核心用户覆盖不足要解释</td></tr>
+        <tr><td>深度</td><td>单抽更贵；参与付费率与大卡占比低于上期同期</td><td>🟡</td><td>深付费仍在，轻转化变弱，建议核对池子体验</td></tr>
+        <tr><td>结构</td><td>更靠目标用户；礼包占比上升</td><td>⚪</td><td>策略差异可能性大，需运营/商业化确认是否预期内</td></tr>
+        <tr><td>节奏</td><td>前9天累计曲线高于上期同期</td><td>🟢</td><td>首发节奏更强，长尾待观察</td></tr>
+        <tr><td>品类（耽美59池·9日）</td><td>收入/目标ARPU/触达ARPU偏强；目标触达率与参与付费率偏弱</td><td>🟡</td><td>首周在品类里不算差，但「抽了还付费」弱于多数同类，需对齐池子与运营</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:28px">建议你们补充的字段 / 信息（便于下一轮更准）</h2>
+    <table>
+      <thead>
+        <tr><th>类型</th><th>建议补充</th><th>用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>目标</td><td>每期活动「预期收入」或「对标期次」书面记录</td><td>判断好/不好不止看环比，还能看达标</td></tr>
+        <tr><td>配置</td><td>卡池概率、保底步数、大奖数量、礼包档位与折扣快照</td><td>解释「单抽均价、大卡占比、参与付费率」变化</td></tr>
+        <tr><td>宣发</td><td>各资源位<strong>完整排期</strong>（含往期同活动），若能对齐「触达」定义更佳</td><td>解释目标触达率、触达规模变化</td></tr>
+        <tr><td>大盘</td><td>同期全站/品类付费水位、是否有竞品活动</td><td>区分「活动自身」与「外部环境」</td></tr>
+        <tr><td>内容</td><td>是否混池、是否绑定剧情节点（更新/名场面）</td><td>解释人群结构与节奏</td></tr>
+        <tr><td>体验</td><td>客诉量、退款/异常（若有）</td><td>与「深度」指标交叉验证用户感受</td></tr>
+      </tbody>
+    </table>
+    <p class="chart-cap" style="margin-top:16px">
+      打开本文件方式：双击 <code>人鱼陷落-第15期祈愿-五维复盘.html</code> 用浏览器打开即可；若需贴进 PPT，可截图各模块或只摘「一句话结论」+「红绿灯表」。
+    </p>
+  </section>
+
+  </main>
+</div>
+
+  <script>
+  (function () {
+    var modal = document.getElementById("usage-modal");
+    var openBtn = document.getElementById("open-usage-modal");
+    var closeBtn = document.getElementById("close-usage-modal");
+    if (modal && openBtn) {
+      openBtn.addEventListener("click", function () {
+        if (typeof modal.showModal === "function") {
+          modal.showModal();
+          if (closeBtn) closeBtn.focus();
+        }
+      });
+      if (closeBtn) {
+        closeBtn.addEventListener("click", function () {
+          modal.close();
+        });
+      }
+      modal.addEventListener("click", function (ev) {
+        if (ev.target === modal) modal.close();
+      });
+      document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && modal.open) modal.close();
+      });
+    }
+
+    var filterWrap = document.getElementById("dash-filter-wrap");
+    var filterToggle = document.getElementById("toggle-filter-panel");
+    if (filterWrap && filterToggle) {
+      function setFilterExpanded(exp) {
+        filterWrap.classList.toggle("is-expanded", exp);
+        filterToggle.setAttribute("aria-expanded", exp ? "true" : "false");
+        filterToggle.textContent = exp ? "筛选栏 ▴" : "筛选栏 ▾";
+      }
+      filterToggle.addEventListener("click", function () {
+        setFilterExpanded(!filterWrap.classList.contains("is-expanded"));
+      });
+    }
+
+    var tabs = document.querySelectorAll(".dash-tab[data-target]");
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        var id = tab.getAttribute("data-target");
+        var el = id ? document.getElementById(id) : null;
+        tabs.forEach(function (t) {
+          var on = t === tab;
+          t.classList.toggle("is-active", on);
+          t.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -19,6 +19,7 @@
           <a class="sidebar__link is-active" href="./index.html" aria-current="page">运营宣推</a>
           <a class="sidebar__link" href="./wishbar.html">祈愿bar访问贡献</a>
           <a class="sidebar__link" href="./reach.html">祈愿宣发触达</a>
+          <a class="sidebar__link" href="./wish-review.html">祈愿单项目复盘</a>
         </nav>
         <div class="sidebar__hint muted">本地解析 CSV，不上传数据</div>
       </aside>
@@ -37,6 +38,7 @@
             <button id="bindFolderBtn" class="btn btn--ghost" type="button">绑定数据文件夹</button>
             <button id="updateFolderBtn" class="btn" type="button">更新最新数据</button>
             <button id="exportReportBtn" class="btn btn--ghost" type="button" title="导出结论报告。分享链接含报告数据，仅发送给可信任对象。">导出报告</button>
+            <button id="exportSnapshotBtn" class="btn btn--ghost" type="button" title="导出本页可交互 HTML（内含当前数据，与汇总页整站导出不同）">导出快照</button>
           </div>
         </header>
 
@@ -214,7 +216,7 @@
         <div id="module2" class="card card--full">
           <div class="card__title">
             <div class="card__titleMain"><span class="titleBadge">3</span>各业务线宣发效率趋势</div>
-            <div class="card__titleSub">按宣发来源拆分，关注每曝光收入与 p-CTR 变化</div>
+            <div class="card__titleSub">按宣发来源拆分；可筛宣发来源；关注效率指标、p-CTR 与运营宣推曝光占比</div>
           </div>
           <div class="card__body">
             <div class="cardControls">
@@ -234,15 +236,21 @@
                 <div class="control__label">结束日期</div>
                 <input id="srcEndDate" type="date" />
               </div>
+              <div class="control control--wide">
+                <div class="control__label">宣发来源</div>
+                <select id="srcSourceFilter">
+                  <option value="">全部</option>
+                </select>
+              </div>
             </div>
             <div class="pillRow">
-              <div class="pillRow__label muted">选择业务线/宣发来源（用于趋势图）</div>
+              <div class="pillRow__label muted">选择业务线/宣发来源（用于趋势图；与上方「宣发来源」筛选叠加）</div>
               <div class="pillRow__pills" id="sourcePills"></div>
             </div>
             <div class="chartWrap">
               <button class="btn btn--ghost btn--sm copyChartBtn" type="button">复制为图片</button>
               <canvas id="sourceTrendChart"></canvas>
-              <div class="chartHint muted" id="sourceChartHint">图表：按业务线拆分，展示每曝光收入 + p-CTR 趋势（运营宣推口径）</div>
+              <div class="chartHint muted" id="sourceChartHint">图表：按宣发来源拆分，实线=效率指标，虚线=p-CTR，点划线=运营宣推曝光占比（运营宣推口径）</div>
             </div>
             <details class="details">
               <summary>展开查看来源效率表</summary>
@@ -351,7 +359,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
-    <script src="./app.js?v=20260318_1"></script>
+    <script src="./app.js?v=20260337"></script>
   </body>
 </html>
 
