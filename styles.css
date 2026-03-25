@@ -80,16 +80,16 @@ body[data-page="wish-review"] .reviewEmbedMain{
   flex-direction: column;
   min-height: 0;
   margin: 0;
-  padding: 0 16px 16px;
+  padding: 0 18px 20px;
 }
 body[data-page="wish-review"] .reviewEmbed{
   flex: 1;
   width: 100%;
   min-height: 480px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, .04);
+  box-shadow: 0 4px 28px rgba(15, 23, 42, 0.07);
 }
 body[data-page="wish-review"].is-embed .sidebar{
   display: none;
@@ -109,6 +109,104 @@ body[data-page="wish-review"].is-embed .reviewEmbed{
   border-radius: 0;
   min-height: 100vh;
   box-shadow: none;
+}
+
+/* 祈愿单项目复盘 · 侧栏操作区与说明 */
+.wishReviewSidebarTools{
+  margin-top: 6px;
+  padding: 14px 10px 0;
+  border-top: 1px solid rgba(15, 23, 42, .07);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wishReviewSidebarTools__title{
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  margin: 0 0 2px 2px;
+}
+.wishReviewSidebarTools .btn{
+  width: 100%;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 40px;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.wishReviewSidebarTools .btn--ghost{
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+.wishReviewSidebarTools .btn--ghost:hover{
+  background: #fff;
+  border-color: rgba(79, 124, 255, 0.35);
+}
+.sidebar__hint--wishReview{
+  margin-top: 14px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid rgba(79, 124, 255, 0.14);
+  border-left: 3px solid rgba(79, 124, 255, 0.42);
+  border-radius: 10px;
+  background: linear-gradient(
+    145deg,
+    rgba(79, 124, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.72) 48%,
+    rgba(246, 248, 255, 0.9) 100%
+  );
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgba(15, 23, 42, 0.72);
+}
+.sidebar__hint--wishReview strong,
+.sidebar__hint--wishReview code{
+  color: rgba(15, 23, 42, 0.88);
+  font-weight: 600;
+}
+
+/* 祈愿复盘 · 主区数据源卡片 */
+.wishReviewDataPanel{
+  max-width: none;
+  padding: 0 0 14px;
+  margin: 0;
+}
+.wishReviewDataCard{
+  margin-bottom: 0;
+  border: 1px solid rgba(79, 124, 255, 0.12);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+.wishReviewDataCard .card__titleSub{
+  line-height: 1.55;
+}
+.wishReviewDataCard .card__titleSub code{
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(79, 124, 255, 0.08);
+  border: 1px solid rgba(79, 124, 255, 0.12);
+}
+.wishReviewDataCard__actions{
+  margin-bottom: 14px;
+  align-items: center;
+  gap: 10px;
+}
+.wishReviewDataCard__hint{
+  font-size: 12px;
+  line-height: 1.45;
+  flex: 1;
+  min-width: 160px;
+}
+.wishReviewScanStatus{
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 1.25em;
+}
+.wishReviewBundleTable .tableWrap{
+  border-radius: 10px;
 }
 
 /* 汇总页：更紧凑、减少左侧到内容区视觉割裂 */

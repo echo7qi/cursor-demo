@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>祈愿单项目复盘</title>
-    <link rel="stylesheet" href="./styles.css?v=20260336" />
+    <link rel="stylesheet" href="./styles.css?v=20260327b" />
   </head>
   <body data-page="wish-review">
     <script>
@@ -21,11 +21,12 @@
           <a class="sidebar__link" href="./reach.html">祈愿宣发触达</a>
           <a class="sidebar__link is-active" href="./wish-review.html" aria-current="page">祈愿单项目复盘</a>
         </nav>
-        <div class="wishReviewSidebarTools" style="padding:0 14px 12px;display:flex;flex-direction:column;gap:8px">
-          <button type="button" class="btn js-wish-review-bind" style="width:100%;justify-content:center">绑定数据文件夹</button>
-          <button type="button" class="btn btn--ghost js-wish-review-scan" style="width:100%;justify-content:center">扫描数据源</button>
+        <div class="wishReviewSidebarTools">
+          <div class="wishReviewSidebarTools__title">本页操作</div>
+          <button type="button" class="btn js-wish-review-bind">绑定数据文件夹</button>
+          <button type="button" class="btn btn--ghost js-wish-review-scan">扫描数据源</button>
         </div>
-        <div class="sidebar__hint muted">与其它看板共用「资源位数据更新」绑定；对标池 CSV 与「整体数据监测」同夹。下方内嵌为静态样例，可右上角新标签打开全屏。</div>
+        <div class="sidebar__hint sidebar__hint--wishReview">与其它看板共用「资源位数据更新」根目录；对标池 CSV 与「整体数据监测」同夹。下方为静态样例报告，可右上角新标签全屏打开。</div>
       </aside>
 
       <div class="appShell__content appShell__content--wishReview">
@@ -42,20 +43,20 @@
         </header>
 
         <main class="reviewEmbedMain">
-          <section class="container" style="padding:0 0 12px;max-width:none">
-            <div class="card card--full" style="margin-bottom:12px">
+          <section class="wishReviewDataPanel">
+            <div class="card card--full wishReviewDataCard">
               <div class="card__title">
                 <div class="card__titleMain">祈愿收入复盘 · 数据源</div>
-                <div class="card__titleSub">子文件夹：整体数据监测（内含监测表 + 对标池 CSV）、作品明细表、分层用户监测 — 与本地 <code>生成_人鱼全期结论表.py --data-bundle</code> 约定一致</div>
+                <div class="card__titleSub">目录约定：<strong>整体数据监测</strong>（监测表与对标池同夹）、<strong>作品明细表</strong>、<strong>分层用户监测</strong>；生成页请使用 <code>生成_人鱼全期结论表.py --data-bundle</code></div>
               </div>
               <div class="card__body">
-                <div class="cardControls" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
+                <div class="cardControls wishReviewDataCard__actions">
                   <button type="button" class="btn js-wish-review-bind">绑定数据文件夹</button>
                   <button type="button" class="btn btn--ghost js-wish-review-scan">扫描数据源</button>
-                  <span class="muted" style="font-size:12px;align-self:center">与其它看板相同，绑定「资源位数据更新」根目录即可</span>
+                  <span class="wishReviewDataCard__hint muted">绑定「资源位数据更新」根目录即可，与其它看板共用。</span>
                 </div>
-                <p id="wishReviewHint" class="muted" style="margin:0 0 10px;font-size:13px"></p>
-                <div id="wishReviewBundleTable"><p class="muted">加载中…</p></div>
+                <p id="wishReviewHint" class="wishReviewScanStatus muted"></p>
+                <div id="wishReviewBundleTable" class="wishReviewBundleTable"><p class="muted">加载中…</p></div>
               </div>
             </div>
           </section>
