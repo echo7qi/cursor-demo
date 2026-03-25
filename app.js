@@ -1221,7 +1221,44 @@ function render() {
   // 2) 各业务宣发效率（趋势） – 固定运营宣推口径
   {
     const timeGran = $('srcTimeGran')?.value || 'day';
-    const srcRows = filterRowsByDate(dailyRows, $('srcStartDate')?.value, $('srcEndDate')?.value);
+    const srcRowsAll = filterRowsByDate(dailyRows, $('srcStartDate')?.value, $('srcEndDate')?.value);
+    let srcRows = srcRowsAll;
+
+    const srcFilterEl = $('srcSourceFilter');
+    const srcOptsRows = srcRowsAll;
+    const uniqueSources = Array.from(
+      new Set(srcOptsRows.map((r) => String(r[COLS.source] ?? '').trim() || '(空)'))
+    ).sort();
+    if (srcFilterEl) {
+      const key = uniqueSources.join('\x1e');
+      if (srcFilterEl.dataset.optKey !== key) {
+        srcFilterEl.dataset.optKey = key;
+        const prev = srcFilterEl.value;
+        srcFilterEl.innerHTML = '';
+        const o0 = document.createElement('option');
+        o0.value = '';
+        o0.textContent = '全部';
+        srcFilterEl.appendChild(o0);
+        for (const s of uniqueSources) {
+          const o = document.createElement('option');
+          o.value = s;
+          o.textContent = s;
+          srcFilterEl.appendChild(o);
+        }
+        if (prev === '' || uniqueSources.includes(prev)) srcFilterEl.value = prev;
+      }
+    }
+
+    const module2SourceOnly = (srcFilterEl?.value || '').trim();
+    if (state._module2SourceFilter !== module2SourceOnly) {
+      state._module2SourceFilter = module2SourceOnly;
+      const pe = $('sourcePills');
+      if (pe) pe.innerHTML = '';
+      state.selectedSources = new Set();
+    }
+    if (module2SourceOnly) {
+      srcRows = srcRowsAll.filter((r) => (String(r[COLS.source] ?? '').trim() || '(空)') === module2SourceOnly);
+    }
 
     const opsScopeCols = pickScopeCols('ops');
     const bySrc = groupBy(srcRows, (r) => String(r[COLS.source] ?? '').trim() || '(空)');
@@ -1269,7 +1306,7 @@ function render() {
     const hintEl = $('sourceChartHint');
     const palette = ['#4f7cff', '#40c79a', '#ff9f43', '#a855f7', '#ef4444', '#06b6d4', '#84cc16', '#f97316'];
 
-    const byDate = groupBy(srcRows, (r) => String(r[COLS.date] ?? '').trim());
+    const byDate = groupBy(srcRowsAll, (r) => String(r[COLS.date] ?? '').trim());
     const dates = Array.from(byDate.keys()).filter(Boolean).sort();
     const dailyBuckets = dates.map((d) => ({ date: d, rows: byDate.get(d) }));
 
@@ -1333,6 +1370,24 @@ function render() {
           borderWidth: 1.5,
           yAxisID: 'y1',
         });
+
+        const shareVals = buckets.map((b) => {
+          const totalA = computeFunnelAgg(b.rows, opsScopeCols);
+          const r = b.rows.filter((x) => (String(x[COLS.source] ?? '').trim() || '(空)') === src);
+          const srcA = computeFunnelAgg(r, opsScopeCols);
+          return safeDiv(srcA.imp, totalA.imp);
+        });
+        datasets.push({
+          label: `${src} · 运营宣推曝光占比`,
+          data: shareVals,
+          borderColor: color,
+          borderDash: [2, 3],
+          backgroundColor: 'transparent',
+          tension: 0.25,
+          pointRadius: 0,
+          borderWidth: 1.5,
+          yAxisID: 'y1',
+        });
       });
 
       state.charts.sourceTrend = new Chart(ctx, {
@@ -1387,7 +1442,7 @@ function render() {
       });
       if (hintEl) {
         const granLabel = timeGran === 'day' ? '日' : (timeGran === 'week_avg' ? '周（日均）' : '周（汇总）');
-        hintEl.textContent = `趋势：${granLabel} · 口径=运营宣推 · 每来源两条线：实线=${effLabel(effMetric)}，虚线=p-CTR · 已选来源=${selected.length}`;
+        hintEl.textContent = `趋势：${granLabel} · 口径=运营宣推 · 每来源三条线：实线=${effLabel(effMetric)}，虚线=p-CTR，点划线=运营宣推曝光占比 · 已选来源=${selected.length}${module2SourceOnly ? ` · 已筛宣发来源=${module2SourceOnly}` : ''}`;
       }
     } else if (hintEl) {
       hintEl.textContent = '图表库未加载（可能网络受限），仍可查看下方表格。';
@@ -1774,7 +1829,7 @@ async function loadRows(rows, fileNameLabel = null) {
   [
     'latestStartDate', 'latestEndDate',
     'opsStartDate', 'opsEndDate',
-    'srcStartDate', 'srcEndDate',
+    'srcStartDate', 'srcEndDate', 'srcSourceFilter',
     'posStartDate', 'posEndDate',
     'topStartDate', 'topEndDate',
     'matrixStartDate', 'matrixEndDate',
@@ -2017,7 +2072,7 @@ function setup() {
   [
     'latestStartDate', 'latestEndDate',
     'opsStartDate', 'opsEndDate',
-    'srcStartDate', 'srcEndDate',
+    'srcStartDate', 'srcEndDate', 'srcSourceFilter',
     'posStartDate', 'posEndDate',
     'topStartDate', 'topEndDate',
     'matrixStartDate', 'matrixEndDate',
@@ -2085,6 +2140,10 @@ function setup() {
       if (btn) btn.textContent = '导出失败';
       setTimeout(() => { if (btn) btn.textContent = orig; }, 2000);
     }
+  });
+
+  $('exportSnapshotBtn')?.addEventListener('click', () => {
+    exportPageSnapshot();
   });
 }
 
@@ -2223,6 +2282,78 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Pi
     shareUrl = base + '#r=' + b64;
   }
   return { html, dataUrl, shareUrl };
+}
+
+/** 本页可交互快照（单 HTML，与汇总页 ZIP 整站导出区分） */
+async function exportPageSnapshot() {
+  if (!state.rows.length) {
+    const h = $('statusHint');
+    if (h) h.textContent = '请先加载数据再导出本页快照。';
+    else alert('请先加载数据再导出本页快照。');
+    return;
+  }
+  const btn = $('exportSnapshotBtn');
+  const orig = btn?.textContent;
+  if (btn) btn.textContent = '打包中…';
+  try {
+    const cssText = await fetch('./styles.css').then((r) => r.text()).catch(() => '');
+    const jsText = await fetch(`./app.js?${Date.now()}`).then((r) => r.text()).catch(() => '');
+    const dataPayload = JSON.stringify({ opsAppRows: state.rows });
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const pageHtml = document.querySelector('.appShell__content main')?.innerHTML || '';
+    const headerHtml = document.querySelector('.appShell__content header')?.innerHTML || '';
+    const snapCss =
+      '.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}' +
+      '.header__actions .file,.header__actions #bindFolderBtn,.header__actions #updateFolderBtn,.header__actions #exportReportBtn,.header__actions #exportSnapshotBtn{display:none!important}' +
+      '.header{position:static!important;top:auto!important}';
+    const html = `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>运营宣推看板快照 ${ts}</title>
+<style>${cssText}</style>
+<style>${snapCss}
+.snap-banner{background:linear-gradient(135deg,#f0f4ff,#fdf4ff);border-bottom:1px solid rgba(79,124,255,.15);padding:10px 18px;font-size:12px;color:rgba(15,23,42,.7)}
+.snap-banner strong{color:rgba(15,23,42,.9)}</style>
+</head>
+<body data-page="ops">
+<div class="appShell">
+<div class="appShell__content">
+<div class="snap-banner"><span>\ud83d\udccb <strong>本页可交互快照</strong>\u3000\u751f\u6210\u65f6\u95f4\uff1a${ts}\u3000\u00b7\u3000\u7b5b\u9009\u4e0e\u56fe\u8868\u53ef\u6b63\u5e38\u4f7f\u7528</span></div>
+<header class="header">${headerHtml}</header>
+<main class="container">${pageHtml}</main>
+</div>
+</div>
+<script>window.__SNAPSHOT_DATA=${dataPayload};<\/script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"><\/script>
+<script>${jsText}<\/script>
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    a.download = `\u8fd0\u8425\u5ba3\u63a8\u5feb\u7167_${dateStr}.html`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 1000);
+    const hint = $('statusHint');
+    if (hint) hint.textContent = '本页快照已下载。';
+  } catch (e) {
+    const hint = $('statusHint');
+    if (hint) hint.textContent = `导出失败：${e.message || e}`;
+    else alert(`导出失败：${e.message || e}`);
+  } finally {
+    if (btn) btn.textContent = orig || '导出快照';
+  }
 }
 
 if (!window.__reportView) {

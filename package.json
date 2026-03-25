@@ -3,9 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite --port 5174",
     "quickcan:login": "node automation/quickcan.login.mjs",
     "quickcan:sync": "node automation/quickcan.sync.mjs",
     "quickcan:install-schedule": "node automation/install-launchd.mjs"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
   },
   "dependencies": {
     "playwright": "^1.54.2",

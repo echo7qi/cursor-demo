@@ -21,7 +21,11 @@
           <a class="sidebar__link" href="./reach.html">祈愿宣发触达</a>
           <a class="sidebar__link is-active" href="./wish-review.html" aria-current="page">祈愿单项目复盘</a>
         </nav>
-        <div class="sidebar__hint muted">内嵌静态复盘页；可右上角新标签打开全屏。</div>
+        <div class="wishReviewSidebarTools" style="padding:0 14px 12px;display:flex;flex-direction:column;gap:8px">
+          <button type="button" class="btn js-wish-review-bind" style="width:100%;justify-content:center">绑定数据文件夹</button>
+          <button type="button" class="btn btn--ghost js-wish-review-scan" style="width:100%;justify-content:center">扫描数据源</button>
+        </div>
+        <div class="sidebar__hint muted">与其它看板共用「资源位数据更新」绑定；本页校验「祈愿收入复盘」下四套子文件夹。下方内嵌为静态样例，可右上角新标签打开全屏。</div>
       </aside>
 
       <div class="appShell__content appShell__content--wishReview">
@@ -31,11 +35,30 @@
             <div class="header__subtitle">全期卡片与 KPI 样例（人鱼专题）</div>
           </div>
           <div class="header__actions">
-            <a class="btn btn--ghost" href="./fish-wish-review.html" target="_blank" rel="noopener">新标签页打开</a>
+            <button class="btn btn--ghost js-wish-review-bind" type="button">绑定数据文件夹</button>
+            <button class="btn js-wish-review-scan" type="button">扫描数据源</button>
+            <a class="btn btn--ghost" href="./fish-wish-review.html" target="_blank" rel="noopener">新标签打开样例报告</a>
           </div>
         </header>
 
         <main class="reviewEmbedMain">
+          <section class="container" style="padding:0 0 12px;max-width:none">
+            <div class="card card--full" style="margin-bottom:12px">
+              <div class="card__title">
+                <div class="card__titleMain">祈愿收入复盘 · 数据源</div>
+                <div class="card__titleSub">整体数据监测、作品明细表、历史品类池、分层用户监测 — 与本地 <code>生成_人鱼全期结论表.py --data-bundle &lt;祈愿收入复盘目录&gt;</code> 目录结构一致</div>
+              </div>
+              <div class="card__body">
+                <div class="cardControls" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
+                  <button type="button" class="btn js-wish-review-bind">绑定数据文件夹</button>
+                  <button type="button" class="btn btn--ghost js-wish-review-scan">扫描数据源</button>
+                  <span class="muted" style="font-size:12px;align-self:center">与其它看板相同，绑定「资源位数据更新」根目录即可</span>
+                </div>
+                <p id="wishReviewHint" class="muted" style="margin:0 0 10px;font-size:13px"></p>
+                <div id="wishReviewBundleTable"><p class="muted">加载中…</p></div>
+              </div>
+            </div>
+          </section>
           <iframe
             class="reviewEmbed"
             title="祈愿单项目复盘内容"
@@ -45,5 +68,6 @@
         </main>
       </div>
     </div>
+    <script src="./wish-review.js?v=20260326"></script>
   </body>
 </html>

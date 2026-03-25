@@ -1674,6 +1674,72 @@ async function loadLatestFromBoundFolder() {
   }
 }
 
+/** 本页可交互快照（单 HTML；数据极大时可能失败，请用汇总页 ZIP 或减小 CSV） */
+async function exportWishbarPageSnapshot() {
+  if (!rawRows.length) {
+    alert('请先加载数据再导出本页快照。');
+    return;
+  }
+  const btn = $('wishbarExportSnapshotBtn');
+  const orig = btn?.textContent;
+  if (btn) btn.textContent = '打包中…';
+  try {
+    const cssText = await fetch('./styles.css').then((r) => r.text()).catch(() => '');
+    const jsText = await fetch(`./wishbar.js?${Date.now()}`).then((r) => r.text()).catch(() => '');
+    const dataPayload = JSON.stringify({ wishbarRows: rawRows });
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const pageHtml = document.querySelector('.appShell__content main')?.innerHTML || '';
+    const headerHtml = document.querySelector('.appShell__content header')?.innerHTML || '';
+    const snapCss =
+      '.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}' +
+      '.header__actions .file,.header__actions #wishbarBindFolderBtn,.header__actions #wishbarUpdateBtn,.header__actions #wishbarClearBtn,.header__actions #wishbarExportSnapshotBtn{display:none!important}' +
+      '.header{position:static!important;top:auto!important}';
+    const html = `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>祈愿bar访问贡献快照 ${ts}</title>
+<style>${cssText}</style>
+<style>${snapCss}
+.snap-banner{background:linear-gradient(135deg,#f0f4ff,#fdf4ff);border-bottom:1px solid rgba(79,124,255,.15);padding:10px 18px;font-size:12px;color:rgba(15,23,42,.7)}
+.snap-banner strong{color:rgba(15,23,42,.9)}</style>
+</head>
+<body data-page="wishbar">
+<div class="appShell">
+<div class="appShell__content">
+<div class="snap-banner"><span>\ud83d\udccb <strong>\u672c\u9875\u53ef\u4ea4\u4e92\u5feb\u7167</strong>\u3000\u751f\u6210\u65f6\u95f4\uff1a${ts}</span></div>
+<header class="header">${headerHtml}</header>
+<main class="container">${pageHtml}</main>
+</div>
+</div>
+<script>window.__SNAPSHOT_DATA=${dataPayload};<\/script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>
+<script>${jsText}<\/script>
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    a.download = `\u7948\u613f\u5ba3\u53d1\u5feb\u7167_${dateStr}.html`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 1000);
+    setStatus('本页快照已下载。');
+  } catch (e) {
+    setStatus(`导出失败：${e?.message || e}`);
+  } finally {
+    if (btn) btn.textContent = orig || '导出快照';
+  }
+}
+
 function init() {
   const input = $('wishbarFileInput');
   input?.addEventListener('change', (e) => {
@@ -1792,6 +1858,10 @@ function init() {
     setStatus('已清空。请选择/拖入 CSV 文件开始分析。');
     renderGlobalL1Summary();
     renderGlobalL2Summary();
+  });
+
+  $('wishbarExportSnapshotBtn')?.addEventListener('click', () => {
+    exportWishbarPageSnapshot();
   });
 
   if (window.__SNAPSHOT_DATA?.wishbarRows) {

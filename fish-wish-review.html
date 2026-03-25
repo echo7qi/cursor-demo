@@ -227,12 +227,83 @@
     }
     .dash-main {
       flex: 1;
-      max-width: 960px;
       width: 100%;
-      margin: 0 auto;
-      padding: 20px 16px 48px;
+      max-width: none;
+      margin: 0;
+      padding: 16px clamp(12px, 2vw, 28px) 48px;
       background: var(--bg);
       box-sizing: border-box;
+    }
+    .dash-work-search-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 12px;
+      padding: 10px 20px 12px;
+      background: #fafafa;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .dash-work-search-label {
+      font-size: 13px;
+      color: #595959;
+      flex-shrink: 0;
+      font-weight: 500;
+    }
+    .dash-work-search-input {
+      flex: 1;
+      min-width: min(200px, 100%);
+      max-width: min(480px, 100%);
+      font: inherit;
+      font-size: 14px;
+      padding: 8px 12px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .dash-work-search-input:focus {
+      outline: 2px solid #4f46e5;
+      outline-offset: 1px;
+      border-color: #a5b4fc;
+    }
+    .dash-work-search-btn {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 1px solid #4338ca;
+      background: #4f46e5;
+      color: #fff;
+      cursor: pointer;
+    }
+    .dash-work-search-btn:hover {
+      background: #4338ca;
+    }
+    .dash-work-search-clear {
+      font: inherit;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      color: #262626;
+      cursor: pointer;
+    }
+    .dash-work-search-clear:hover {
+      background: #f5f5f5;
+    }
+    .fish-filter-banner {
+      margin: 0 0 14px;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1e3a5f;
+      background: #e0e7ff;
+      border: 1px solid #a5b4fc;
+      border-radius: 8px;
+    }
+    .fish-filter-banner[hidden] {
+      display: none !important;
     }
     .usage-modal {
       width: min(640px, calc(100vw - 32px));
@@ -1017,7 +1088,7 @@
       border: 1px solid #e2e8f0;
       line-height: 1.55;
     }
-    .exec-calib-detail { max-width: 920px; margin-left: auto; margin-right: auto; }
+    .exec-calib-detail { max-width: none; margin-left: 0; margin-right: 0; }
   </style>
 </head>
 <body>
@@ -1057,6 +1128,13 @@
     <button type="button" class="dash-tab" role="tab" aria-selected="false" data-target="panel-detail">② 整体数据监测（第15期五维）</button>
     <button type="button" class="dash-tab" role="tab" aria-selected="false" data-target="panel-appendix">③ 附录与约定</button>
   </nav>
+
+  <div class="dash-work-search-bar" role="search" aria-label="按作品名筛选复盘期次">
+    <label class="dash-work-search-label" for="fish-work-q">作品名</label>
+    <input type="search" id="fish-work-q" class="dash-work-search-input" placeholder="模糊搜索，如：人鱼、人鱼陷落" autocomplete="off" />
+    <button type="button" class="dash-work-search-btn" id="fish-work-search-go">搜索</button>
+    <button type="button" class="dash-work-search-clear" id="fish-work-clear">清空</button>
+  </div>
   </div>
 
   <main class="dash-main">
@@ -1103,18 +1181,19 @@
     </div>
   </dialog>
 
-  <p class="sub">
+  <p class="sub" id="fish-report-lead">
     五维：<strong>规模、效率、深度、结构、节奏</strong> · 全期 <strong>13</strong> 期（第15期→第2期）· 口径 <strong>上线满9日·当前累计</strong>。<br />
     完整口径、<strong>全期卡读法</strong>、目标达成度/30日预估与<strong>模型 MAPE 回测</strong>请点击顶栏 <strong>使用说明</strong>；版式对齐内部「特典祈愿看板」顶栏 + 筛选条 + Tab。
   </p>
 
   <section id="panel-overview" class="exec">
+  <div id="fish-work-filter-banner" class="fish-filter-banner" hidden></div>
 <!--FISH_LATEST_PERIOD_META-->
 <div class="latest-period-meta" aria-label="最新期概况"><p class="latest-period-meta-kicker">默认展示 <strong>监测表内最新期</strong> <span class="latest-period-no">第 15 期</span></p><dl class="latest-period-meta-grid"><div><dt>作品名</dt><dd>人鱼陷落</dd></div><div><dt>品类</dt><dd>漫改耽美</dd></div><div><dt>卡池名</dt><dd>鱼喵请闭眼·特典祈愿</dd></div><div><dt>上线时间</dt><dd>2026-03-16</dd></div><div><dt>截止已上线天数</dt><dd>9<span class="latest-period-meta-sub">（相对上线时间，取监测表「汇总」行；随导出刷新）</span></dd></div></dl></div>
         <!--END_FISH_LATEST_PERIOD_META-->
     <div class="fish-period-stack" id="fish-period-cards">
 <!--FISH_LATEST_PERIOD-->
-<article class="period-board" data-period="15">
+<article class="period-board" data-work-title="人鱼陷落" data-period="15">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 15 期</span>
@@ -1237,7 +1316,7 @@
         <!--END_FISH_NEXT_STRATEGY_BODY-->
     </aside>
 <!--FISH_OLDER_PERIODS-->
-<article class="period-board" data-period="14">
+<article class="period-board" data-work-title="人鱼陷落" data-period="14">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 14 期</span>
@@ -1345,7 +1424,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="13">
+<article class="period-board" data-work-title="人鱼陷落" data-period="13">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 13 期</span>
@@ -1453,7 +1532,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="12">
+<article class="period-board" data-work-title="人鱼陷落" data-period="12">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 12 期</span>
@@ -1561,7 +1640,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="11">
+<article class="period-board" data-work-title="人鱼陷落" data-period="11">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 11 期</span>
@@ -1669,7 +1748,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="10">
+<article class="period-board" data-work-title="人鱼陷落" data-period="10">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 10 期</span>
@@ -1777,7 +1856,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="9">
+<article class="period-board" data-work-title="人鱼陷落" data-period="9">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 9 期</span>
@@ -1885,7 +1964,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="8">
+<article class="period-board" data-work-title="人鱼陷落" data-period="8">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 8 期</span>
@@ -1993,7 +2072,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="7">
+<article class="period-board" data-work-title="人鱼陷落" data-period="7">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 7 期</span>
@@ -2101,7 +2180,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="6">
+<article class="period-board" data-work-title="人鱼陷落" data-period="6">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 6 期</span>
@@ -2209,7 +2288,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="4">
+<article class="period-board" data-work-title="人鱼陷落" data-period="4">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 4 期</span>
@@ -2317,7 +2396,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="3">
+<article class="period-board" data-work-title="人鱼陷落" data-period="3">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 3 期</span>
@@ -2425,7 +2504,7 @@
         </details>
       </article>
 
-<article class="period-board" data-period="2">
+<article class="period-board" data-work-title="人鱼陷落" data-period="2">
         <header class="period-head">
           <div class="period-head-text">
             <span class="period-badge">第 2 期</span>
@@ -2794,6 +2873,120 @@
         }
       });
     });
+
+    /* 按作品名模糊搜索：仅展示匹配作品中 data-period 最大的一期 */
+    (function workSearch() {
+      var input = document.getElementById("fish-work-q");
+      var goBtn = document.getElementById("fish-work-search-go");
+      var clearBtn = document.getElementById("fish-work-clear");
+      var stack = document.getElementById("fish-period-cards");
+      var banner = document.getElementById("fish-work-filter-banner");
+      var lead = document.getElementById("fish-report-lead");
+      if (!input || !stack) return;
+
+      function norm(s) {
+        return String(s || "")
+          .trim()
+          .toLowerCase();
+      }
+
+      function applyWorkFilter() {
+        var q = norm(input.value);
+        var articles = Array.prototype.slice.call(
+          stack.querySelectorAll(":scope > article.period-board")
+        );
+        var aside = stack.querySelector(":scope > aside.exec-next-strategy");
+        var meta = document.querySelector("#panel-overview .latest-period-meta");
+
+        articles.forEach(function (a) {
+          a.style.removeProperty("display");
+        });
+
+        if (!q) {
+          if (aside) aside.style.removeProperty("display");
+          if (meta) meta.style.removeProperty("display");
+          if (banner) {
+            banner.setAttribute("hidden", "");
+            banner.textContent = "";
+          }
+          if (lead) lead.style.removeProperty("display");
+          return;
+        }
+
+        var globalMax = 0;
+        articles.forEach(function (a) {
+          var p = parseInt(a.getAttribute("data-period"), 10);
+          if (!isNaN(p) && p > globalMax) globalMax = p;
+        });
+
+        var matched = articles.filter(function (a) {
+          var t = norm(a.getAttribute("data-work-title"));
+          return t.indexOf(q) !== -1;
+        });
+
+        if (!matched.length) {
+          articles.forEach(function (a) {
+            a.style.display = "none";
+          });
+          if (aside) aside.style.display = "none";
+          if (meta) meta.style.display = "none";
+          if (banner) {
+            banner.removeAttribute("hidden");
+            banner.textContent =
+              "未找到作品名包含「" + input.value.trim() + "」的期次，请调整关键词后重试。";
+          }
+          if (lead) lead.style.removeProperty("display");
+          return;
+        }
+
+        var maxForWork = 0;
+        matched.forEach(function (a) {
+          var p = parseInt(a.getAttribute("data-period"), 10);
+          if (!isNaN(p) && p > maxForWork) maxForWork = p;
+        });
+
+        var chosen = null;
+        matched.forEach(function (a) {
+          var p = parseInt(a.getAttribute("data-period"), 10);
+          if (p === maxForWork) chosen = a;
+        });
+
+        articles.forEach(function (a) {
+          a.style.display = a === chosen ? "" : "none";
+        });
+
+        var isGlobalLatest = maxForWork === globalMax;
+        if (aside) aside.style.display = isGlobalLatest ? "" : "none";
+        if (meta) meta.style.display = isGlobalLatest ? "" : "none";
+
+        if (banner) {
+          banner.removeAttribute("hidden");
+          var wt = chosen ? chosen.getAttribute("data-work-title") || "" : "";
+          banner.textContent =
+            "已筛选：作品「" +
+            wt +
+            "」· 展示第 " +
+            maxForWork +
+            " 期（本页内该作品最新期）。点击「清空」恢复全期列表。";
+        }
+        if (lead) lead.style.display = "none";
+      }
+
+      if (goBtn) goBtn.addEventListener("click", applyWorkFilter);
+      if (clearBtn) {
+        clearBtn.addEventListener("click", function () {
+          input.value = "";
+          applyWorkFilter();
+          input.focus();
+        });
+      }
+      input.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          applyWorkFilter();
+        }
+      });
+    })();
   })();
   </script>
 </body>

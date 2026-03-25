@@ -1717,6 +1717,10 @@ async function exportSnapshot() {
   const pageHtml = document.querySelector('.appShell__content main')?.innerHTML || '';
   const headerHtml = document.querySelector('.appShell__content header')?.innerHTML || '';
 
+  const snapHide =
+    '.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}' +
+    '.header__actions .file,.header__actions #reachBindFolderBtn,.header__actions #reachUpdateBtn,.header__actions #reachClearBtn,.header__actions #reachExportBtn{display:none!important}' +
+    '.header{position:static!important;top:auto!important}';
   const html = `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -1724,14 +1728,14 @@ async function exportSnapshot() {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>\u7948\u613f\u89e6\u8fbe\u770b\u677f\u5feb\u7167 ${ts}</title>
 <style>${cssText}</style>
-<style>.sidebar{display:none!important}.appShell{grid-template-columns:1fr!important}
+<style>${snapHide}
 .snap-banner{background:linear-gradient(135deg,#f0f4ff,#fdf4ff);border-bottom:1px solid rgba(79,124,255,.15);padding:10px 18px;font-size:12px;color:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:space-between}
 .snap-banner strong{color:rgba(15,23,42,.9)}</style>
 </head>
-<body>
+<body data-page="reach">
 <div class="appShell">
 <div class="appShell__content">
-<div class="snap-banner"><span>\u{1f4cb} <strong>\u53ef\u4ea4\u4e92\u5feb\u7167</strong>\u3000\u751f\u6210\u65f6\u95f4\uff1a${ts}\u3000\u00b7\u3000\u7b5b\u9009/\u56fe\u8868/\u5c55\u5f00\u5747\u53ef\u6b63\u5e38\u4f7f\u7528</span></div>
+<div class="snap-banner"><span>\ud83d\udccb <strong>\u672c\u9875\u53ef\u4ea4\u4e92\u5feb\u7167</strong>\u3000\u751f\u6210\u65f6\u95f4\uff1a${ts}\u3000\u00b7\u3000\u7b5b\u9009/\u56fe\u8868/\u5c55\u5f00\u53ef\u6b63\u5e38\u4f7f\u7528</span></div>
 <header class="header">${headerHtml}</header>
 <main class="container">${pageHtml}</main>
 </div>
