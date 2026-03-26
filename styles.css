@@ -229,6 +229,22 @@ body[data-page="wish-review"] .reviewEmbed{
   overflow: visible;
   min-width: 0;
 }
+.wishReviewPastPeriodsBar{
+  margin: 18px 0 8px;
+  padding: 14px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(79, 124, 255, 0.35);
+  background: rgba(79, 124, 255, 0.06);
+  text-align: center;
+}
+.wishReviewPastPeriodsHint{
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.wishReviewPastStack{
+  margin-top: 8px;
+}
 .wishReviewDash__detailTitle{
   margin: 0 0 6px;
   font-size: 16px;

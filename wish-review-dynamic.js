@@ -225,6 +225,8 @@
     fileName: '',
     selected: null,
     filter: '',
+    /** 右侧 fish 版复盘：是否已展开该专题除最新期外的往期 */
+    showPastPeriodsExpanded: false,
   };
 
   function fmtPct(x) {
@@ -523,19 +525,61 @@
   }
 
   function buildFishEmbedReportHtml(t) {
-    const boards = t.periods.map((sr) => buildPeriodBoardArticle(sr)).join('\n');
+    const periods = t.periods || [];
+    const latest = periods[0];
+    if (!latest) {
+      return '<p class="review-mod-note">该专题无汇总期次数据。</p>';
+    }
+    const nPast = periods.length - 1;
+    const firstBoard = buildPeriodBoardArticle(latest);
+    const pastBoards =
+      state.showPastPeriodsExpanded && nPast > 0
+        ? periods
+            .slice(1)
+            .map((sr) => buildPeriodBoardArticle(sr))
+            .join('\n')
+        : '';
+
+    let pastBar = '';
+    if (nPast > 0) {
+      if (state.showPastPeriodsExpanded) {
+        pastBar =
+          '<div class="wishReviewPastPeriodsBar">' +
+          '<button type="button" class="btn btn--ghost wishReviewPastPeriodsBtn" data-wish-review-past="collapse">收起往期（仅保留最新一期）</button>' +
+          '</div>';
+      } else {
+        pastBar =
+          '<div class="wishReviewPastPeriodsBar">' +
+          '<p class="wishReviewPastPeriodsHint muted">默认仅展示<strong>最近上线</strong>的一期完整复盘（与列表「最新期」一致）。</p>' +
+          '<button type="button" class="btn wishReviewPastPeriodsBtn" data-wish-review-past="expand">加载往期完整复盘（另 ' +
+          esc(String(nPast)) +
+          ' 期）</button>' +
+          '</div>';
+      }
+    }
+
     return (
       '<div class="wishReviewFishRoot fish-report-embedded">' +
       '<p class="sub" style="margin:0 0 16px;line-height:1.55">' +
       '专题 <strong>' +
       esc(t.name) +
-      '</strong> · 自上而下为各期复盘卡（<strong>新→旧</strong>），<strong>版式与 fish-wish-review.html 静态样例一致</strong>。' +
-      '数据来自已绑定监测表；<strong>同品类分位、30 日预估、与相邻期对比、④ 分层表、⑤ 长综合结论</strong>仍依赖对标池/分层与 Python，与人鱼 HTML 完全一致时请本地 <code>生成_人鱼全期结论表.py --topic ' +
+      '</strong> · <strong>版式与 fish-wish-review.html 一致</strong>。' +
+      (nPast > 0
+        ? ' 监测表内共 <strong>' +
+          esc(String(periods.length)) +
+          '</strong> 期；当前' +
+          (state.showPastPeriodsExpanded ? '已展开全部期次' : '仅详解最新一期') +
+          '。'
+        : ' 本专题仅 1 期。') +
+      ' <strong>同品类分位、30 日预估、④ 分层表、⑤ 长综合结论</strong>等仍依赖本地脚本：<code>生成_人鱼全期结论表.py --topic ' +
       esc(t.name) +
       "'</code>。</p>" +
       '<div class="fish-period-stack">' +
-      boards +
-      '</div></div>'
+      firstBoard +
+      '</div>' +
+      pastBar +
+      (pastBoards ? '<div class="fish-period-stack wishReviewPastStack">' + pastBoards + '</div>' : '') +
+      '</div>'
     );
   }
 
@@ -615,6 +659,7 @@
   }
 
   function setSelected(name) {
+    state.showPastPeriodsExpanded = false;
     state.selected = name;
     renderList();
     renderDetail(name);
@@ -709,6 +754,7 @@
       src.textContent = `${label} · ${mtime}`;
     }
 
+    state.showPastPeriodsExpanded = false;
     if (!state.selected || !state.topics.some((x) => x.name === state.selected)) {
       state.selected = state.topics[0] ? state.topics[0].name : null;
     }
@@ -738,6 +784,18 @@
         setSelected(btn.getAttribute('data-topic'));
       });
     });
+
+    const detailCard = $('wishReviewDetail');
+    if (detailCard) {
+      detailCard.addEventListener('click', (ev) => {
+        const b = ev.target.closest('.wishReviewPastPeriodsBtn');
+        if (!b) return;
+        const act = b.getAttribute('data-wish-review-past');
+        if (act === 'expand') state.showPastPeriodsExpanded = true;
+        else if (act === 'collapse') state.showPastPeriodsExpanded = false;
+        renderDetail(state.selected);
+      });
+    }
 
     document.addEventListener('wishreview:datasource-updated', () => loadFromBinding());
 
