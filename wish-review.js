@@ -1,5 +1,5 @@
 /* 祈愿单项目复盘：与运营宣推 / 触达共用「资源位数据更新」根目录绑定；对标池 CSV 与「整体数据监测」同夹。
- * 扫描结果写入 window.__WISH_REVIEW_BUNDLE_SCAN__（无主区 UI）。 */
+ * 各子夹内多个 CSV 按修改时间从旧到新合并（监测夹排除池类文件名）。扫描写入 window.__WISH_REVIEW_BUNDLE_SCAN__。 */
 
 const DB_NAME = 'ops-dashboard-local-db';
 const DB_STORE = 'kv';
@@ -106,22 +106,6 @@ async function listCsvWithMtime(dirHandle) {
   return out;
 }
 
-function pickLatestForMain(list) {
-  if (!list.length) return null;
-  const prefer = list.filter((x) => /^①/.test(x.name) || x.name.includes('整体数据监测'));
-  const pool = prefer.length ? prefer : list;
-  pool.sort((a, b) => b.lastModified - a.lastModified);
-  return pool[0];
-}
-
-function pickLatestForWork(list) {
-  if (!list.length) return null;
-  const prefer = list.filter((x) => x.name.includes('作品明细表'));
-  const pool = prefer.length ? prefer : list;
-  pool.sort((a, b) => b.lastModified - a.lastModified);
-  return pool[0];
-}
-
 function pickBenchmarkFromMainDir(list) {
   if (!list.length) return null;
   const noMonitor = list.filter((x) => !x.name.includes('整体数据监测'));
@@ -150,12 +134,22 @@ function listMonitoringCsvMetasForMerge(list) {
   return metas;
 }
 
-function pickLatestForLayer(list) {
-  if (!list.length) return null;
-  const prefer = list.filter((x) => /^②/.test(x.name) || x.name.includes('分层用户监测'));
-  const pool = prefer.length ? prefer : list;
-  pool.sort((a, b) => b.lastModified - a.lastModified);
-  return pool[0];
+/** 子文件夹内全部 .csv，按修改时间从旧到新（合并时后读覆盖同键） */
+function listAllCsvMetasSortedAsc(list) {
+  const metas = list.filter((f) => f.name.toLowerCase().endsWith('.csv'));
+  metas.sort((a, b) => a.lastModified - b.lastModified);
+  return metas;
+}
+
+/** 与整体监测同夹：文件名判定为对标池的 CSV，按时间从旧到新；无则回退 pickBenchmarkFromMainDir 的单个文件 */
+function listBenchmarkCsvMetasForMerge(mainFileList) {
+  const metas = mainFileList.filter(
+    (f) => f.name.toLowerCase().endsWith('.csv') && isLikelyBenchmarkPoolCsvFileName(f.name),
+  );
+  metas.sort((a, b) => a.lastModified - b.lastModified);
+  if (metas.length) return metas;
+  const one = pickBenchmarkFromMainDir(mainFileList);
+  return one ? [one] : [];
 }
 
 async function scanBundleFromRoot(rootHandle) {
@@ -177,31 +171,34 @@ async function scanBundleFromRoot(rootHandle) {
     rows: [],
   };
 
-  async function one(key, subNames, picker) {
-    const sub = await resolveFirstChildDir(review.handle, subNames);
+  async function oneMergeAllInSubdir(key, subNames) {
     const label = SUB_LABEL[key];
+    const sub = await resolveFirstChildDir(review.handle, subNames);
     if (!sub) {
       result.rows.push({ key, label, ok: false, detail: `缺少子文件夹「${subNames[0]}」` });
       return;
     }
     const files = await listCsvWithMtime(sub.handle);
-    const picked = picker(files);
-    if (!picked) {
+    const toMerge = listAllCsvMetasSortedAsc(files);
+    if (!toMerge.length) {
       result.rows.push({
         key,
         label,
         ok: false,
         detail: `「${sub.name}」下无 CSV`,
+        sub: sub.name,
       });
       return;
     }
+    const names = toMerge.map((x) => x.name);
     result.rows.push({
       key,
       label,
       ok: true,
       sub: sub.name,
-      file: picked.name,
-      lastModified: picked.lastModified,
+      file: names.join(' + '),
+      files: names,
+      lastModified: Math.max(...toMerge.map((x) => x.lastModified)),
     });
   }
 
@@ -241,28 +238,30 @@ async function scanBundleFromRoot(rootHandle) {
         lastModified: Math.max(...toMerge.map((x) => x.lastModified)),
       });
     }
-    const benchP = pickBenchmarkFromMainDir(mainFiles);
-    if (!benchP) {
+    const benchMerge = listBenchmarkCsvMetasForMerge(mainFiles);
+    if (!benchMerge.length) {
       result.rows.push({
         key: 'bench',
         label: SUB_LABEL.bench,
         ok: false,
-        detail: `「${mainSub.name}」内除监测表外未找到对标池 CSV（如 *池历史数据*.csv）`,
+        detail: `「${mainSub.name}」内未找到可对标的池类 CSV（如 *池历史数据*.csv）`,
       });
     } else {
+      const bnames = benchMerge.map((x) => x.name);
       result.rows.push({
         key: 'bench',
         label: SUB_LABEL.bench,
         ok: true,
         sub: `${mainSub.name}（同夹）`,
-        file: benchP.name,
-        lastModified: benchP.lastModified,
+        file: bnames.join(' + '),
+        files: bnames,
+        lastModified: Math.max(...benchMerge.map((x) => x.lastModified)),
       });
     }
   }
 
-  await one('work', BUNDLE_SUBS.work, pickLatestForWork);
-  await one('layer', BUNDLE_SUBS.layer, pickLatestForLayer);
+  await oneMergeAllInSubdir('work', BUNDLE_SUBS.work);
+  await oneMergeAllInSubdir('layer', BUNDLE_SUBS.layer);
 
   return result;
 }
@@ -278,43 +277,11 @@ async function runScan() {
   }
 }
 
-/** 读取绑定目录下「祈愿收入复盘/整体数据监测」内全部监测 CSV（排除对标池文件名），按修改时间从旧到新合并（供动态看板解析） */
-async function readMonitorCsvFromBoundRoot() {
-  const root = await getBoundDirHandle();
-  if (!root) {
-    return { ok: false, error: '尚未绑定数据文件夹。请先在左侧点击「绑定数据文件夹」。' };
-  }
-  const perm = await root.queryPermission?.({ mode: 'read' });
-  if (perm !== 'granted') {
-    const req = await root.requestPermission?.({ mode: 'read' });
-    if (req !== 'granted') {
-      return { ok: false, error: '未获得文件夹读取权限。' };
-    }
-  }
-  const review = await resolveFirstChildDir(root, REVIEW_ROOT_CANDIDATES);
-  if (!review) {
-    return {
-      ok: false,
-      error: `未找到「${REVIEW_ROOT_CANDIDATES.join('」或「')}」文件夹。`,
-    };
-  }
-  const mainSub = await resolveFirstChildDir(review.handle, BUNDLE_SUBS.main);
-  if (!mainSub) {
-    return { ok: false, error: `未找到子文件夹「${BUNDLE_SUBS.main[0]}」。` };
-  }
-  const mainFiles = await listCsvWithMtime(mainSub.handle);
-  const toMerge = listMonitoringCsvMetasForMerge(mainFiles);
-  if (!toMerge.length) {
-    return {
-      ok: false,
-      error:
-        '「整体数据监测」内未找到可合并的监测 CSV（已排除文件名像品类池/历史池的对标表）。',
-    };
-  }
+async function readTextPartsFromDir(dirHandle, metas) {
   const parts = [];
-  for (let i = 0; i < toMerge.length; i++) {
-    const meta = toMerge[i];
-    const fh = await mainSub.handle.getFileHandle(meta.name);
+  for (let i = 0; i < metas.length; i++) {
+    const meta = metas[i];
+    const fh = await dirHandle.getFileHandle(meta.name);
     const file = await fh.getFile();
     parts.push({
       name: file.name,
@@ -322,6 +289,10 @@ async function readMonitorCsvFromBoundRoot() {
       lastModified: file.lastModified,
     });
   }
+  return parts;
+}
+
+function finalizeCsvPartsResult(parts) {
   const lastModified = Math.max(...parts.map((p) => p.lastModified));
   return {
     ok: true,
@@ -332,6 +303,129 @@ async function readMonitorCsvFromBoundRoot() {
   };
 }
 
+/**
+ * 一次读取祈愿复盘包：整体数据监测（多表合并）+ 同夹对标池 + 分层用户监测 + 作品明细表。
+ * 各夹内均为全部 .csv 按修改时间从旧到新读入（监测夹内仍排除池类文件名）。
+ */
+async function readFullWishReviewBundleFromBoundRoot() {
+  const root = await getBoundDirHandle();
+  if (!root) {
+    return {
+      ok: false,
+      error: '尚未绑定数据文件夹。请先在左侧点击「绑定数据文件夹」。',
+      main: null,
+    };
+  }
+  const perm = await root.queryPermission?.({ mode: 'read' });
+  if (perm !== 'granted') {
+    const req = await root.requestPermission?.({ mode: 'read' });
+    if (req !== 'granted') {
+      return { ok: false, error: '未获得文件夹读取权限。', main: null };
+    }
+  }
+  const review = await resolveFirstChildDir(root, REVIEW_ROOT_CANDIDATES);
+  if (!review) {
+    return {
+      ok: false,
+      error: `未找到「${REVIEW_ROOT_CANDIDATES.join('」或「')}」文件夹。`,
+      main: null,
+    };
+  }
+  const mainSub = await resolveFirstChildDir(review.handle, BUNDLE_SUBS.main);
+  if (!mainSub) {
+    return { ok: false, error: `未找到子文件夹「${BUNDLE_SUBS.main[0]}」。`, main: null };
+  }
+  const mainFiles = await listCsvWithMtime(mainSub.handle);
+  const mainMerge = listMonitoringCsvMetasForMerge(mainFiles);
+  if (!mainMerge.length) {
+    return {
+      ok: false,
+      error:
+        '「整体数据监测」内未找到可合并的监测 CSV（已排除文件名像品类池/历史池的对标表）。',
+      main: null,
+    };
+  }
+
+  const mainParts = await readTextPartsFromDir(mainSub.handle, mainMerge);
+  const main = finalizeCsvPartsResult(mainParts);
+
+  const benchMerge = listBenchmarkCsvMetasForMerge(mainFiles);
+  const bench =
+    benchMerge.length > 0
+      ? finalizeCsvPartsResult(await readTextPartsFromDir(mainSub.handle, benchMerge))
+      : {
+          ok: false,
+          skipped: true,
+          parts: [],
+          fileNames: [],
+          error: '同夹内无对标池 CSV',
+        };
+
+  const layerSub = await resolveFirstChildDir(review.handle, BUNDLE_SUBS.layer);
+  let layer = {
+    ok: false,
+    skipped: true,
+    parts: [],
+    fileNames: [],
+    error: '缺少「分层用户监测」文件夹',
+  };
+  if (layerSub) {
+    const layerMetas = listAllCsvMetasSortedAsc(await listCsvWithMtime(layerSub.handle));
+    if (layerMetas.length) {
+      layer = finalizeCsvPartsResult(await readTextPartsFromDir(layerSub.handle, layerMetas));
+    } else {
+      layer = {
+        ok: false,
+        skipped: true,
+        parts: [],
+        fileNames: [],
+        error: '「分层用户监测」内无 CSV',
+      };
+    }
+  }
+
+  const workSub = await resolveFirstChildDir(review.handle, BUNDLE_SUBS.work);
+  let work = {
+    ok: false,
+    skipped: true,
+    parts: [],
+    fileNames: [],
+    error: '缺少「作品明细表」文件夹',
+  };
+  if (workSub) {
+    const workMetas = listAllCsvMetasSortedAsc(await listCsvWithMtime(workSub.handle));
+    if (workMetas.length) {
+      work = finalizeCsvPartsResult(await readTextPartsFromDir(workSub.handle, workMetas));
+    } else {
+      work = {
+        ok: false,
+        skipped: true,
+        parts: [],
+        fileNames: [],
+        error: '「作品明细表」内无 CSV',
+      };
+    }
+  }
+
+  return {
+    ok: true,
+    main,
+    bench,
+    layer,
+    work,
+  };
+}
+
+/** 仅整体数据监测（与 readFull 中 main 一致，便于旧调用） */
+async function readMonitorCsvFromBoundRoot() {
+  const full = await readFullWishReviewBundleFromBoundRoot();
+  if (!full.ok) {
+    return { ok: false, error: full.error };
+  }
+  return { ok: true, ...full.main };
+}
+
+window.wishReviewReadFullBundle = readFullWishReviewBundleFromBoundRoot;
 window.wishReviewReadMonitorCsv = readMonitorCsvFromBoundRoot;
 
 function onBindClick() {

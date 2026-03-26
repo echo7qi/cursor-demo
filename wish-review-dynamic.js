@@ -58,6 +58,40 @@
     return Array.from(m.values());
   }
 
+  /** 分层表：同活动+期次+分类+周期+分层，后文件覆盖 */
+  function layerDedupeKey(r) {
+    return [
+      val(r, '活动标识'),
+      val(r, '第x次祈愿'),
+      val(r, '数据分类'),
+      val(r, '数据周期'),
+      val(r, '目标用户分层'),
+    ].join('\x01');
+  }
+
+  function dedupeLayerRows(rows) {
+    const m = new Map();
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      m.set(layerDedupeKey(r), r);
+    }
+    return Array.from(m.values());
+  }
+
+  /** 作品明细：同专题+日期+时间维度，后文件覆盖（避免跨表重复累加曝光） */
+  function workDedupeKey(r) {
+    return [val(r, '专题id'), val(r, '日期'), val(r, '时间维度')].join('\x01');
+  }
+
+  function dedupeWorkRows(rows) {
+    const m = new Map();
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      m.set(workDedupeKey(r), r);
+    }
+    return Array.from(m.values());
+  }
+
   function isSummaryAllRow(r) {
     return (
       val(r, '数据分类') === '汇总' &&
@@ -171,6 +205,9 @@
 
   let state = {
     rows: [],
+    benchRows: [],
+    layerRows: [],
+    workRows: [],
     topics: [],
     fileName: '',
     selected: null,
@@ -314,25 +351,51 @@
     renderDetail(name);
   }
 
+  function parsePartsToRows(parts, logLabel) {
+    let out = [];
+    for (let pi = 0; pi < parts.length; pi++) {
+      const parsed = Papa.parse(parts[pi].text, {
+        header: true,
+        skipEmptyLines: 'greedy',
+      });
+      if (parsed.errors && parsed.errors.length) {
+        console.warn('[wish-review-dynamic]', logLabel || parts[pi].name, parsed.errors);
+      }
+      out = out.concat(normalizeRows(parsed.data || []));
+    }
+    return out;
+  }
+
   async function loadFromBinding() {
     const status = $('wishReviewDashStatus');
     const src = $('wishReviewDashSource');
-    if (!window.wishReviewReadMonitorCsv) {
+    const readAll = window.wishReviewReadFullBundle || window.wishReviewReadMonitorCsv;
+    if (!readAll) {
       if (status) status.textContent = '脚本未就绪。';
       return;
     }
-    if (status) status.textContent = '正在读取监测表…';
-    const r = await window.wishReviewReadMonitorCsv();
-    if (!r.ok) {
-      if (status) status.textContent = r.error || '读取失败';
+    if (status) {
+      status.textContent = window.wishReviewReadFullBundle
+        ? '正在读取全部数据源（监测、对标池、分层、作品明细）…'
+        : '正在读取监测表…';
+    }
+    const r = await readAll();
+    const isFull = r && r.main && typeof r.main === 'object' && r.main.ok !== undefined;
+    const mainBlock = isFull ? r.main : r;
+    if (!mainBlock.ok) {
+      if (status) status.textContent = mainBlock.error || r.error || '读取失败';
       if (src) src.textContent = '';
       state.rows = [];
+      state.benchRows = [];
+      state.layerRows = [];
+      state.workRows = [];
       state.topics = [];
+      if (typeof window !== 'undefined') window.__WISH_REVIEW_BUNDLE_DATA__ = null;
       renderList();
       renderDetail(null);
       return;
     }
-    const parts = r.parts && r.parts.length ? r.parts : null;
+    const parts = mainBlock.parts && mainBlock.parts.length ? mainBlock.parts : null;
     let mergedRows = [];
     try {
       if (parts) {
@@ -366,28 +429,60 @@
       return;
     }
     state.rows = dedupeMonitoringRows(mergedRows);
+    state.benchRows = [];
+    state.layerRows = [];
+    state.workRows = [];
+    if (isFull) {
+      if (r.bench && r.bench.ok && r.bench.parts && r.bench.parts.length) {
+        state.benchRows = dedupeMonitoringRows(parsePartsToRows(r.bench.parts, 'bench'));
+      }
+      if (r.layer && r.layer.ok && r.layer.parts && r.layer.parts.length) {
+        state.layerRows = dedupeLayerRows(parsePartsToRows(r.layer.parts, 'layer'));
+      }
+      if (r.work && r.work.ok && r.work.parts && r.work.parts.length) {
+        state.workRows = dedupeWorkRows(parsePartsToRows(r.work.parts, 'work'));
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.__WISH_REVIEW_BUNDLE_DATA__ = {
+        mainRowCount: state.rows.length,
+        benchRowCount: state.benchRows.length,
+        layerRowCount: state.layerRows.length,
+        workRowCount: state.workRows.length,
+        loadedAt: Date.now(),
+      };
+    }
     const built = buildTopicModels(state.rows);
     state.topics = built.topics;
     state._meta = built;
-    state.fileName = r.fileName;
+    state.fileName = mainBlock.fileName;
     state.fileNames =
-      r.fileNames ||
-      (parts ? parts.map((p) => p.name) : r.fileName ? [r.fileName] : []);
-    const mtime = new Date(r.lastModified).toLocaleString('zh-CN', { hour12: false });
+      mainBlock.fileNames ||
+      (parts ? parts.map((p) => p.name) : mainBlock.fileName ? [mainBlock.fileName] : []);
+    const mtime = new Date(mainBlock.lastModified).toLocaleString('zh-CN', { hour12: false });
     const nFiles = parts ? parts.length : 1;
+    let extra = '';
+    if (isFull) {
+      const bits = [];
+      if (state.benchRows.length) bits.push(`对标池 ${state.benchRows.length} 行`);
+      if (state.layerRows.length) bits.push(`分层 ${state.layerRows.length} 行`);
+      if (state.workRows.length) bits.push(`作品明细 ${state.workRows.length} 行`);
+      if (bits.length) extra = ' · 已同步 ' + bits.join('、');
+    }
     if (status) {
       status.textContent =
         (nFiles > 1
           ? `已合并 ${nFiles} 个监测 CSV → ${state.rows.length} 行（跨文件去重后）`
           : `已加载 ${state.rows.length} 行`) +
         ` · ${built.topicCount} 个专题 · ${built.activityDedupCount} 个祈愿活动` +
-        `（汇总·全部 原始 ${built.rawSummaryCount} 行，专题内按活动标识去重）`;
+        `（汇总·全部 原始 ${built.rawSummaryCount} 行，专题内按活动标识去重）` +
+        extra;
     }
     if (src) {
       const label =
-        r.fileNames && r.fileNames.length
-          ? r.fileNames.join(' + ')
-          : r.fileName || (parts && parts.map((p) => p.name).join(' + ')) || '—';
+        mainBlock.fileNames && mainBlock.fileNames.length
+          ? mainBlock.fileNames.join(' + ')
+          : mainBlock.fileName || (parts && parts.map((p) => p.name).join(' + ')) || '—';
       src.textContent = `${label} · ${mtime}`;
     }
 

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>祈愿单项目复盘</title>
-    <link rel="stylesheet" href="./styles.css?v=20260330" />
+    <link rel="stylesheet" href="./styles.css?v=20260331" />
   </head>
   <body data-page="wish-review">
     <script>
@@ -28,11 +28,11 @@
         </div>
         <div class="wishReviewSidebarTools wishReviewSidebarTools--tight">
           <button type="button" class="btn btn--ghost wishReviewSidebarTools__full" id="wishReviewReloadBtnSide">
-            重新加载监测表
+            重新加载全部数据源
           </button>
         </div>
         <div class="sidebar__hint sidebar__hint--wishReview">
-          先<strong>绑定</strong>「资源位数据更新」→「祈愿收入复盘」。右侧动态读取<strong>整体数据监测</strong>最新 CSV（全专题）。可选<strong>扫描</strong>校验子文件夹。静态五维样例：
+          先<strong>绑定</strong>「资源位数据更新」→「祈愿收入复盘」。点击重新加载会一次读取<strong>整体数据监测、同夹对标池、分层用户监测、作品明细表</strong>各夹内全部 CSV（按时间合并去重）。可选<strong>扫描</strong>校验。静态五维样例：
           <a href="./fish-wish-review.html" target="_blank" rel="noopener">fish-wish-review.html</a>
         </div>
       </aside>
@@ -41,7 +41,7 @@
         <header class="header">
           <div class="header__title">
             <h1>祈愿单项目复盘</h1>
-            <div class="header__subtitle">动态加载监测表：按专题搜索、本周/近7日新上线、最新期 KPI</div>
+            <div class="header__subtitle">动态加载复盘数据包：按专题搜索、本周/近7日新上线、最新期 KPI</div>
           </div>
           <div class="header__actions">
             <a class="btn btn--ghost" href="./fish-wish-review.html" target="_blank" rel="noopener">静态样例报告</a>
@@ -58,7 +58,7 @@
                 placeholder="按专题名称模糊搜索（监测表「专题名称」列）"
                 autocomplete="off"
               />
-              <button type="button" class="btn" id="wishReviewReloadBtn">重新加载监测表</button>
+              <button type="button" class="btn" id="wishReviewReloadBtn">重新加载全部数据源</button>
               <span id="wishReviewDashStatus" class="wishReviewDash__status muted"></span>
               <span id="wishReviewDashSource" class="wishReviewDash__source muted"></span>
             </div>
@@ -90,8 +90,8 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="./wish-review.js?v=20260330"></script>
-    <script src="./wish-review-dynamic.js?v=20260330"></script>
+    <script src="./wish-review.js?v=20260331"></script>
+    <script src="./wish-review-dynamic.js?v=20260331"></script>
     <script>
       (function () {
         var side = document.getElementById('wishReviewReloadBtnSide');
