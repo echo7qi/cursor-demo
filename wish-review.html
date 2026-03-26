@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>祈愿单项目复盘</title>
-    <link rel="stylesheet" href="./styles.css?v=20260402" />
+    <link rel="stylesheet" href="./styles.css?v=20260403" />
   </head>
   <body data-page="wish-review">
     <script>
@@ -32,7 +32,7 @@
           </button>
         </div>
         <div class="sidebar__hint sidebar__hint--wishReview">
-          先<strong>绑定</strong>「资源位数据更新」→「祈愿收入复盘」。本页对监测 CSV 做<strong>流式瘦身</strong>：只保留「汇总·汇总·全部」与「当前累计·上线1–9日内」等看板用行，原表再大内存也可控；全量明细与五维报告仍请用本地 <code>生成_人鱼全期结论表.py --data-bundle</code>。若单文件体积极大（数百 MB 级），可先在本地导出瘦身表再绑定。
+          先<strong>绑定</strong>「资源位数据更新」→「祈愿收入复盘」。本页对监测 CSV 做<strong>流式瘦身</strong>：只保留「汇总·汇总·全部」与「当前累计·上线1–9日内」等看板用行，原表再大内存也可控。若单文件仍过大，可在复盘目录运行本地脚本 <code>导出_看板用监测瘦身.py --data-bundle …</code> 生成 <code>①看板用_监测瘦身_*.csv</code> 再绑定。全量五维报告：<code>生成_人鱼全期结论表.py --data-bundle</code>。
           <a href="./fish-wish-review.html" target="_blank" rel="noopener">fish-wish-review.html</a>
         </div>
       </aside>
@@ -90,8 +90,8 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="./wish-review.js?v=20260402"></script>
-    <script src="./wish-review-dynamic.js?v=20260402"></script>
+    <script src="./wish-review.js?v=20260403"></script>
+    <script src="./wish-review-dynamic.js?v=20260403"></script>
     <script>
       (function () {
         var side = document.getElementById('wishReviewReloadBtnSide');
