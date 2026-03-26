@@ -278,6 +278,19 @@
     );
   }
 
+  /** 与 fish 顶栏「进度」一致：预估30日 = n 日累计 × 30/n，进度 = 累计/预估 */
+  function linearEst30Revenue(revN, nDays) {
+    if (revN == null || !Number.isFinite(revN) || revN < 0) {
+      return { est: null, progressPct: null };
+    }
+    const n = parseInt(String(nDays), 10);
+    if (!Number.isFinite(n) || n < 1) return { est: null, progressPct: null };
+    const est = (revN * 30) / n;
+    if (!Number.isFinite(est) || est <= 0) return { est: null, progressPct: null };
+    const progressPct = Math.min(100, Math.round((revN / est) * 100));
+    return { est, progressPct };
+  }
+
   function oneLinerText(pa, nSnap) {
     if (!pa) {
       return (
@@ -299,7 +312,9 @@
       );
     }
     if (t != null) bits.push('目标触达率约 ' + (t * 100).toFixed(1) + '%');
-    bits.push('同品类池分位、与相邻期对比、30 日预估等未在浏览器计算');
+    bits.push(
+      '顶栏「预估30日收入」按 n 日累计线性外推；脚本多模型预估请以本地生成 HTML 为准；同品类分位、与相邻期对比未在浏览器计算',
+    );
     return bits.join('；') + '。';
   }
 
@@ -367,10 +382,16 @@
     const goalHtml =
       goalCell !== '' ? esc(goalCell) : '—<span class="kpi-level">（未录入）</span>';
 
+    const est30 = linearEst30Revenue(rev, n);
+    const est30Strong =
+      est30.est != null && est30.progressPct != null
+        ? `${fmtInt(est30.est)} · 进度${est30.progressPct}%<span class="kpi-level">（线性外推）</span>`
+        : '—<span class="kpi-level">（缺 n 日累计）</span>';
+
     const kpiBlock = pa
       ? `<div class="period-kpis">
           <div class="kpi-pill"><span class="kpi-l">${n}日累计收入</span><strong>${fmtInt(rev)}</strong></div>
-          <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>—<span class="kpi-level">（浏览器不算）</span></strong></div>
+          <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>${est30Strong}</strong></div>
           <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>${goalHtml}</strong></div>
           <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>${join != null ? fmtPct(join) : '—'}</strong></div>
           <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>${fmtInt(paidUv)}</strong></div>
@@ -455,12 +476,21 @@
       '</section>' +
       '<section class="mini-card" aria-label="收入节奏">' +
       '<h4 class="mini-card-title">收入节奏</h4>' +
-      '<p class="mini-con">同期累计快照</p>' +
+      '<p class="mini-con">同期累计 + 线性外推 30 日</p>' +
       '<div class="mini-stats"><div class="data-line">同期' +
       esc(String(n)) +
       '日累计收入 <strong>' +
       fmtInt(rev) +
-      '</strong></div></div>' +
+      '</strong></div>' +
+      (est30.est != null
+        ? '<div class="data-line">线性预估 30 日累计 <strong>' +
+          fmtInt(est30.est) +
+          '</strong>｜进度 <strong>' +
+          esc(String(est30.progressPct)) +
+          '%</strong></div>'
+        : '') +
+      '</div>' +
+      '<details class="mini-details"><summary>展开说明</summary><div class="detail-inner">预估 = 当前 n 日累计 ÷ n × 30；进度 = 当前累计 ÷ 预估。与 Python 脚本中的混合 k / OLS 等模型可能不同。</div></details>' +
       '</section>' +
       '<section class="mini-card" aria-label="同品类表现">' +
       '<h4 class="mini-card-title">同品类表现</h4>' +
@@ -571,7 +601,7 @@
           (state.showPastPeriodsExpanded ? '已展开全部期次' : '仅详解最新一期') +
           '。'
         : ' 本专题仅 1 期。') +
-      ' <strong>同品类分位、30 日预估、④ 分层表、⑤ 长综合结论</strong>等仍依赖本地脚本：<code>生成_人鱼全期结论表.py --topic ' +
+      ' <strong>顶栏「预估30日」为线性外推</strong>；多模型 MAPE 与⑤ 长结论、④ 分层、同品类分位等仍依赖本地：<code>生成_人鱼全期结论表.py --topic ' +
       esc(t.name) +
       "'</code>。</p>" +
       '<div class="fish-period-stack">' +
