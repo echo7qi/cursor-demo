@@ -416,15 +416,47 @@ async function readFullWishReviewBundleFromBoundRoot() {
   };
 }
 
-/** 仅整体数据监测（与 readFull 中 main 一致，便于旧调用） */
+/**
+ * 仅读取「整体数据监测」合并 CSV。
+ * 不与 readFull 共用实现：全包会同时载入对标池/分层/作品明细，大文件下易导致标签页 OOM（Chrome 错误代码 5）。
+ */
 async function readMonitorCsvFromBoundRoot() {
-  const full = await readFullWishReviewBundleFromBoundRoot();
-  if (!full.ok) {
-    return { ok: false, error: full.error };
+  const root = await getBoundDirHandle();
+  if (!root) {
+    return { ok: false, error: '尚未绑定数据文件夹。请先在左侧点击「绑定数据文件夹」。' };
   }
-  return { ok: true, ...full.main };
+  const perm = await root.queryPermission?.({ mode: 'read' });
+  if (perm !== 'granted') {
+    const req = await root.requestPermission?.({ mode: 'read' });
+    if (req !== 'granted') {
+      return { ok: false, error: '未获得文件夹读取权限。' };
+    }
+  }
+  const review = await resolveFirstChildDir(root, REVIEW_ROOT_CANDIDATES);
+  if (!review) {
+    return {
+      ok: false,
+      error: `未找到「${REVIEW_ROOT_CANDIDATES.join('」或「')}」文件夹。`,
+    };
+  }
+  const mainSub = await resolveFirstChildDir(review.handle, BUNDLE_SUBS.main);
+  if (!mainSub) {
+    return { ok: false, error: `未找到子文件夹「${BUNDLE_SUBS.main[0]}」。` };
+  }
+  const mainFiles = await listCsvWithMtime(mainSub.handle);
+  const mainMerge = listMonitoringCsvMetasForMerge(mainFiles);
+  if (!mainMerge.length) {
+    return {
+      ok: false,
+      error:
+        '「整体数据监测」内未找到可合并的监测 CSV（已排除文件名像品类池/历史池的对标表）。',
+    };
+  }
+  const mainParts = await readTextPartsFromDir(mainSub.handle, mainMerge);
+  return { ok: true, ...finalizeCsvPartsResult(mainParts) };
 }
 
+/** 慎用：会一次性读入监测同夹+分层+作品明细全部 CSV，数据大时易 OOM；看板默认只用 wishReviewReadMonitorCsv */
 window.wishReviewReadFullBundle = readFullWishReviewBundleFromBoundRoot;
 window.wishReviewReadMonitorCsv = readMonitorCsvFromBoundRoot;
 
