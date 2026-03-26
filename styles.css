@@ -226,7 +226,8 @@ body[data-page="wish-review"] .reviewEmbed{
   vertical-align: middle;
 }
 .wishReviewDash__detail{
-  overflow: hidden;
+  overflow: visible;
+  min-width: 0;
 }
 .wishReviewDash__detailTitle{
   margin: 0 0 6px;

@@ -237,69 +237,325 @@
     return Math.round(x).toLocaleString('zh-CN');
   }
 
+  /** 0–1 比例；表中若为百分数则换算 */
+  function rate01(v) {
+    if (v == null || v === '') return null;
+    const x = parseFloat(String(v).replace(/,/g, ''));
+    if (!Number.isFinite(x)) return null;
+    return x > 1.0001 ? x / 100 : x;
+  }
+
+  function hbarHtml(label, frac, displayText, color) {
+    if (frac == null || !Number.isFinite(frac)) return '';
+    const w = Math.max(2, Math.min(100, frac * 100));
+    return (
+      '<div class="rv-hbar-row">' +
+      `<span class="rv-hbar-lab">${esc(label)}</span>` +
+      '<div class="rv-hbar-track">' +
+      `<div class="rv-hbar-fill" style="width:${w.toFixed(1)}%;background:${esc(color)}"></div>` +
+      '</div>' +
+      `<span class="rv-hbar-val">${esc(displayText)}</span>` +
+      '</div>'
+    );
+  }
+
+  function poolStackHtml(giftR, ticketR) {
+    const g = Math.max(0, Math.min(1, giftR));
+    const tk = Math.max(0, Math.min(1, ticketR));
+    let rest = 1 - g - tk;
+    if (rest < 0) rest = 0;
+    return (
+      '<div class="rv-stack-bar" title="礼包 / 祈愿券 / 其余收入占比">' +
+      `<span class="rv-stack-s rv-stack-g" style="width:${(g * 100).toFixed(2)}%">礼</span>` +
+      `<span class="rv-stack-s rv-stack-t" style="width:${(tk * 100).toFixed(2)}%">券</span>` +
+      `<span class="rv-stack-s rv-stack-o" style="width:${(rest * 100).toFixed(2)}%">其</span>` +
+      '</div>' +
+      `<p class="rv-stack-cap">收入结构 · 礼包 ${(g * 100).toFixed(0)}% · 祈愿券 ${(tk * 100).toFixed(
+        0,
+      )}% · 其余 ${(rest * 100).toFixed(0)}%</p>`
+    );
+  }
+
+  function oneLinerText(pa, nSnap) {
+    if (!pa) {
+      return (
+        '未匹配到「当前累计·上线' +
+        esc(String(nSnap)) +
+        '日内·全部」快照；请核对导出列名或运行本地生成脚本。'
+      );
+    }
+    const j = rate01(val(pa, '参与付费率'));
+    const t = rate01(val(pa, '目标触达率'));
+    const bits = [];
+    if (j != null) {
+      bits.push(
+        j < 0.12
+          ? '参与付费率偏低'
+          : j < 0.18
+            ? '参与付费率中等略偏低'
+            : '参与付费率相对正常',
+      );
+    }
+    if (t != null) bits.push('目标触达率约 ' + (t * 100).toFixed(1) + '%');
+    bits.push('同品类池分位、与相邻期对比、30 日预估等未在浏览器计算');
+    return bits.join('；') + '。';
+  }
+
+  function buildPeriodBoardArticle(sumRow) {
+    const pNo = periodNum(sumRow);
+    const aid = val(sumRow, '活动标识');
+    const daysRaw = toNum(val(sumRow, '已上线天数'));
+    const daysInt = daysRaw != null ? Math.floor(daysRaw) : 9;
+    const snap = snapRowN(state.rows, aid, daysInt);
+    const pa = snap.pa;
+    const pyes = snap.pyes;
+    const n = snap.n;
+    const genre = val(sumRow, '品类') || '—';
+    const theme = val(sumRow, '活动名称【修正】') || val(sumRow, '活动名称') || '—';
+    const daysOnline = val(sumRow, '已上线天数') || '—';
+
+    const join = pa ? rate01(val(pa, '参与付费率')) : null;
+    let freeShare = null;
+    if (pa) {
+      const fd = toNum(val(pa, '免费抽卡用户数'));
+      const du = toNum(val(pa, '抽卡用户数'));
+      if (fd != null && du != null && du > 0) freeShare = fd / du;
+    }
+    const repeatR = pa ? rate01(val(pa, '复抽率')) : null;
+
+    let payRows = '';
+    if (join != null) payRows += hbarHtml('参与付费率', join, fmtPct(join), '#0d9488');
+    if (freeShare != null) payRows += hbarHtml('纯免费抽占抽卡用户', freeShare, fmtPct(freeShare), '#ca8a04');
+    if (repeatR != null) payRows += hbarHtml('复抽率', repeatR, fmtPct(repeatR), '#6366f1');
+    if (!payRows) {
+      payRows = '<p class="review-mod-note">本快照行缺少参与付费率/抽卡用户数等字段时无法绘制条形。</p>';
+    }
+
+    const giftR = pa ? rate01(val(pa, '金爱心礼包贡献收入占比')) : null;
+    const ticketR = pa ? rate01(val(pa, '付费祈愿券贡献收入占比')) : null;
+    const poolBlock =
+      giftR != null && ticketR != null
+        ? poolStackHtml(giftR, ticketR)
+        : '<p class="review-mod-note">缺少金爱心礼包/付费祈愿券收入占比列时无法绘制堆叠条。</p>';
+
+    const tgt = pa ? rate01(val(pa, '目标触达率')) : null;
+    const tdr = pa ? rate01(val(pa, '触达抽卡率')) : null;
+    const tuv = pa ? toNum(val(pa, '触达用户数')) : null;
+    const tarpu = pa ? toNum(val(pa, '触达ARPU')) : null;
+    let launchRows = '';
+    if (tgt != null) launchRows += hbarHtml('目标触达率', tgt, fmtPct(tgt), '#0891b2');
+    if (tdr != null) launchRows += hbarHtml('触达抽卡率', tdr, fmtPct(tdr), '#0e7490');
+    if (tuv != null || tarpu != null) {
+      launchRows +=
+        '<div class="rv-metric-line"><span>触达 UV</span><strong>' +
+        fmtInt(tuv) +
+        '</strong><span>触达 ARPU</span><strong>' +
+        (tarpu != null ? tarpu.toFixed(3) : '—') +
+        '</strong></div>';
+    }
+    if (!launchRows) {
+      launchRows = '<p class="review-mod-note">缺少目标触达率/触达 UV 等列。</p>';
+    }
+
+    const rev = pa ? toNum(val(pa, '总收入')) : null;
+    const paidUv = pa ? toNum(val(pa, '付费抽卡用户数')) : null;
+    const ppd = pa ? toNum(val(pa, '付费抽用户-人均付费抽数')) : null;
+    const arppu = pa ? toNum(val(pa, '触达付费ARPPU')) : null;
+    const goalCell = val(pa, '目标达成度');
+    const goalHtml =
+      goalCell !== '' ? esc(goalCell) : '—<span class="kpi-level">（未录入）</span>';
+
+    const kpiBlock = pa
+      ? `<div class="period-kpis">
+          <div class="kpi-pill"><span class="kpi-l">${n}日累计收入</span><strong>${fmtInt(rev)}</strong></div>
+          <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">预估30日收入</span><strong>—<span class="kpi-level">（浏览器不算）</span></strong></div>
+          <div class="kpi-pill kpi-pill-goal"><span class="kpi-l">收入目标达成度</span><strong>${goalHtml}</strong></div>
+          <div class="kpi-pill"><span class="kpi-l">参与付费率</span><strong>${join != null ? fmtPct(join) : '—'}</strong></div>
+          <div class="kpi-pill"><span class="kpi-l">付费抽卡人数</span><strong>${fmtInt(paidUv)}</strong></div>
+          <div class="kpi-pill"><span class="kpi-l">付费抽人均抽数</span><strong>${ppd != null ? ppd.toFixed(2) : '—'}</strong></div>
+          <div class="kpi-pill"><span class="kpi-l">付费ARPPU</span><strong>${arppu != null ? arppu.toFixed(2) : '—'}</strong></div>
+        </div>`
+      : '<p class="review-mod-note">无当前累计快照，顶栏 KPI 略。</p>';
+
+    const pps = pa ? toNum(val(pa, '付费单抽均价')) : null;
+    const topShare = pa ? rate01(val(pa, '抽到最高等级用户占比')) : null;
+    const tgtUserShare = pyes ? rate01(val(pyes, '对应人群收入占比')) : null;
+
+    const payOl =
+      '<ol class="review-conclusions">' +
+      '<li>条形与监测表「当前累计·上线' +
+      esc(String(n)) +
+      '日内·全部」一致；解读句式与静态 fish 页同源逻辑请在本地脚本中生成。</li>' +
+      '<li>若参与付费率与纯免费抽占比同向异常，请结合赠抽与进付费抽引导复盘（与 fish 使用说明一致）。</li>' +
+      '</ol>';
+    const poolOl =
+      '<ol class="review-conclusions">' +
+      '<li>礼/券/其余结构由堆叠条展示；完整有序结论与阈值提示见本地生成 HTML。</li>' +
+      '</ol>';
+    const launchOl =
+      '<ol class="review-conclusions">' +
+      '<li>触达类指标与 fish ③ 块同源字段；宣发曝光与 pCTR 需作品明细表，浏览器未载入。</li>' +
+      '</ol>';
+
+    const miniGrid =
+      '<div class="period-grid">' +
+      '<section class="mini-card" aria-label="收入规模">' +
+      '<h4 class="mini-card-title">收入规模</h4>' +
+      '<p class="mini-con">表内对比 ' +
+      esc(String(n)) +
+      ' 日·当前累计</p>' +
+      '<div class="mini-stats"><div class="data-line">' +
+      esc(String(n)) +
+      '日累计收入 <strong>' +
+      fmtInt(rev) +
+      '</strong></div></div>' +
+      '<details class="mini-details"><summary>展开说明</summary><div class="detail-inner">n=min(9, 该期「已上线天数」取整)；与 Python 卡片对齐。</div></details>' +
+      '</section>' +
+      '<section class="mini-card" aria-label="触达效率">' +
+      '<h4 class="mini-card-title">触达效率</h4>' +
+      '<p class="mini-con">来自监测表同快照</p>' +
+      '<div class="mini-stats"><div class="data-line">触达 UV <strong>' +
+      fmtInt(tuv) +
+      '</strong>｜触达 ARPU <strong>' +
+      (tarpu != null ? tarpu.toFixed(3) : '—') +
+      '</strong>｜目标触达率 <strong>' +
+      (tgt != null ? fmtPct(tgt) : '—') +
+      '</strong></div></div>' +
+      '<details class="mini-details"><summary>展开说明</summary><div class="detail-inner">与 fish ⑥ 触达小卡同源字段。</div></details>' +
+      '</section>' +
+      '<section class="mini-card" aria-label="客单价">' +
+      '<h4 class="mini-card-title">客单价</h4>' +
+      '<p class="mini-con">付费与抽次结构</p>' +
+      '<div class="mini-stats"><div class="data-line">付费单抽均价 <strong>' +
+      (pps != null ? pps.toFixed(2) : '—') +
+      '</strong>｜参与付费率 <strong>' +
+      (join != null ? fmtPct(join) : '—') +
+      '</strong>｜纯免费抽占抽卡用户 <strong>' +
+      (freeShare != null ? fmtPct(freeShare) : '—') +
+      '</strong>｜复抽率 <strong>' +
+      (repeatR != null ? fmtPct(repeatR) : '—') +
+      '</strong>｜顶配用户占比 <strong>' +
+      (topShare != null ? fmtPct(topShare) : '—') +
+      '</strong></div></div>' +
+      '<details class="mini-details"><summary>展开说明</summary><div class="detail-inner">顶配用户占比列名：抽到最高等级用户占比。</div></details>' +
+      '</section>' +
+      '<section class="mini-card" aria-label="结构">' +
+      '<h4 class="mini-card-title">结构</h4>' +
+      '<p class="mini-con">目标用户收入占比（「是」行）</p>' +
+      '<div class="mini-stats"><div class="data-line">目标用户收入占比 <strong>' +
+      (tgtUserShare != null ? fmtPct(tgtUserShare) : '—') +
+      '</strong>｜礼包 <strong>' +
+      (giftR != null ? fmtPct(giftR) : '—') +
+      '</strong>｜祈愿券 <strong>' +
+      (ticketR != null ? fmtPct(ticketR) : '—') +
+      '</strong></div></div>' +
+      '<details class="mini-details"><summary>展开说明</summary><div class="detail-inner">目标用户收入占比为「是否目标用户=是」行的对应人群收入占比。</div></details>' +
+      '</section>' +
+      '<section class="mini-card" aria-label="收入节奏">' +
+      '<h4 class="mini-card-title">收入节奏</h4>' +
+      '<p class="mini-con">同期累计快照</p>' +
+      '<div class="mini-stats"><div class="data-line">同期' +
+      esc(String(n)) +
+      '日累计收入 <strong>' +
+      fmtInt(rev) +
+      '</strong></div></div>' +
+      '</section>' +
+      '<section class="mini-card" aria-label="同品类表现">' +
+      '<h4 class="mini-card-title">同品类表现</h4>' +
+      '<p class="mini-con">浏览器未加载对标池 CSV</p>' +
+      '<div class="mini-stats"><div class="data-line">9日收入分位 <strong>—</strong>｜参与付费率 <strong>' +
+      (join != null ? fmtPct(join) : '—') +
+      '</strong></div></div>' +
+      '<details class="mini-details"><summary>展开说明</summary><div class="detail-inner">与人鱼静态页一致的分位与话术需 <code>漫改耽美池</code> 等文件，请本地运行生成脚本。</div></details>' +
+      '</section>' +
+      '</div>';
+
+    return (
+      `<article class="period-board" data-period="${esc(String(pNo))}">` +
+      '<header class="period-head">' +
+      '<div class="period-head-text">' +
+      `<span class="period-badge">第 ${esc(String(pNo))} 期</span>` +
+      `<span class="period-theme">${esc(theme)}</span>` +
+      `<span class="period-sub">${esc(genre)} · 已上线 ${esc(daysOnline)} 天 · 表内对比 ${esc(String(n))} 日</span>` +
+      '</div>' +
+      '<p class="period-one-liner"><span class="one-liner-label">一句话总结</span>' +
+      oneLinerText(pa, n) +
+      '</p>' +
+      kpiBlock +
+      '</header>' +
+      '<div class="review-modules">' +
+      '<p class="review-mod-note">阅读顺序：①②③④⑤；⑥ 为下方折叠区。版式对齐 fish-wish-review.html。</p>' +
+      '<div class="review-mod-grid">' +
+      '<section class="review-mod">' +
+      '<h3 class="review-mod-title"><span class="review-mod-badge">①</span> 付费表现</h3>' +
+      payRows +
+      payOl +
+      '</section>' +
+      '<section class="review-mod">' +
+      '<h3 class="review-mod-title"><span class="review-mod-badge">②</span> 抽池策略与收入结构</h3>' +
+      poolBlock +
+      poolOl +
+      '</section>' +
+      '<section class="review-mod">' +
+      '<h3 class="review-mod-title"><span class="review-mod-badge">③</span> 宣发与触达</h3>' +
+      launchRows +
+      launchOl +
+      '</section>' +
+      '</div>' +
+      '<section class="review-mod review-mod--layer">' +
+      '<h3 class="review-mod-title"><span class="review-mod-badge">④</span> 付费分层表现</h3>' +
+      '<p class="review-mod-note">未在浏览器加载《② 分层用户监测》全文（控内存）。分层表与条形要点与 fish ④ 一致时请本地运行 <code>生成_人鱼全期结论表.py --data-bundle</code>。</p>' +
+      '</section>' +
+      '<section class="review-mod review-mod--synthesis">' +
+      '<h3 class="review-mod-title"><span class="review-mod-badge">⑤</span> 综合判断（跨维度）</h3>' +
+      '<ol class="review-conclusions">' +
+      '<li>此处为占位说明：静态 fish 页中 ⑤ 由脚本结合对标池分位、触达、结构等多句生成。若需相同文案与判断，请使用本地生成脚本输出 HTML。</li>' +
+      '</ol>' +
+      '</section>' +
+      '</div>' +
+      '<details class="period-metrics-fold">' +
+      '<summary class="period-metrics-fold-sum">展开 / 收起 ⑥ 六格指标明细（字段与 fish 同源快照）</summary>' +
+      '<p class="review-grid-hint">以下为简版 <strong>⑥</strong>，指标来自监测表当前累计行；完整算式脚注以本地生成页为准。</p>' +
+      miniGrid +
+      '</details>' +
+      '</article>'
+    );
+  }
+
+  function buildFishEmbedReportHtml(t) {
+    const boards = t.periods.map((sr) => buildPeriodBoardArticle(sr)).join('\n');
+    return (
+      '<div class="wishReviewFishRoot fish-report-embedded">' +
+      '<p class="sub" style="margin:0 0 16px;line-height:1.55">' +
+      '专题 <strong>' +
+      esc(t.name) +
+      '</strong> · 自上而下为各期复盘卡（<strong>新→旧</strong>），<strong>版式与 fish-wish-review.html 静态样例一致</strong>。' +
+      '数据来自已绑定监测表；<strong>同品类分位、30 日预估、与相邻期对比、④ 分层表、⑤ 长综合结论</strong>仍依赖对标池/分层与 Python，与人鱼 HTML 完全一致时请本地 <code>生成_人鱼全期结论表.py --topic ' +
+      esc(t.name) +
+      "'</code>。</p>" +
+      '<div class="fish-period-stack">' +
+      boards +
+      '</div></div>'
+    );
+  }
+
   function renderDetail(topicName) {
     const host = $('wishReviewDetailInner');
     if (!host) return;
     if (!topicName) {
+      host.className = 'card__body';
       host.innerHTML =
-        '<p class="muted wishReviewDash__empty">绑定后在左侧选择专题；支持按专题名称搜索。数据来自整体数据监测 CSV。</p>';
+        '<p class="muted wishReviewDash__empty">绑定后在左侧选择专题；右侧将按 fish 静态模板展示各期复盘卡。</p>';
       return;
     }
     const t = state.topics.find((x) => x.name === topicName);
     if (!t) {
+      host.className = 'card__body';
       host.innerHTML = '<p class="muted wishReviewDash__empty">未找到该专题</p>';
       return;
     }
-    const { latest, periods } = t;
-    const aid = val(latest, '活动标识');
-    const days = toNum(val(latest, '已上线天数')) ?? 9;
-    const { pa, n } = snapRowN(state.rows, aid, days);
-
-    let kpiBlock = '';
-    if (pa) {
-      const rev = toNum(val(pa, '总收入'));
-      const join = toNum(val(pa, '参与付费率'));
-      const tgt = toNum(val(pa, '目标触达率'));
-      const tuv = toNum(val(pa, '触达用户数'));
-      kpiBlock = `
-        <div class="wishReviewDash__kpis">
-          <div class="wishReviewDash__kpi"><span class="wishReviewDash__kpiL">上线${n}日·累计收入</span><strong>${fmtInt(rev)}</strong></div>
-          <div class="wishReviewDash__kpi"><span class="wishReviewDash__kpiL">参与付费率</span><strong>${join != null ? fmtPct(join) : '—'}</strong></div>
-          <div class="wishReviewDash__kpi"><span class="wishReviewDash__kpiL">目标触达率</span><strong>${tgt != null ? fmtPct(tgt) : '—'}</strong></div>
-          <div class="wishReviewDash__kpi"><span class="wishReviewDash__kpiL">触达 UV</span><strong>${fmtInt(tuv)}</strong></div>
-        </div>`;
-    } else {
-      kpiBlock =
-        '<p class="muted">未匹配到「当前累计·上线' +
-        esc(Math.min(9, Math.max(1, Math.floor(days)))) +
-        '日内·全部」行，可能导出口径不同。</p>';
-    }
-
-    const periodRows = periods
-      .map((r) => {
-        const p = periodNum(r);
-        const pool = esc(val(r, '活动名称【修正】') || val(r, '活动名称') || '—');
-        const ld = esc(val(r, '上线日期') || '—');
-        const d0 = esc(val(r, '已上线天数') || '—');
-        return `<tr><td>第 ${p} 期</td><td>${pool}</td><td>${ld}</td><td>${d0}</td></tr>`;
-      })
-      .join('');
-
-    host.innerHTML = `
-      <div class="wishReviewDash__detailHead">
-        <h2 class="wishReviewDash__detailTitle">${esc(t.name)}</h2>
-        <p class="muted wishReviewDash__detailMeta">品类：${esc(val(latest, '品类') || '—')} · 监测表最新期：第 ${periodNum(latest)} 期 · 上线 ${esc(val(latest, '上线日期') || '—')}</p>
-      </div>
-      ${kpiBlock}
-      <h3 class="wishReviewDash__subTitle">专题内各期（汇总行）</h3>
-      <div class="tableWrap">
-        <table class="table table--compact">
-          <thead><tr><th>期次</th><th>活动名称</th><th>上线日期</th><th>已上线天数</th></tr></thead>
-          <tbody>${periodRows}</tbody>
-        </table>
-      </div>
-      <p class="muted wishReviewDash__footNote">指标快照与脚本「上线满9日·当前累计」对齐思路一致；完整五维卡片请本地运行 <code>生成_人鱼全期结论表.py --topic</code> 生成 HTML。</p>
-    `;
+    host.className = 'card__body wishReviewDetailInner--fish';
+    host.innerHTML = buildFishEmbedReportHtml(t);
   }
 
   function topicMatchesFilter(t, q) {
