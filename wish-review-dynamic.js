@@ -26,17 +26,72 @@
     return String(v).trim();
   }
 
-  /** 去掉表头 BOM、列名首尾空白，避免首列识别不到「数据分类」 */
-  function normalizeRows(rows) {
-    if (!rows || !rows.length) return rows || [];
-    return rows.map((r) => {
-      const out = {};
-      Object.keys(r).forEach((k) => {
-        const nk = k.replace(/^\uFEFF/, '').trim();
-        out[nk] = r[k];
-      });
-      return out;
+  /** 单行：去掉表头 BOM、列名首尾空白 */
+  function normalizeRowKeys(r) {
+    if (!r || typeof r !== 'object') return {};
+    const out = {};
+    Object.keys(r).forEach((k) => {
+      const nk = k.replace(/^\uFEFF/, '').trim();
+      out[nk] = r[k];
     });
+    return out;
+  }
+
+  function isSummaryAllRow(r) {
+    return (
+      val(r, '数据分类') === '汇总' &&
+      val(r, '数据周期') === '汇总' &&
+      val(r, '是否目标用户') === '全部'
+    );
+  }
+
+  /**
+   * 本页看板实际用到的行远少于全表：大量明细（分日、分渠道等）可丢弃，避免数据逐年膨胀时拖垮浏览器。
+   * 保留：① 汇总/汇总/全部（建专题列表）；② 当前累计·上线1–9日内·全部或「是」（详情 KPI）。
+   */
+  function isLaunchWindowWithin9DaysRow(r) {
+    if (val(r, '数据分类') !== '当前累计') return false;
+    const dr = val(r, '数据周期');
+    if (!/^上线\s*([1-9])\s*日内$/.test(dr)) return false;
+    const ut = val(r, '是否目标用户');
+    return ut === '全部' || ut === '是';
+  }
+
+  function isRowUsedByDashboard(r) {
+    return isSummaryAllRow(r) || isLaunchWindowWithin9DaysRow(r);
+  }
+
+  /** 流式解析：只把「看板用行」推入数组，避免 Papa 一次性生成百万行 objects */
+  function parseMonitoringCsvToSlimRows(text, logLabel) {
+    const acc = [];
+    const errs = [];
+    Papa.parse(text, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      worker: false,
+      error(e) {
+        errs.push({ type: 'fatal', message: String((e && e.message) || e) });
+      },
+      step(results) {
+        if (results.errors && results.errors.length) {
+          for (let i = 0; i < results.errors.length; i++) errs.push(results.errors[i]);
+        }
+        const raw = results.data;
+        if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) return;
+        const row = normalizeRowKeys(raw);
+        if (!isRowUsedByDashboard(row)) return;
+        acc.push(row);
+      },
+      complete(results) {
+        if (results && results.errors && results.errors.length) {
+          for (let i = 0; i < results.errors.length; i++) errs.push(results.errors[i]);
+        }
+      },
+    });
+    if (errs.length) {
+      console.warn('[wish-review-dynamic]', logLabel || 'CSV', errs.slice(0, 10));
+    }
+    return acc;
   }
 
   /** 多文件合并：同一活动+数据分类+周期+用户类型 只保留一行（后读入的文件覆盖先读的，时间序由 wish-review.js 从旧到新） */
@@ -56,14 +111,6 @@
       m.set(rowDedupeKey(r), r);
     }
     return Array.from(m.values());
-  }
-
-  function isSummaryAllRow(r) {
-    return (
-      val(r, '数据分类') === '汇总' &&
-      val(r, '数据周期') === '汇总' &&
-      val(r, '是否目标用户') === '全部'
-    );
   }
 
   function periodNum(row) {
@@ -326,7 +373,7 @@
       return;
     }
     if (status) {
-      status.textContent = '正在读取整体数据监测（多 CSV 合并）…';
+      status.textContent = '正在解析整体数据监测（流式瘦身，仅保留看板用行）…';
     }
     const mainBlock = await readFn();
     if (!mainBlock.ok) {
@@ -347,24 +394,15 @@
     try {
       if (parts) {
         for (let pi = 0; pi < parts.length; pi++) {
-          const parsed = Papa.parse(parts[pi].text, {
-            header: true,
-            skipEmptyLines: 'greedy',
-          });
-          if (parsed.errors && parsed.errors.length) {
-            console.warn('[wish-review-dynamic]', parts[pi].name, parsed.errors);
-          }
-          mergedRows = mergedRows.concat(normalizeRows(parsed.data || []));
+          mergedRows = mergedRows.concat(
+            parseMonitoringCsvToSlimRows(parts[pi].text, parts[pi].name),
+          );
         }
       } else if (mainBlock.text) {
-        const parsed = Papa.parse(mainBlock.text, {
-          header: true,
-          skipEmptyLines: 'greedy',
-        });
-        if (parsed.errors && parsed.errors.length) {
-          console.warn('[wish-review-dynamic]', parsed.errors);
-        }
-        mergedRows = normalizeRows(parsed.data || []);
+        mergedRows = parseMonitoringCsvToSlimRows(
+          mainBlock.text,
+          mainBlock.fileName || '监测表',
+        );
       } else {
         if (status) {
           status.textContent = '读取结果缺少 CSV 内容，请刷新页面后重试。';
@@ -386,7 +424,7 @@
         layerRowCount: 0,
         workRowCount: 0,
         loadedAt: Date.now(),
-        note: '本页仅解析整体数据监测，避免大目录全量载入导致浏览器崩溃',
+        note: '仅保留汇总行+当前累计·上线1–9日内；流式解析降低内存',
       };
     }
     const built = buildTopicModels(state.rows);
@@ -405,7 +443,7 @@
           : `已加载 ${state.rows.length} 行`) +
         ` · ${built.topicCount} 个专题 · ${built.activityDedupCount} 个祈愿活动` +
         `（汇总·全部 原始 ${built.rawSummaryCount} 行，专题内按活动标识去重）` +
-        ' · 对标池/分层/作品明细未载入（防内存过大；本地脚本仍合并全量）';
+        ' · 已瘦身解析（原表再大也只保留看板用行）；对标池等未载入，全量请用本地脚本';
     }
     if (src) {
       const label =
