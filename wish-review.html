@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>祈愿单项目复盘</title>
-    <link rel="stylesheet" href="./styles.css?v=20260403" />
+    <link rel="stylesheet" href="./styles.css?v=20260404" />
   </head>
   <body data-page="wish-review">
     <script>
@@ -22,6 +22,19 @@
           <a class="sidebar__link is-active" href="./wish-review.html" aria-current="page">祈愿单项目复盘</a>
         </nav>
         <div class="wishReviewSidebarTools">
+          <div class="wishReviewSidebarTools__title">静态五维样例（仍在）</div>
+          <a
+            class="btn wishReviewSidebarTools__full"
+            href="./fish-wish-review.html?v=20260404"
+            target="_blank"
+            rel="noopener"
+            >人鱼陷落 · 五维复盘 HTML</a
+          >
+          <p class="sidebar__hint sidebar__hint--tight muted" style="margin-top: 8px; font-size: 12px">
+            与当前页不同：本页是<strong>动态简版</strong>看板；调试好的人鱼完整报告是<strong>单独页面</strong>，未下线。
+          </p>
+        </div>
+        <div class="wishReviewSidebarTools">
           <div class="wishReviewSidebarTools__title">本页操作</div>
           <button type="button" class="btn js-wish-review-bind">绑定数据文件夹</button>
           <button type="button" class="btn btn--ghost js-wish-review-scan">扫描数据源</button>
@@ -32,8 +45,7 @@
           </button>
         </div>
         <div class="sidebar__hint sidebar__hint--wishReview">
-          先<strong>绑定</strong>「资源位数据更新」→「祈愿收入复盘」。本页对监测 CSV 做<strong>流式瘦身</strong>：只保留「汇总·汇总·全部」与「当前累计·上线1–9日内」等看板用行，原表再大内存也可控。若单文件仍过大，可在复盘目录运行本地脚本 <code>导出_看板用监测瘦身.py --data-bundle …</code> 生成 <code>①看板用_监测瘦身_*.csv</code> 再绑定。全量五维报告：<code>生成_人鱼全期结论表.py --data-bundle</code>。
-          <a href="./fish-wish-review.html" target="_blank" rel="noopener">fish-wish-review.html</a>
+          先<strong>绑定</strong>「资源位数据更新」→「祈愿收入复盘」。本页对监测 CSV 做<strong>流式瘦身</strong>：只保留「汇总·汇总·全部」与「当前累计·上线1–9日内」等看板用行，原表再大内存也可控。若单文件仍过大，可在复盘目录运行本地脚本 <code>导出_看板用监测瘦身.py --data-bundle …</code> 生成 <code>①看板用_监测瘦身_*.csv</code> 再绑定。其它专题的五维 HTML 仍用本地 <code>生成_人鱼全期结论表.py --data-bundle / --topic</code> 生成。
         </div>
       </aside>
 
@@ -41,10 +53,18 @@
         <header class="header">
           <div class="header__title">
             <h1>祈愿单项目复盘</h1>
-            <div class="header__subtitle">动态加载整体数据监测：按专题搜索、本周/近7日新上线、最新期 KPI</div>
+            <div class="header__subtitle">
+              动态简版看板（绑定 CSV）；人鱼<strong>五维静态样例</strong>见侧栏按钮或本按钮，未删除。
+            </div>
           </div>
           <div class="header__actions">
-            <a class="btn btn--ghost" href="./fish-wish-review.html" target="_blank" rel="noopener">静态样例报告</a>
+            <a
+              class="btn btn--ghost"
+              href="./fish-wish-review.html?v=20260404"
+              target="_blank"
+              rel="noopener"
+              >静态样例报告（人鱼）</a
+            >
           </div>
         </header>
 
@@ -90,8 +110,8 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="./wish-review.js?v=20260403"></script>
-    <script src="./wish-review-dynamic.js?v=20260403"></script>
+    <script src="./wish-review.js?v=20260404"></script>
+    <script src="./wish-review-dynamic.js?v=20260404"></script>
     <script>
       (function () {
         var side = document.getElementById('wishReviewReloadBtnSide');
