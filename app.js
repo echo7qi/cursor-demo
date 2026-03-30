@@ -237,6 +237,11 @@ function fmtWow(x) {
   return `${sign}${(x * 100).toFixed(2)}%`;
 }
 
+/** 该来源 p-CTR 口径不稳定，表格等处统一显示「-」、趋势图不画 p-CTR 线 */
+function isH5ActivitySource(src) {
+  return String(src ?? '').trim() === 'H5活动';
+}
+
 /** 括号内展示相对上周的绝对差（占比、p-CTR 等为百分点，非环比倍率） */
 function absDeltaRateParen(curr, prev, digits = 2) {
   if (prev == null || !Number.isFinite(prev)) return '';
@@ -569,8 +574,8 @@ function render() {
       const srcCols = [
         { label: '宣发来源', value: (r) => r.src },
         { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
-        { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.pctr, 2) },
-        { label: 'p-CTR环比', className: 'num', value: (r) => fmtWow(r.pctr_wow) },
+        { label: 'p-CTR', className: 'num', value: (r) => (isH5ActivitySource(r.src) ? '-' : fmtRate(r.pctr, 2)) },
+        { label: 'p-CTR环比', className: 'num', value: (r) => (isH5ActivitySource(r.src) ? '-' : fmtWow(r.pctr_wow)) },
         { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.erpi, 4) },
         { label: '每曝光收入环比', className: 'num', value: (r) => fmtWow(r.erpi_wow) },
       ];
@@ -641,12 +646,12 @@ function render() {
               const prevM = prevWk && wi === 0 ? prevSrcMap?.get(src) : null;
               let impSp = fmtInt(m.imp);
               let shareSp = fmtRate(m.shareOps, 2);
-              let ctrSp = fmtRate(m.ctr, 2);
+              let ctrSp = isH5ActivitySource(src) ? '-' : fmtRate(m.ctr, 2);
               let revSp = fmtMoney(m.rev_per_imp, 4);
               if (isLatest && prevM) {
                 const impCls = cellCls(m.imp, prevM.imp);
                 const shareCls = cellCls(m.shareOps, prevM.shareOps);
-                const ctrCls = cellCls(m.ctr, prevM.ctr);
+                const ctrCls = isH5ActivitySource(src) ? '' : cellCls(m.ctr, prevM.ctr);
                 const revCls = cellCls(m.rev_per_imp, prevM.rev_per_imp);
                 if (impCls) impSp = `<span class="${impCls}">${impSp}</span>`;
                 if (shareCls) shareSp = `<span class="${shareCls}">${shareSp}</span>`;
@@ -667,7 +672,8 @@ function render() {
               const revWow = wow(currM.rev_per_imp, prevM.rev_per_imp);
               const shareWow = wow(currM.shareOps, prevM.shareOps);
               const revAbs = currM.rev_per_imp - prevM.rev_per_imp;
-              html += `<td class="num">${fmtWow(impWow)}</td><td class="num">${fmtWow(shareWow)}</td><td class="num">${fmtWow(ctrWow)}</td><td class="num">${fmtWow(revWow)}</td><td class="num">${revAbs >= 0 ? '+' : ''}${fmtMoney(revAbs, 4)}</td>`;
+              const ctrWowCell = isH5ActivitySource(src) ? '-' : fmtWow(ctrWow);
+              html += `<td class="num">${fmtWow(impWow)}</td><td class="num">${fmtWow(shareWow)}</td><td class="num">${ctrWowCell}</td><td class="num">${fmtWow(revWow)}</td><td class="num">${revAbs >= 0 ? '+' : ''}${fmtMoney(revAbs, 4)}</td>`;
             } else {
               html += '<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';
             }
@@ -784,7 +790,7 @@ function render() {
         { label: '宣发来源', value: (r) => r.src },
         { label: '资源场景', value: (r) => r.pos },
         { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
-        { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
+        { label: 'p-CTR', className: 'num', value: (r) => (isH5ActivitySource(r.src) ? '-' : fmtRate(r.ctr, 2)) },
         { label: '效率表现', value: (r) => r.effLabel || '-' },
       ];
       buildTable($('latestWeekTopProjectsTable'), topicCols, topicTop);
@@ -858,7 +864,7 @@ function render() {
         return { ...x, pctr_wow: wow(x.ctr, p?.ctr), erpi_wow: wow(x.rev_per_imp, p?.rev_per_imp) };
       });
       const hasSignificantSrc = srcTopWithWow.some((x) =>
-        (x.pctr_wow != null && Math.abs(x.pctr_wow) >= 0.08) || (x.erpi_wow != null && Math.abs(x.erpi_wow) >= 0.08)
+        (!isH5ActivitySource(x.src) && x.pctr_wow != null && Math.abs(x.pctr_wow) >= 0.08) || (x.erpi_wow != null && Math.abs(x.erpi_wow) >= 0.08)
       );
 
       const wrap1 = $('conclusionSection1Wrap');
@@ -870,8 +876,8 @@ function render() {
         const srcColsTop5 = [
           { label: '宣发来源', value: (r) => r.src },
           { label: '运营宣推曝光', className: 'num', value: (r) => fmtInt(r.imp) },
-          { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
-          { label: 'p-CTR环比', className: 'num', value: (r) => fmtWow(r.pctr_wow) },
+          { label: 'p-CTR', className: 'num', value: (r) => (isH5ActivitySource(r.src) ? '-' : fmtRate(r.ctr, 2)) },
+          { label: 'p-CTR环比', className: 'num', value: (r) => (isH5ActivitySource(r.src) ? '-' : fmtWow(r.pctr_wow)) },
           { label: '每曝光收入', className: 'num', value: (r) => fmtMoney(r.rev_per_imp, 4) },
           { label: '每曝光收入环比', className: 'num', value: (r) => fmtWow(r.erpi_wow) },
         ];
@@ -1345,22 +1351,24 @@ function render() {
           yAxisID: 'y',
         });
 
-        const ctrVals = buckets.map((b) => {
-          const r = b.rows.filter((x) => (String(x[COLS.source] ?? '').trim() || '(空)') === src);
-          const a = computeFunnelAgg(r, opsScopeCols);
-          return safeDiv(a.clk, a.imp);
-        });
-        datasets.push({
-          label: `${src} · p-CTR`,
-          data: ctrVals,
-          borderColor: color,
-          borderDash: [4, 4],
-          backgroundColor: 'transparent',
-          tension: 0.25,
-          pointRadius: 0,
-          borderWidth: 1.5,
-          yAxisID: 'y1',
-        });
+        if (!isH5ActivitySource(src)) {
+          const ctrVals = buckets.map((b) => {
+            const r = b.rows.filter((x) => (String(x[COLS.source] ?? '').trim() || '(空)') === src);
+            const a = computeFunnelAgg(r, opsScopeCols);
+            return safeDiv(a.clk, a.imp);
+          });
+          datasets.push({
+            label: `${src} · p-CTR`,
+            data: ctrVals,
+            borderColor: color,
+            borderDash: [4, 4],
+            backgroundColor: 'transparent',
+            tension: 0.25,
+            pointRadius: 0,
+            borderWidth: 1.5,
+            yAxisID: 'y1',
+          });
+        }
 
         const shareVals = buckets.map((b) => {
           const totalA = computeFunnelAgg(b.rows, opsScopeCols);
@@ -1445,7 +1453,7 @@ function render() {
       { label: '运营宣推曝光占比', className: 'num', value: (r) => fmtRate(r.ops_share, 2) },
       { label: '运营宣推收入', className: 'num', value: (r) => fmtMoney(r.rev, 2) },
       { label: '每曝光收入(运营宣推)', className: 'num', value: (r) => fmtMoney(r.erpi_ops, 4) },
-      { label: 'p-CTR', className: 'num', value: (r) => fmtRate(r.ctr, 2) },
+      { label: 'p-CTR', className: 'num', value: (r) => (isH5ActivitySource(r.src) ? '-' : fmtRate(r.ctr, 2)) },
       { label: '阅读率', className: 'num', value: (r) => fmtRate(r.read_rate, 2) },
       { label: '付费率', className: 'num', value: (r) => fmtRate(r.pay_rate, 2) },
     ];

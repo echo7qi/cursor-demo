@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>祈愿单项目复盘</title>
-    <link rel="stylesheet" href="./styles.css?v=20260411" />
+    <link rel="stylesheet" href="./styles.css?v=20260430" />
     <link rel="stylesheet" href="./wish-review-fish-layout.css?v=20260411" />
   </head>
   <body data-page="wish-review">
@@ -14,48 +14,50 @@
       }
     </script>
     <div class="appShell">
-      <aside class="sidebar">
-        <div class="sidebar__brand">数据看板</div>
-        <nav class="sidebar__nav">
-          <a class="sidebar__link" href="./index.html">运营宣推</a>
-          <a class="sidebar__link" href="./wishbar.html">祈愿bar访问贡献</a>
-          <a class="sidebar__link" href="./reach.html">祈愿宣发触达</a>
-          <a class="sidebar__link is-active" href="./wish-review.html" aria-current="page">祈愿单项目复盘</a>
-        </nav>
-        <div class="wishReviewSidebarTools">
-          <div class="wishReviewSidebarTools__title">静态五维样例（仍在）</div>
-          <a
-            class="btn wishReviewSidebarTools__full"
-            href="./fish-wish-review.html?v=20260404"
-            target="_blank"
-            rel="noopener"
-            >人鱼陷落 · 五维复盘 HTML</a
-          >
-          <p class="sidebar__hint sidebar__hint--tight muted" style="margin-top: 8px; font-size: 12px">
-            与当前页不同：本页是<strong>动态简版</strong>看板；调试好的人鱼完整报告是<strong>单独页面</strong>，未下线。
-          </p>
+      <div class="appShell__content appShell__content--wishReview">
+        <div class="wishReviewTopbar" aria-label="站点导航与数据绑定">
+          <div class="wishReviewTopbar__row wishReviewTopbar__row--nav">
+            <div class="wishReviewTopbar__brand">数据看板</div>
+            <nav class="wishReviewTopbar__nav" aria-label="主栏目">
+              <a class="wishReviewTopbar__navLink" href="./index.html">运营宣推</a>
+              <a class="wishReviewTopbar__navLink" href="./wishbar.html">祈愿bar访问贡献</a>
+              <a class="wishReviewTopbar__navLink" href="./reach.html">祈愿宣发触达</a>
+              <a class="wishReviewTopbar__navLink is-active" href="./wish-review.html" aria-current="page">祈愿单项目复盘</a>
+            </nav>
+          </div>
+          <div class="wishReviewTopbar__row wishReviewTopbar__row--tools">
+            <div class="wishReviewTopbar__static">
+              <span class="wishReviewSidebarTools__title wishReviewTopbar__staticTitle">静态五维样例（仍在）</span>
+              <a
+                class="btn btn--ghost wishReviewTopbar__staticBtn"
+                href="./fish-wish-review.html?v=20260404"
+                target="_blank"
+                rel="noopener"
+                >人鱼陷落 · 五维复盘 HTML</a
+              >
+              <p class="wishReviewTopbar__staticHint muted">
+                与当前页不同：本页是<strong>动态简版</strong>看板；调试好的人鱼完整报告是<strong>单独页面</strong>，未下线。
+              </p>
+            </div>
+            <div class="wishReviewTopbar__bind">
+              <span class="wishReviewTopbar__bindLabel">数据绑定</span>
+              <button type="button" class="btn js-wish-review-bind">绑定数据文件夹</button>
+              <button type="button" class="btn btn--ghost js-wish-review-scan">扫描数据源</button>
+              <button type="button" class="btn btn--ghost" id="wishReviewReloadBtnSide">重新加载监测数据</button>
+            </div>
+            <p class="wishReviewTopbar__hint muted">数据在浏览器本地解析，不上传。</p>
+          </div>
         </div>
-        <div class="wishReviewSidebarTools">
-          <div class="wishReviewSidebarTools__title">本页操作</div>
-          <button type="button" class="btn js-wish-review-bind">绑定数据文件夹</button>
-          <button type="button" class="btn btn--ghost js-wish-review-scan">扫描数据源</button>
-        </div>
-        <div class="wishReviewSidebarTools wishReviewSidebarTools--tight">
-          <button type="button" class="btn btn--ghost wishReviewSidebarTools__full" id="wishReviewReloadBtnSide">
-            重新加载监测数据
-          </button>
-        </div>
-        <div class="sidebar__hint sidebar__hint--wishReview">
+
+        <div class="wishReviewPageNote sidebar__hint--wishReview">
           先<strong>绑定</strong>「资源位数据更新」→「祈愿收入复盘」。本页对监测 CSV 做<strong>流式瘦身</strong>：只保留「汇总·汇总·全部」与「当前累计·上线1–9日内」等看板用行，原表再大内存也可控。若单文件仍过大，可在复盘目录运行本地脚本 <code>导出_看板用监测瘦身.py --data-bundle …</code> 生成 <code>①看板用_监测瘦身_*.csv</code> 再绑定。其它专题的五维 HTML 仍用本地 <code>生成_人鱼全期结论表.py --data-bundle / --topic</code> 生成。
         </div>
-      </aside>
 
-      <div class="appShell__content appShell__content--wishReview">
         <header class="header">
           <div class="header__title">
             <h1>祈愿单项目复盘</h1>
             <div class="header__subtitle">
-              左侧选专题后，右侧按 <strong>fish-wish-review</strong> 同版式展示各期复盘卡（监测表数据）；与人鱼 HTML 100% 一致仍请本地脚本生成。
+              在列表中选专题后，右侧按 <strong>fish-wish-review</strong> 同版式展示各期复盘卡（监测表数据）；与人鱼 HTML 100% 一致仍请本地脚本生成。
             </div>
           </div>
           <div class="header__actions">

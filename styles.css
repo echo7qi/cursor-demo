@@ -68,18 +68,139 @@ body.is-embed .grid{
   gap: 10px;
 }
 
-/* 祈愿单项目复盘：视口内布局 + 主区动态看板可滚动 */
+/* 祈愿单项目复盘：视口内布局 + 主区动态看板可滚动（顶栏横排，无左侧栏） */
 body[data-page="wish-review"] .appShell{
   min-height: 100vh;
   min-height: 100dvh;
   height: 100vh;
   height: 100dvh;
   align-items: stretch;
+  grid-template-columns: 1fr;
 }
-body[data-page="wish-review"] .sidebar{
-  height: 100%;
-  max-height: 100dvh;
-  overflow: auto;
+body[data-page="wish-review"] .wishReviewTopbar{
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+}
+body[data-page="wish-review"] .wishReviewTopbar__row{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 18px;
+}
+body[data-page="wish-review"] .wishReviewTopbar__row--nav{
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+body[data-page="wish-review"] .wishReviewTopbar__row--tools{
+  align-items: flex-start;
+}
+body[data-page="wish-review"] .wishReviewTopbar__brand{
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(79, 124, 255, 0.08);
+  border: 1px solid rgba(79, 124, 255, 0.18);
+}
+body[data-page="wish-review"] .wishReviewTopbar__nav{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+body[data-page="wish-review"] .wishReviewTopbar__navLink{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: rgba(15, 23, 42, 0.82);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+body[data-page="wish-review"] .wishReviewTopbar__navLink:hover{
+  background: rgba(79, 124, 255, 0.06);
+  border-color: rgba(79, 124, 255, 0.12);
+}
+body[data-page="wish-review"] .wishReviewTopbar__navLink.is-active,
+body[data-page="wish-review"] .wishReviewTopbar__navLink[aria-current="page"]{
+  background: rgba(79, 124, 255, 0.1);
+  border-color: rgba(79, 124, 255, 0.22);
+  color: rgba(15, 23, 42, 0.92);
+  font-weight: 600;
+}
+body[data-page="wish-review"] .wishReviewTopbar__static{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  flex: 1 1 280px;
+  min-width: 0;
+}
+body[data-page="wish-review"] .wishReviewTopbar__staticTitle{
+  margin: 0;
+  flex: 0 0 auto;
+}
+body[data-page="wish-review"] .wishReviewTopbar__staticBtn{
+  width: auto;
+  min-height: 36px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+body[data-page="wish-review"] .wishReviewTopbar__staticHint{
+  margin: 0;
+  flex: 1 1 220px;
+  font-size: 12px;
+  line-height: 1.45;
+  min-width: min(100%, 200px);
+}
+body[data-page="wish-review"] .wishReviewTopbar__bind{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+body[data-page="wish-review"] .wishReviewTopbar__bindLabel{
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  margin-right: 2px;
+}
+body[data-page="wish-review"] .wishReviewTopbar__bind .btn{
+  width: auto;
+  min-height: 38px;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+body[data-page="wish-review"] .wishReviewTopbar__hint{
+  margin: 0;
+  flex: 1 1 200px;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.65);
+}
+body[data-page="wish-review"] .wishReviewPageNote.sidebar__hint--wishReview{
+  margin: 0 18px 10px;
+  flex-shrink: 0;
 }
 body[data-page="wish-review"] .appShell__content--wishReview{
   display: flex;
@@ -117,6 +238,14 @@ body[data-page="wish-review"] .reviewEmbed{
 @media (max-width: 900px){
   body[data-page="wish-review"] .reviewEmbedMain{
     padding: 0 10px 10px;
+  }
+  body[data-page="wish-review"] .wishReviewPageNote.sidebar__hint--wishReview{
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  body[data-page="wish-review"] .wishReviewTopbar__row{
+    padding-left: 12px;
+    padding-right: 12px;
   }
 }
 
@@ -298,6 +427,10 @@ body[data-page="wish-review"] .reviewEmbed{
   font-weight: 600;
 }
 body[data-page="wish-review"].is-embed .sidebar{
+  display: none;
+}
+body[data-page="wish-review"].is-embed .wishReviewTopbar,
+body[data-page="wish-review"].is-embed .wishReviewPageNote{
   display: none;
 }
 body[data-page="wish-review"].is-embed .appShell{

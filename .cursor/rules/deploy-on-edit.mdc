@@ -4,7 +4,9 @@ globs: "**/*"
 alwaysApply: true
 ---
 
-# cursor-demo：修改即部署
+# cursor-demo：修改即部署（默认）
+
+**默认**：凡在本仓库内的有效改动，任务结束前都应推送上线；除非用户明确说「只改本地 / 不要部署」。
 
 本仓库已配置 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)：推送到 `main` 后由 GitHub Actions 发布到 Pages。
 

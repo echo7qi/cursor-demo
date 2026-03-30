@@ -10,19 +10,17 @@
 
 ### 步骤
 
-1. **提交并推送代码**
+1. **一键推送（推荐，与 Cursor 规则一致）**
    ```bash
-   cd /Users/wangqiqi/Desktop/运营宣推数据看板
-   git add .
-   git commit -m "部署看板到 GitHub Pages"
-   git push origin main
+   cd /path/to/cursor-demo
+   ./deploy.sh "简要说明本次修改"
    ```
+   或直接 `git push origin main`（需先有 commit）。
 
-2. **在 GitHub 启用 Pages**
+2. **在 GitHub 启用 Pages（首次）**
    - 打开：https://github.com/echo7qi/cursor-demo/settings/pages
-   - **Source**：选择「Deploy from a branch」
-   - **Branch**：选择 `main`，文件夹选择 `/ (root)`
-   - 点击 **Save**
+   - **Source**：选择 **GitHub Actions**（本仓库用 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) 在推送 `main` 时发布）
+   - 若曾使用「Deploy from a branch」，请改为 **GitHub Actions**，避免两套发布冲突
 
 3. **等待 1–2 分钟**，访问：**https://echo7qi.github.io/cursor-demo/**
 

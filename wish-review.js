@@ -22,6 +22,27 @@ const SUB_LABEL = {
   layer: '分层用户监测',
 };
 
+async function resolveReviewRootFromBoundRoot(rootHandle) {
+  if (!rootHandle) return null;
+  const rootName = typeof rootHandle.name === 'string' ? rootHandle.name : '';
+  if (rootName && REVIEW_ROOT_CANDIDATES.includes(rootName)) {
+    return { handle: rootHandle, name: rootName };
+  }
+  // Fallback: if the bound directory already contains "整体数据监测" directly,
+  // treat it as the review root (user may bind "祈愿收入复盘" itself).
+  try {
+    if (BUNDLE_SUBS?.main?.length) {
+      for (const mainSubName of BUNDLE_SUBS.main) {
+        const h = await rootHandle.getDirectoryHandle(mainSubName, { create: false });
+        if (h) return { handle: rootHandle, name: rootName || '祈愿收入复盘' };
+      }
+    }
+  } catch (_) {
+    // ignore and continue
+  }
+  return resolveFirstChildDir(rootHandle, REVIEW_ROOT_CANDIDATES);
+}
+
 function openDb() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 1);
@@ -159,7 +180,7 @@ async function scanBundleFromRoot(rootHandle) {
     if (req !== 'granted') throw new Error('未获得文件夹读取权限。');
   }
 
-  const review = await resolveFirstChildDir(rootHandle, REVIEW_ROOT_CANDIDATES);
+  const review = await resolveReviewRootFromBoundRoot(rootHandle);
   if (!review) {
     throw new Error(
       `未找到「${REVIEW_ROOT_CANDIDATES.join('」或「')}」文件夹。请在绑定的「资源位数据更新」目录下创建「祈愿收入复盘」。`,
@@ -323,7 +344,7 @@ async function readFullWishReviewBundleFromBoundRoot() {
       return { ok: false, error: '未获得文件夹读取权限。', main: null };
     }
   }
-  const review = await resolveFirstChildDir(root, REVIEW_ROOT_CANDIDATES);
+  const review = await resolveReviewRootFromBoundRoot(root);
   if (!review) {
     return {
       ok: false,
@@ -432,7 +453,7 @@ async function readMonitorCsvFromBoundRoot() {
       return { ok: false, error: '未获得文件夹读取权限。' };
     }
   }
-  const review = await resolveFirstChildDir(root, REVIEW_ROOT_CANDIDATES);
+  const review = await resolveReviewRootFromBoundRoot(root);
   if (!review) {
     return {
       ok: false,
