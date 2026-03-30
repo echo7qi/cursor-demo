@@ -21,7 +21,7 @@
       color: var(--text);
       line-height: 1.6;
       margin: 0;
-      padding: 12px;
+      padding: 14px 16px;
       max-height: min(88vh, 1680px);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
