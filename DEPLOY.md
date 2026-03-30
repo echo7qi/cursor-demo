@@ -2,7 +2,11 @@
 
 ## 方式一：GitHub Pages（推荐，免费稳定）
 
-部署后获得**永久稳定链接**：`https://echo7qi.github.io/cursor-demo/`
+部署后获得**永久稳定链接**（同一仓库、同一 GitHub Actions，推送 `main` 即更新）：
+
+| 页面 | 地址 |
+|------|------|
+| 运营宣推首页 | `https://echo7qi.github.io/cursor-demo/` 或 `.../index.html` |
 
 ### 步骤
 

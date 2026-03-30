@@ -71,6 +71,40 @@ function normSource(s) {
   return v;
 }
 
+/**
+ * 周维度「日期」列统一为 YYYY-MM-DD。
+ * 混用 2026/03/29 与 2026-03-23 时，原生字符串排序会把 '/' 格式整体排错，导致「最新周」仍停在 3/23。
+ */
+function normalizeWishbarWeekKey(raw) {
+  const s = String(raw ?? '').replace(/\ufeff/g, '').trim();
+  if (!s) return '';
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+  m = s.match(/^(\d{4})[./](\d{1,2})[./](\d{1,2})/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+  m = s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+  m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return s;
+}
+
+function weekKeyToTimeMs(key) {
+  const n = normalizeWishbarWeekKey(key);
+  const m = n.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const t = d.getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+function compareWeekKeysChronological(a, b) {
+  const ta = weekKeyToTimeMs(a);
+  const tb = weekKeyToTimeMs(b);
+  if (ta != null && tb != null && ta !== tb) return ta - tb;
+  return String(a).localeCompare(String(b), 'zh-CN');
+}
+
 /** 一级来源缺省合并为「(空)」：图表/宣推表/周明细列默认不展示 */
 function isEmptyPrimarySource(label) {
   return label === '(空)';
@@ -134,8 +168,8 @@ function buildWishbarContributionRows(fp, weekStr) {
 }
 
 function parseWeekToDate(w) {
-  const s = String(w ?? '').trim();
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const n = normalizeWishbarWeekKey(w);
+  const m = n.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   return null;
 }
@@ -337,7 +371,8 @@ function computeActivityPayTopN(rows, weekStr, topN = 5) {
   const map = new Map();
   for (const r of rows) {
     if (!r) continue;
-    if (String(rowCell(r, colDate) ?? '').trim() !== weekStr) continue;
+    const wk = normalizeWishbarWeekKey(String(rowCell(r, colDate) ?? '').trim());
+    if (wk !== weekStr) continue;
     if (hasPeriodCol) {
       const period = String(rowCell(r, colPeriod) ?? '').trim();
       if (!period || !(period === '周' || period.startsWith('周') || period.includes('周'))) continue;
@@ -858,7 +893,7 @@ function buildWeeklyShares(rows) {
     const period = String(periodRaw ?? '').trim();
     if (hasPeriodCol && (!period || !(period === '周' || period.startsWith('周') || period.includes('周')))) continue;
 
-    const week = String(r[colDate] ?? '').trim();
+    const week = normalizeWishbarWeekKey(String(r[colDate] ?? '').trim());
     if (!week) continue;
 
     const l1 = normSource(r[colL1]);
@@ -886,7 +921,7 @@ function buildWeeklyShares(rows) {
     m2.set(l2, (m2.get(l2) || 0) + uv);
   }
 
-  const weeks = Array.from(weekData.keys()).sort();
+  const weeks = Array.from(weekData.keys()).sort(compareWeekKeysChronological);
   const l1Set = new Set();
   const l2Set = new Set();
   for (const w of weeks) {
@@ -978,7 +1013,8 @@ function getFilteredRows(rows, filters) {
   const colL2 = resolveCol(rows, 'l2');
 
   return rows.filter((r) => {
-    const week = String(r[colDate] ?? '').trim();
+    const week = normalizeWishbarWeekKey(String(r[colDate] ?? '').trim());
+    if (!week) return false;
     if (filters.dateStart && week < filters.dateStart) return false;
     if (filters.dateEnd && week > filters.dateEnd) return false;
     const l1 = normSource(r[colL1]);
