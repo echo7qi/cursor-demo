@@ -237,6 +237,23 @@ function fmtWow(x) {
   return `${sign}${(x * 100).toFixed(2)}%`;
 }
 
+/** 括号内展示相对上周的绝对差（占比、p-CTR 等为百分点，非环比倍率） */
+function absDeltaRateParen(curr, prev, digits = 2) {
+  if (prev == null || !Number.isFinite(prev)) return '';
+  const d = Number(curr) - Number(prev);
+  if (!Number.isFinite(d)) return '';
+  const sign = d >= 0 ? '+' : '';
+  return ` <span class="kpiDelta">(${sign}${(d * 100).toFixed(digits)}%)</span>`;
+}
+
+function absDeltaMoneyParen(curr, prev, digits = 4) {
+  if (prev == null || !Number.isFinite(prev)) return '';
+  const d = Number(curr) - Number(prev);
+  if (!Number.isFinite(d)) return '';
+  const sign = d >= 0 ? '+' : '';
+  return ` <span class="kpiDelta">(${sign}${fmtMoney(d, digits)})</span>`;
+}
+
 function openLocalDb() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 1);
@@ -475,9 +492,9 @@ function render() {
       const kwEl = $('latestWeekKpis');
       if (kwEl) kwEl.innerHTML = [
         kpi('周区间', `<span class="num">${weekStart} ~ ${weekEnd}</span>${days < 7 ? '<span class="muted">（非完整周）</span>' : ''}`),
-        kpi('运营宣推曝光占比（周）', fmtRate(opsShareGlobal, 2)),
-        kpi('运营宣推每曝光收入（周）', `<span class="num">${fmtMoney(d.rev_per_imp, 4)}</span>`),
-        kpi('运营宣推p-CTR（周）', fmtRate(d.ctr, 2)),
+        kpi('运营宣推曝光占比（周）', `${fmtRate(opsShareGlobal, 2)}${absDeltaRateParen(opsShareGlobal, prevOpsShareGlobal)}`),
+        kpi('运营宣推每曝光收入（周）', `<span class="num">${fmtMoney(d.rev_per_imp, 4)}</span>${absDeltaMoneyParen(d.rev_per_imp, prevD?.rev_per_imp, 4)}`),
+        kpi('运营宣推p-CTR（周）', `${fmtRate(d.ctr, 2)}${absDeltaRateParen(d.ctr, prevD?.ctr)}`),
       ].join('');
 
       const wowRows = [
@@ -600,31 +617,6 @@ function render() {
         });
         const sourceOrder = ['运营全局', ...otherSources];
 
-        let maxAbsChangeSrc = null;
-        let maxAbsChangeVal = -1;
-        if (prevWk && prevSrcMap) {
-          for (const src of otherSources) {
-            const currM = latestSrcMap?.get(src);
-            const prevM = prevSrcMap?.get(src);
-            if (currM && prevM) {
-              const impWow = wow(currM.imp, prevM.imp);
-              const ctrWow = wow(currM.ctr, prevM.ctr);
-              const revWow = wow(currM.rev_per_imp, prevM.rev_per_imp);
-              const shareWow = wow(currM.shareOps, prevM.shareOps);
-              const absMax = Math.max(
-                impWow != null ? Math.abs(impWow) : 0,
-                shareWow != null ? Math.abs(shareWow) : 0,
-                ctrWow != null ? Math.abs(ctrWow) : 0,
-                revWow != null ? Math.abs(revWow) : 0,
-              );
-              if (absMax > maxAbsChangeVal) {
-                maxAbsChangeVal = absMax;
-                maxAbsChangeSrc = src;
-              }
-            }
-          }
-        }
-
         const cellCls = (curr, prev) => {
           if (prev == null) return '';
           return curr > prev ? 'bad' : curr < prev ? 'good' : '';
@@ -641,8 +633,7 @@ function render() {
         html += '<th class="num">曝光量级pv</th><th class="num">宣推占比</th><th class="num">p-ctr</th><th class="num">每曝光收入</th><th class="num">每曝光收入绝对值</th></tr></thead><tbody>';
 
         for (const src of sourceOrder) {
-          const rowHighlight = src === maxAbsChangeSrc ? 'rowHighlightMax' : '';
-          html += `<tr${rowHighlight ? ` class="${rowHighlight}"` : ''}><td><strong>${src}</strong></td>`;
+          html += `<tr><td><strong>${src}</strong></td>`;
           weeksToShow.forEach((w, wi) => {
             const m = byWeekBySrc.get(w.weekStart)?.get(src);
             if (m) {

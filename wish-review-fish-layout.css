@@ -855,26 +855,27 @@
       margin: 0 0 8px;
       font-size: 0.72rem;
       color: #92400e;
-      background: #fffbeb;
+      background: #fff;
       padding: 6px 8px;
       border-radius: 6px;
-      border: 1px solid #fcd34d;
+      border: 1px solid #e2e8f0;
       line-height: 1.4;
     }
     .exec .diag-tip {
       margin-top: 10px;
       padding: 8px 10px;
-      background: #fffbeb;
-      border-left: 3px solid #f59e0b;
-      color: #78350f;
+      background: #fff;
+      border-left: 0;
+      border: 1px solid #e2e8f0;
+      color: #475569;
       font-size: 0.74rem;
       line-height: 1.5;
     }
     .exec-next-strategy {
       margin: 0 0 20px;
       padding: 14px 16px;
-      background: linear-gradient(135deg, #fffbeb 0%, #fff 55%);
-      border: 1px solid #fcd34d;
+      background: #fff;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
       box-shadow: 0 1px 2px rgba(120, 53, 15, 0.06);
     }
